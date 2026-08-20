@@ -1,316 +1,604 @@
-export type UserRole =
-  | 'customer'
-  | 'restaurant_owner'
-  | 'market_owner'
-  | 'clothes_seller'
-  | 'fruits_vegetables_seller'
-  | 'fresh_meat_seller'
-  | 'dairy_seller'
-  | 'electronics_seller'
-  | 'beauty_seller'
-  | 'car_seller'
-  | 'delivery_agent'
-  | 'admin';
+export type Language = 'ku' | 'ar' | 'en' | 'tr' | 'fa';
 
-export type ProductCategory =
-  | 'food'
-  | 'market'
-  | 'clothes'
-  | 'fruits_vegetables'
-  | 'fresh_meat'
-  | 'dairy'
-  | 'electronics'
-  | 'beauty'
-  | 'cars';
+export type UserRole = 'superadmin' | 'owner' | 'manager' | 'cashier' | 'technician' | 'inventory_clerk' | 'customer';
 
-export type OrderStatus =
-  | 'pending'
-  | 'accepted'
-  | 'preparing'
-  | 'ready'
-  | 'picked_up'
-  | 'on_the_way'
-  | 'delivered'
-  | 'cancelled';
+export type BusinessType = 
+  | 'mobile_electronics' 
+  | 'pharmacy_medical' 
+  | 'supermarket_grocery' 
+  | 'clothing_fashion' 
+  | 'auto_parts' 
+  | 'restaurant_cafe' 
+  | 'cosmetics_perfumes' 
+  | 'general_retail';
 
-export type CarPackageType = '1_week' | '15_days' | '1_month';
+export interface BusinessTypeDefinition {
+  id: BusinessType;
+  name: string;
+  nameKu: string;
+  nameAr: string;
+  icon: string;
+  description: string;
+  descriptionKu: string;
+  defaultCategories: string[];
+  features: {
+    hasImei: boolean;
+    hasExpiryDate: boolean;
+    hasBatchNumber: boolean;
+    hasSizeColor: boolean;
+    hasPartNumber: boolean;
+    hasUnits: boolean;
+    hasPrescription: boolean;
+    hasKitchenTables: boolean;
+  };
+}
 
-export type CarPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
+export type PermissionKey =
+  // POS & Checkout
+  | 'pos:access'
+  | 'pos:discount'
+  | 'pos:custom_price'
+  // Sales History & Refunds
+  | 'sales:view_all'
+  | 'sales:view_own'
+  | 'sales:refund_void'
+  // Products & Inventory
+  | 'products:view'
+  | 'products:view_cost_price'
+  | 'products:create'
+  | 'products:edit'
+  | 'products:delete'
+  | 'inventory:adjust_stock'
+  // Supplier Returns (RMA)
+  | 'returns:view'
+  | 'returns:create'
+  | 'returns:settle'
+  | 'returns:suppliers_manage'
+  // Customers & Loyalty
+  | 'customers:view'
+  | 'customers:manage'
+  | 'customers:give_credit'
+  | 'loyalty:manage'
+  | 'loyalty:redeem'
+  // SMS Gateway
+  | 'sms:send'
+  | 'sms:configure'
+  // Reports & Audits
+  | 'reports:view_financial'
+  | 'reports:view_inventory'
+  | 'reports:export'
+  // Store Settings & Administration
+  | 'settings:store_profile'
+  | 'settings:permissions'
+  | 'settings:audit_logs'
+  | 'subscription:manage';
 
-export type CarAdStatus = 'pending_payment' | 'active' | 'expired' | 'rejected' | 'sold';
+export interface PermissionDefinition {
+  key: PermissionKey;
+  label: string;
+  labelKu?: string;
+  labelAr?: string;
+  description: string;
+  category: 'pos' | 'products' | 'returns' | 'customers' | 'sms' | 'reports' | 'settings';
+  dangerLevel?: 'low' | 'medium' | 'high';
+}
 
-export type PaymentMethod = 'cash_on_delivery' | 'fib' | 'fastpay' | 'zaincash' | 'asiapay';
+export interface RolePermissionsConfig {
+  id?: string;
+  role: UserRole;
+  permissions: PermissionKey[];
+  maxDiscountPercent?: number;
+  canViewCostPrices?: boolean;
+  canVoidSales?: boolean;
+  canProcessReturns?: boolean;
+  canExportReports?: boolean;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export interface StaffMember {
+  id: string;
+  userId?: string;
+  displayName: string;
+  email: string;
+  phone?: string;
+  role: UserRole;
+  branchId?: string;
+  branchName?: string;
+  isActive: boolean;
+  customPermissions?: PermissionKey[];
+  createdAt: string;
+  lastLoginAt?: string;
+}
 
 export interface UserProfile {
-  id: string;
+  id?: string;
   email: string;
-  fullName: string;
-  phone: string;
-  avatarUrl?: string;
-  city: string;
-  area: string;
-  address: string;
   role: UserRole;
-  isVerified?: boolean;
-  isBlocked?: boolean;
-  createdAt: string;
-  updatedAt?: string;
+  userType?: 'store_owner' | 'customer' | 'staff';
+  storeId?: string;
+  customerStoreId?: string;
+  customerId?: string;
+  branchId?: string;
+  displayName?: string;
+  phone?: string;
+  customPermissions?: PermissionKey[];
 }
 
-export interface DeliveryZoneSettings {
-  minDistanceKm: number; // e.g. 0 (لە 0 کم)
-  maxDistanceKm: number; // e.g. 15 (تا 15 کم)
-  baseFee: number; // e.g. 2500 IQD
-  baseDistanceThresholdKm: number; // e.g. 3km included in baseFee
-  perKmExtraFee: number; // e.g. 250 IQD per km above base threshold
-  freeDeliveryThreshold?: number; // e.g. 50000 IQD (0 if disabled)
-  isStrictRadius: boolean; // if true, rejects orders beyond maxDistanceKm
-  estimatedMinutesBase: number; // e.g. 20 mins
-  estimatedMinutesPerKm: number; // e.g. 2 min/km
-  coveredNeighborhoods: string[]; // e.g. ['بەختیاری', 'ئاشتی', 'عەنکاوە']
-  deliveryAvailabilityNote?: string;
-}
-
-export interface SellerProfile {
+export interface Store {
   id: string;
-  userId: string;
-  storeName: string;
-  slug: string;
-  category: ProductCategory;
+  name: string;
+  ownerId: string;
+  subscriberEmail?: string;
+  backupEmail?: string;
+  autoBackupGmail?: boolean;
+  businessType?: BusinessType;
+  phone?: string;
+  address?: string;
+  currency?: string;
+  language?: Language;
+  subscriptionStatus: 'trial' | 'active' | 'expiring_soon' | 'expired' | 'suspended' | 'cancelled';
+  trialEndDate?: string;
+  subscriptionEndDate?: string;
+  subscriptionPeriod?: '3_months' | '6_months' | '1_year' | 'monthly' | 'trial';
+  licenseKey?: string;
+  planId?: 'free_trial' | 'starter' | 'pro' | 'enterprise' | string;
+  billingCycle?: 'monthly' | 'yearly';
+  paymentMethod?: {
+    brand: string;
+    last4: string;
+    expMonth: number;
+    expYear: number;
+  };
+  createdAt: string;
+  loyaltyConfig?: LoyaltyConfig;
+  smsConfig?: SMSConfig;
+}
+
+export type SubscriptionTierId = 'free_trial' | 'starter' | 'pro' | 'enterprise';
+
+export interface SubscriptionPlan {
+  id: SubscriptionTierId;
+  name: string;
+  nameKu: string;
+  nameAr: string;
   description: string;
-  logoUrl?: string;
-  coverUrl?: string;
-  city: string;
-  address: string;
+  badge?: string;
+  priceMonthly: number;
+  priceYearly: number; // Discounted annual price
+  priceIqd?: number;
+  durationMonths?: number;
+  limits: {
+    branches: number | 'Unlimited';
+    staffSeats: number | 'Unlimited';
+    smsMonthly: number | 'Unlimited';
+    productsMax: number | 'Unlimited';
+    aiInsights: boolean;
+    customWebhook: boolean;
+    dedicatedSmsSender: boolean;
+    prioritySupport: boolean;
+  };
+  highlightFeatures: string[];
+  popular?: boolean;
+}
+
+export interface BillingInvoice {
+  id: string;
+  invoiceNumber: string;
+  planId: string;
+  planName: string;
+  amount: number;
+  currency: string;
+  billingCycle: 'monthly' | 'yearly';
+  status: 'paid' | 'pending' | 'failed' | 'refunded';
+  paymentMethod: string;
+  cardLast4?: string;
+  couponCode?: string;
+  discountAmount?: number;
+  taxAmount?: number;
+  subtotal?: number;
+  receiptUrl?: string;
+  createdAt: string;
+}
+
+export interface PromoCoupon {
+  code: string;
+  discountPercent?: number;
+  discountFixed?: number;
+  description: string;
+  minAmount?: number;
+}
+
+// ---------------- Supplier & Returns (RMA) Types ----------------
+export type ReturnReason = 
+  | 'damaged_on_arrival' 
+  | 'screen_hardware_fault' 
+  | 'excess_stock' 
+  | 'wrong_item_shipped' 
+  | 'recall_manufacturer' 
+  | 'customer_return_to_vendor';
+
+export type ReturnSettlement = 
+  | 'supplier_credit' 
+  | 'cash_refund' 
+  | 'replacement_stock' 
+  | 'pending_inspection';
+
+export type ReturnStatus = 
+  | 'draft' 
+  | 'pending_approval' 
+  | 'shipped_to_supplier' 
+  | 'received_by_supplier' 
+  | 'resolved_credit' 
+  | 'resolved_refund' 
+  | 'resolved_replacement' 
+  | 'rejected';
+
+export type ItemCondition = 
+  | 'new_sealed' 
+  | 'open_box' 
+  | 'damaged_cracked' 
+  | 'defective_hardware' 
+  | 'missing_accessories';
+
+export interface Supplier {
+  id: string;
+  name: string;
+  contactPerson?: string;
   phone: string;
-  commissionRate: number; // e.g. 10 for 10%
-  isOpen: boolean;
-  openingHours?: string;
-  rating: number;
-  totalReviews: number;
-  totalSales: number;
-  isVerified: boolean;
-  deliveryZone?: DeliveryZoneSettings;
+  email?: string;
+  address?: string;
+  companyName?: string;
+  creditBalance: number;
+  totalReturnsCount?: number;
+  notes?: string;
+  createdAt?: string;
+}
+
+export interface SupplierReturnItem {
+  id: string;
+  productId: string;
+  productName: string;
+  brand: string;
+  category?: string;
+  quantity: number;
+  unitCost: number;
+  totalCost: number;
+  condition: ItemCondition;
+  faultDescription?: string;
+  imeis?: string[];
+  barcode?: string;
+}
+
+export interface SupplierReturn {
+  id: string;
+  returnNumber: string; // e.g. RMA-2026-0012
+  supplierId: string;
+  supplierName: string;
+  supplierPhone?: string;
+  supplierEmail?: string;
+  supplierAddress?: string;
+  reason: ReturnReason;
+  reasonDetails?: string;
+  items: SupplierReturnItem[];
+  totalCost: number;
+  settlementType: ReturnSettlement;
+  status: ReturnStatus;
+  trackingNumber?: string;
+  courierName?: string;
+  autoInventoryDeducted: boolean;
+  notes?: string;
+  createdBy: string;
+  createdByName: string;
+  branchId?: string;
+  branchName?: string;
+  settlementAmount?: number;
+  settledAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ---------------- Audit Trail Types ----------------
+export interface AuditLog {
+  id: string;
+  entityType: 'supplier_return' | 'product' | 'sale' | 'supplier' | 'inventory' | 'user' | 'backup' | 'store';
+  entityId: string;
+  action: 'created' | 'updated' | 'status_changed' | 'inventory_deducted' | 'inventory_restored' | 'settled' | 'rejected' | 'deleted';
+  title: string;
+  details?: string;
+  performedBy: string;
+  performedByName: string;
+  role?: string;
+  changes?: Record<string, { old: any; new: any }>;
   createdAt: string;
 }
 
 export interface Product {
   id: string;
-  sellerId: string;
-  sellerName?: string;
-  category: ProductCategory;
-  subcategory?: string;
-  title: string;
-  description: string;
-  price: number; // in IQD
-  discountPrice?: number;
-  images: string[];
-  stock: number;
-  isAvailable: boolean;
-  unit?: string; // kg, piece, portion, etc.
-  rating?: number;
-  reviewCount?: number;
-  createdAt: string;
-  updatedAt?: string;
-
-  // Category specific fields
-  // Clothes
-  sizes?: string[];
-  colors?: string[];
-  brand?: string;
-  gender?: 'men' | 'women' | 'kids' | 'unisex';
-  material?: string;
-
-  // Food / Restaurant
-  ingredients?: string[];
-  prepTimeMinutes?: number;
-  isSpicy?: boolean;
-  isVegetarian?: boolean;
-
-  // Meat / Dairy / Fruits
-  weight?: string;
-  origin?: string;
-  expiryInfo?: string;
-
-  // Electronics
+  name: string;
+  brand: string;
   model?: string;
-  specs?: Record<string, string>;
+  category: string;
+  sku?: string;
+  barcode?: string;
+  purchasePrice: number;
+  sellingPrice: number;
+  wholesalePrice?: number;
+  stock: number;
+  minStock?: number;
+  hasImei?: boolean;
+  imei?: string;
+  imeis?: string[];
   warrantyMonths?: number;
+  description?: string;
+  images?: string[];
+}
 
-  // Beauty
-  skinType?: string;
-  volume?: string;
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  address?: string;
+  debt: number;
+  loyaltyPoints?: number;
+  totalSpent?: number;
+  tier?: 'bronze' | 'silver' | 'gold' | 'platinum';
+  createdAt?: string;
 }
 
 export interface CartItem {
-  product: Product;
-  quantity: number;
-  selectedSize?: string;
-  selectedColor?: string;
-  specialInstructions?: string;
-}
-
-export interface OrderItem {
   id: string;
-  productId: string;
-  productTitle: string;
-  productImage: string;
+  name: string;
   price: number;
+  purchasePrice?: number;
   quantity: number;
-  selectedSize?: string;
-  selectedColor?: string;
-  specialInstructions?: string;
-  total: number;
+  brand?: string;
+  category?: string;
+  imei?: string;
+  warrantyMonths?: number;
+  rewardId?: string;
 }
 
-export interface Order {
+export interface Sale {
   id: string;
-  orderNumber: string;
+  customerId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  items: CartItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  cost?: number;
+  profit?: number;
+  paid: number;
+  remaining?: number;
+  paymentMethod: 'cash' | 'card' | 'debt' | 'points';
+  employeeId?: string;
+  employeeName?: string;
+  branchId?: string;
+  branchName?: string;
+  loyaltyPointsEarned?: number;
+  loyaltyPointsRedeemed?: number;
+  smsSent?: boolean;
+  createdAt: string;
+}
+
+// ---------------- Loyalty Program Types ----------------
+export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum';
+
+export interface LoyaltyConfig {
+  isEnabled: boolean;
+  pointsPerSpend: number; // e.g. 1 point per $10 spent => 0.1 pts/dollar
+  pointValueInCurrency: number; // e.g. 1 point = $0.05 discount
+  minPointsToRedeem: number; // e.g. 50 points
+  tierRules: {
+    silverMinPoints: number; // e.g. 500
+    goldMinPoints: number; // e.g. 1000
+    platinumMinPoints: number; // e.g. 2500
+    silverBonusMultiplier: number; // e.g. 1.05
+    goldBonusMultiplier: number; // e.g. 1.10
+    platinumBonusMultiplier: number; // e.g. 1.20
+  };
+}
+
+export interface LoyaltyReward {
+  id: string;
+  name: string;
+  pointsRequired: number;
+  type: 'discount' | 'free_item' | 'service' | 'voucher';
+  discountAmount?: number;
+  itemCategory?: string;
+  description?: string;
+  isActive: boolean;
+}
+
+export interface LoyaltyHistoryItem {
+  id: string;
+  customerId: string;
+  customerName?: string;
+  saleId?: string;
+  points: number;
+  action: 'earned' | 'redeemed' | 'adjusted' | 'bonus';
+  reason?: string;
+  createdAt: string;
+}
+
+// ---------------- SMS Gateway & Alert Types ----------------
+export type SMSProvider = 'twilio' | 'fastsms' | 'asiacell' | 'korek' | 'zain' | 'custom_webhook';
+
+export interface SMSConfig {
+  provider: SMSProvider;
+  apiKey?: string;
+  accountSid?: string;
+  senderId: string;
+  webhookUrl?: string;
+  testPhone?: string;
+  isEnabled: boolean;
+  autoLowStockAlert: boolean;
+  autoSubscriptionAlert: boolean;
+  autoWarrantyAlert: boolean;
+  autoInstallmentAlert: boolean;
+  managerPhone?: string;
+}
+
+export type SMSEventType = 
+  | 'low_stock' 
+  | 'expiring_subscription' 
+  | 'expiring_warranty' 
+  | 'upcoming_installment' 
+  | 'sale_receipt' 
+  | 'custom';
+
+export interface SMSTemplate {
+  id: string;
+  eventType: SMSEventType;
+  title: string;
+  body: string;
+  language: string;
+  isActive: boolean;
+}
+
+export interface SMSLog {
+  id: string;
+  recipientPhone: string;
+  recipientName?: string;
+  eventType: SMSEventType | string;
+  message: string;
+  status: 'delivered' | 'sent' | 'failed' | 'pending';
+  gatewayResponse?: string;
+  createdAt: string;
+}
+
+export interface InstallmentSchedule {
+  id: string;
   customerId: string;
   customerName: string;
   customerPhone: string;
-  customerAddress: string;
-  customerCity: string;
-  customerNotes?: string;
-  sellerId: string;
-  sellerName: string;
-  sellerPhone?: string;
-  sellerAddress?: string;
-  category: ProductCategory;
-  items: OrderItem[];
-  subtotal: number;
-  deliveryFee: number;
-  deliveryDistanceKm?: number;
-  deliveryZoneStatus?: 'within_radius' | 'custom_distance' | 'out_of_range';
-  total: number;
-  status: OrderStatus;
-  paymentMethod: PaymentMethod;
-  isPaid: boolean;
-  deliveryAgentId?: string;
-  deliveryAgentName?: string;
-  deliveryAgentPhone?: string;
-  commissionCalculated: boolean;
-  commissionRate: number;
-  commissionAmount: number;
-  sellerAmount: number;
-  createdAt: string;
-  updatedAt: string;
-  deliveredAt?: string;
-  statusTimeline: {
-    status: OrderStatus;
-    timestamp: string;
-    note?: string;
-  }[];
+  saleId?: string;
+  totalDebt: number;
+  installmentAmount: number;
+  dueDate: string;
+  status: 'pending' | 'paid' | 'overdue';
+  remindedAt?: string;
 }
 
-export interface CommissionTransaction {
-  id: string;
-  orderId: string;
-  orderNumber: string;
-  sellerId: string;
-  sellerName: string;
-  orderTotal: number;
-  commissionRate: number; // percentage
-  commissionAmount: number;
-  sellerAmount: number;
-  status: 'finalized' | 'pending' | 'refunded';
-  createdAt: string;
-}
-
-export interface SellerWallet {
-  sellerId: string;
-  totalGrossSales: number;
-  totalCommissionPaid: number;
-  totalNetEarnings: number;
-  availableBalance: number;
-  pendingBalance: number;
-  lastPayoutDate?: string;
-}
-
-export interface CarPackage {
-  id: CarPackageType;
-  name: string;
-  durationDays: number;
-  priceIqd: number;
-  features: string[];
-}
-
-export interface CarAd {
-  id: string;
-  userId: string;
-  userPhone: string;
-  userName: string;
-  title: string;
-  brand: string;
-  model: string;
-  year: number;
-  mileageKm: number;
-  priceIqd: number;
-  priceUsd?: number;
-  fuelType: 'gasoline' | 'diesel' | 'hybrid' | 'electric';
-  transmission: 'automatic' | 'manual';
-  color: string;
-  city: string;
-  description: string;
-  images: string[];
-  packageType: CarPackageType;
-  packagePrice: number;
-  paymentStatus: CarPaymentStatus;
-  paymentRef?: string;
-  adStatus: CarAdStatus;
+// ---------------- Reports & Filtering Types ----------------
+export interface ReportFilter {
+  dateRange: 'today' | 'yesterday' | 'week' | 'month' | 'last_month' | 'year' | 'all' | 'custom';
   startDate?: string;
-  expirationDate?: string;
+  endDate?: string;
+  employeeId?: string;
+  customerId?: string;
+  category?: string;
+  branchId?: string;
+  paymentMethod?: string;
+  searchQuery?: string;
+}
+
+export interface ReportSort {
+  field: 'createdAt' | 'id' | 'customerName' | 'total' | 'profit' | 'itemsCount' | 'employeeName' | 'branchName';
+  direction: 'asc' | 'desc';
+}
+
+// ---------------- Database Backup & Automated Snapshot Types ----------------
+export type BackupFrequency = 'daily' | 'weekly' | 'monthly' | 'manual';
+export type BackupTriggerType = 'automatic_schedule' | 'manual_full' | 'manual_collection';
+export type BackupFormat = 'json' | 'csv_bundle' | 'csv_single';
+
+export interface BackupCollectionCounts {
+  sales: number;
+  products: number;
+  customers: number;
+  suppliers: number;
+  supplierReturns: number;
+  staff: number;
+  smsLogs?: number;
+  auditLogs?: number;
+}
+
+export interface BackupConfig {
+  isAutoBackupEnabled: boolean;
+  frequency: BackupFrequency;
+  retentionDays: number;
+  includeSales: boolean;
+  includeProducts: boolean;
+  includeCustomers: boolean;
+  includeSuppliers: boolean;
+  includeSupplierReturns: boolean;
+  lastAutoBackupAt?: string;
+  nextScheduledBackupAt?: string;
+  updatedAt?: string;
+}
+
+export interface BackupSnapshot {
+  id: string;
+  snapshotNumber: string;
+  triggerType: BackupTriggerType;
+  status: 'completed' | 'in_progress' | 'failed';
+  counts: BackupCollectionCounts;
+  totalRecords: number;
+  fileSizeBytes: number;
+  format: BackupFormat;
+  includedCollections: string[];
+  checksum: string;
+  downloadPayload?: string; // Cache data or summary
+  notes?: string;
+  createdBy?: string;
+  createdByName?: string;
   createdAt: string;
 }
 
-export interface CarPayment {
-  id: string;
-  userId: string;
-  carAdId: string;
-  carTitle: string;
-  packageType: CarPackageType;
-  amountIqd: number;
-  currency: 'IQD';
-  status: CarPaymentStatus;
-  paymentMethod: PaymentMethod;
-  transactionReference: string;
-  createdAt: string;
+export interface FullStoreBackupData {
+  version: string;
+  storeId: string;
+  storeName: string;
+  exportedAt: string;
+  exportedBy: string;
+  checksum: string;
+  counts: BackupCollectionCounts;
+  data: {
+    products: Product[];
+    sales: Sale[];
+    customers: Customer[];
+    suppliers: Supplier[];
+    supplierReturns: SupplierReturn[];
+    staff: StaffMember[];
+    rolePermissions?: Record<string, PermissionKey[]>;
+  };
 }
 
-export interface Review {
-  id: string;
-  userId: string;
-  userName: string;
-  userAvatar?: string;
-  targetId: string; // product ID or seller ID
-  targetType: 'product' | 'seller';
-  rating: number; // 1 to 5
-  comment: string;
-  createdAt: string;
+export interface ExportFilterOptions {
+  collections: ('products' | 'sales' | 'customers' | 'suppliers' | 'supplierReturns')[];
+  format: 'json' | 'csv';
+  dateRange: 'all' | 'today' | 'last_7_days' | 'last_30_days' | 'this_month' | 'custom';
+  startDate?: string;
+  endDate?: string;
 }
 
-export type NotificationType = 'order' | 'commission' | 'car' | 'payment' | 'system' | 'seller';
-export type NotificationStatus = 'info' | 'success' | 'warning' | 'error';
+// ---------------- Real-Time Notification System Types ----------------
+export type NotificationType = 'low_inventory' | 'subscription_renewal' | 'system_update' | 'sale' | 'general';
+export type NotificationSeverity = 'info' | 'warning' | 'urgent' | 'success';
 
-export interface NotificationItem {
+export interface StoreNotification {
   id: string;
-  userId: string;
   title: string;
   message: string;
   type: NotificationType;
-  status?: NotificationStatus;
-  isRead: boolean;
-  linkUrl?: string;
-  actionLabel?: string;
+  severity: NotificationSeverity;
+  read: boolean;
+  link?: string;
   metadata?: {
-    orderId?: string;
-    orderNumber?: string;
-    carAdId?: string;
-    amount?: number;
-    paymentMethod?: string;
-    reason?: string;
-    sellerId?: string;
-    daysLeft?: number;
+    productId?: string;
+    productName?: string;
+    stock?: number;
+    minStock?: number;
+    planName?: string;
+    subscriptionEndDate?: string;
+    updateVersion?: string;
+    [key: string]: any;
   };
   createdAt: string;
+  createdBy?: string;
 }
+

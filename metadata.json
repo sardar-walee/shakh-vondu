@@ -1,6 +1,8 @@
 {
-  "name": "Shakh - Multi-Category Marketplace & Delivery",
-  "description": "Comprehensive Kurdish & Iraqi multi-vendor marketplace, restaurant delivery, grocery, electronics, fashion, car advertisements, seller dashboards, and super admin platform.",
+  "name": "Mobile Store Manager SaaS",
+  "description": "A professional multi-tenant SaaS platform for managing mobile stores, inventory, POS, and subscriptions.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
