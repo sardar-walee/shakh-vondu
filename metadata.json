@@ -1,0 +1,6 @@
+{
+  "name": "Shakh - Multi-Category Marketplace & Delivery",
+  "description": "Comprehensive Kurdish & Iraqi multi-vendor marketplace, restaurant delivery, grocery, electronics, fashion, car advertisements, seller dashboards, and super admin platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,124 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User accounts with role-based access for customers, sellers, admins, and delivery drivers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique user ID" },
+        "fullName": { "type": "string", "description": "Full name in Kurdish/English" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "role": { "type": "string", "enum": ["customer", "seller", "admin", "delivery"], "description": "User role" },
+        "city": { "type": "string", "description": "City in Kurdistan" },
+        "area": { "type": "string", "description": "Neighborhood/Area" },
+        "address": { "type": "string", "description": "Street address" },
+        "avatarUrl": { "type": "string", "format": "uri", "description": "Profile picture URL" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "fullName", "role"]
+    },
+    "Seller": {
+      "title": "Seller Store",
+      "description": "Store profile for merchants with delivery radius and zone settings",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "storeName": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "logoUrl": { "type": "string", "format": "uri" },
+        "coverUrl": { "type": "string", "format": "uri" },
+        "city": { "type": "string" },
+        "address": { "type": "string" },
+        "phone": { "type": "string" },
+        "commissionRate": { "type": "number" },
+        "rating": { "type": "number" },
+        "totalReviews": { "type": "number" },
+        "totalSales": { "type": "number" },
+        "isVerified": { "type": "boolean" },
+        "deliveryZone": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "storeName", "category"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Products offered across food, market, meat, vegetables, clothes, electronics, etc.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "subcategory": { "type": "string" },
+        "price": { "type": "number" },
+        "discountPrice": { "type": "number" },
+        "stock": { "type": "number" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "rating": { "type": "number" },
+        "isFeatured": { "type": "boolean" },
+        "isAvailable": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "price", "category", "sellerId"]
+    },
+    "Order": {
+      "title": "Customer Order",
+      "description": "Multi-vendor orders with delivery zone distance calculation and real-time statuses",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "deliveryFee": { "type": "number" },
+        "deliveryDistanceKm": { "type": "number" },
+        "deliveryZoneStatus": { "type": "string" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "preparing", "ready_for_pickup", "picked_up", "out_for_delivery", "delivered", "cancelled"] },
+        "paymentMethod": { "type": "string" },
+        "deliveryAddress": { "type": "string" },
+        "deliveryCity": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "total", "status", "paymentMethod", "deliveryAddress"]
+    },
+    "Car": {
+      "title": "Car Marketplace Listing",
+      "description": "Car ads for Kurdish automotive marketplace",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "sellerPhone": { "type": "string" },
+        "title": { "type": "string" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "number" },
+        "priceUSD": { "type": "number" },
+        "mileage": { "type": "number" },
+        "city": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "make", "model", "year", "priceUSD"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": { "schema": "User", "description": "User documents" },
+    "/sellers/{sellerId}": { "schema": "Seller", "description": "Seller store documents" },
+    "/products/{productId}": { "schema": "Product", "description": "Product catalog" },
+    "/orders/{orderId}": { "schema": "Order", "description": "Orders collection" },
+    "/cars/{carId}": { "schema": "Car", "description": "Cars marketplace collection" }
+  }
+}
