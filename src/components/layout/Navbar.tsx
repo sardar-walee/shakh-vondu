@@ -72,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   searchQuery,
   onSearchChange
 }) => {
-  const { currentUser, isSuperAdmin, isSeller, isDeliveryAgent, logout, switchUserRole } = useAuth();
+  const { currentUser, isSuperAdmin, isSeller, isDeliveryAgent, logout } = useAuth();
   const { totalItems, setIsOpen: setCartOpen } = useCart();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
   const { language, setLanguage, t } = useLanguage();
@@ -83,7 +83,6 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [isCityOpen, setIsCityOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isUserOpen, setIsUserOpen] = useState(false);
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -867,20 +866,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                           پڕۆفایل و ناونیشانەکان
                         </button>
 
-                        {/* Fast Demo Role Switcher */}
-                        <div className="border-t border-slate-100 my-1 pt-1">
-                          <button
-                            onClick={() => { setIsRoleModalOpen(true); setIsUserOpen(false); }}
-                            className="w-full flex items-center justify-between px-4 py-2 text-xs text-[#2563EB] font-bold hover:bg-blue-50 text-right cursor-pointer"
-                          >
-                            <span className="flex items-center gap-2">
-                              <Sparkles className="w-4 h-4 text-amber-500" />
-                              گۆڕینی ڕۆڵ (Demo Persona)
-                            </span>
-                            <span className="text-[10px] bg-blue-100 text-[#2563EB] px-1.5 py-0.5 rounded">تاقیبکەرەوە</span>
-                          </button>
-                        </div>
-
                         <div className="border-t border-slate-100 my-1 pt-1">
                           <button
                             onClick={() => { logout(); setIsUserOpen(false); }}
@@ -1211,26 +1196,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
               </div>
 
-              {/* 5. Demo Persona / Fast Role Switcher */}
-              <div className="bg-slate-50 dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-100 dark:border-slate-800">
-                <button
-                  onClick={() => {
-                    setIsRoleModalOpen(true);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className="w-full flex items-center justify-between text-xs font-bold text-[#2563EB] dark:text-blue-400 cursor-pointer"
-                >
-                  <span className="flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>گۆڕینی ڕۆڵ (Demo Persona Switcher)</span>
-                  </span>
-                  <span className="text-[10px] bg-blue-100 dark:bg-blue-900/50 text-[#2563EB] dark:text-blue-300 px-2 py-0.5 rounded-full font-latin">
-                    تاقیبکەرەوە
-                  </span>
-                </button>
-              </div>
-
-              {/* 6. Preferences: Language & Theme */}
+              {/* 5. Preferences: Language & Theme */}
               <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                 {/* Language Switcher */}
                 <div className="flex items-center justify-between">
@@ -1304,65 +1270,6 @@ export const Navbar: React.FC<NavbarProps> = ({
           </aside>
         </div>,
         document.body
-      )}
-
-      {/* Role Switcher Modal (Demo Switcher) */}
-      {isRoleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl p-6 border border-slate-100 text-right">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-orange-500" />
-                هەڵبژاردنی کەسایەتی بەکارهێنەر (Role Switcher)
-              </h3>
-              <button
-                onClick={() => setIsRoleModalOpen(false)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-full"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-500 my-3">
-              بۆ تاقیکردنەوەی خێرای تەواوی بەشەکان، داشبۆردی سووپەر ئەدمین، فرۆشیارانی جیاواز، شۆفێر و کڕیار، یەکێک لەم ڕۆڵانە دیاریبکە:
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-96 overflow-y-auto pr-1">
-              {[
-                { role: 'admin' as UserRole, name: 'سووپەر ئەدمین (Super Admin)', email: 'shakh8002@gmail.com', color: 'border-red-500 bg-red-50/60 text-red-900' },
-                { role: 'restaurant_owner' as UserRole, name: 'هاکار (خاوەن چێشتخانەی دیلان)', email: 'hakar.rest@shakh.com', color: 'border-orange-500 bg-orange-50/60 text-orange-900' },
-                { role: 'market_owner' as UserRole, name: 'شاناز (سوپەرمارکێتی کاروان)', email: 'shanaz.market@shakh.com', color: 'border-blue-500 bg-blue-50/60 text-blue-900' },
-                { role: 'clothes_seller' as UserRole, name: 'ئالان (ئالان فاشیۆن پریمێم)', email: 'alan.fashion@shakh.com', color: 'border-purple-500 bg-purple-50/60 text-purple-900' },
-                { role: 'fruits_vegetables_seller' as UserRole, name: 'کۆسار (میوە و سەوزەی بەهەشت)', email: 'kamaran.fruits@shakh.com', color: 'border-emerald-500 bg-emerald-50/60 text-emerald-900' },
-                { role: 'fresh_meat_seller' as UserRole, name: 'سەردار قەساب (گۆشتفرۆشی مێرگەپان)', email: 'garmian.meat@shakh.com', color: 'border-rose-500 bg-rose-50/60 text-rose-900' },
-                { role: 'dairy_seller' as UserRole, name: 'دەریا (شیرەمەنی گوڵان)', email: 'darya.dairy@shakh.com', color: 'border-cyan-500 bg-cyan-50/60 text-cyan-900' },
-                { role: 'electronics_seller' as UserRole, name: 'دانا (دانا ئەلیکترۆنیکس)', email: 'dana.tech@shakh.com', color: 'border-indigo-500 bg-indigo-50/60 text-indigo-900' },
-                { role: 'beauty_seller' as UserRole, name: 'لوما (لوما کۆزمەتیک)', email: 'luma.beauty@shakh.com', color: 'border-pink-500 bg-pink-50/60 text-pink-900' },
-                { role: 'delivery_agent' as UserRole, name: 'ڕێباز (کاپتنی گەیاندن)', email: 'rebaz.delivery@shakh.com', color: 'border-teal-500 bg-teal-50/60 text-teal-900' },
-                { role: 'customer' as UserRole, name: 'شوان محەممەد (کڕیاری ئاسایی)', email: 'customer@shakh.com', color: 'border-slate-400 bg-slate-50 text-slate-900' }
-              ].map(item => (
-                <button
-                  key={item.role}
-                  onClick={() => {
-                    switchUserRole(item.role);
-                    setIsRoleModalOpen(false);
-                  }}
-                  className={`p-3 rounded-xl border text-right transition-all hover:scale-[1.02] cursor-pointer ${item.color} ${
-                    currentUser?.role === item.role ? 'ring-2 ring-orange-500 font-bold' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold">{item.name}</span>
-                    {currentUser?.role === item.role && (
-                      <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded font-bold">چالاکە</span>
-                    )}
-                  </div>
-                  <span className="text-[10px] opacity-75 font-latin block mt-0.5">{item.email}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
       )}
     </header>
   );

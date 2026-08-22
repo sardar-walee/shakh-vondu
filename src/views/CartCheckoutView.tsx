@@ -22,9 +22,11 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useLanguage } from '../context/LanguageContext';
-import { PaymentMethod } from '../types';
+import { PaymentMethod, GeoLocation } from '../types';
 import { CITIES } from '../data/seedData';
 import { calculateDeliveryFee, CITY_NEIGHBORHOOD_DISTANCES } from '../utils/deliveryUtils';
+import { GPSLocationPicker } from '../components/common/GPSLocationPicker';
+import { calculateDistanceKm, KURDISTAN_CITIES_COORDS } from '../utils/geoUtils';
 
 interface CartCheckoutViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -32,7 +34,7 @@ interface CartCheckoutViewProps {
 
 export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }) => {
   const { items, subtotal, clearCart, primarySellerName, primarySellerId } = useCart();
-  const { currentUser } = useAuth();
+  const { currentUser, updateUserProfile } = useAuth();
   const { sellers, createOrder } = useMarketplace();
   const { dir } = useLanguage();
 
@@ -42,6 +44,7 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
   const [area, setArea] = useState(currentUser?.area || 'بەختیاری');
   const [distanceKm, setDistanceKm] = useState<number>(3.5);
   const [address, setAddress] = useState(currentUser?.address || '');
+  const [deliveryGeoLocation, setDeliveryGeoLocation] = useState<GeoLocation | null>(currentUser?.geoLocation || null);
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash_on_delivery');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,13 +129,25 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
       paymentMethod,
       customerNotes: notes,
       deliveryAddress: `${city} - ${area} - ${address} (دوری: ${distanceKm} کم)`,
-      deliveryCity: city
+      deliveryCity: city,
+      deliveryGeoLocation: deliveryGeoLocation || undefined
     });
 
     setIsSubmitting(false);
 
     if (result.success && result.orderId) {
       clearCart();
+
+      // Persist latest location and address back to currentUser profile in Firestore
+      if (currentUser) {
+        updateUserProfile({
+          city,
+          area,
+          address,
+          geoLocation: deliveryGeoLocation || undefined
+        }).catch(() => {});
+      }
+
       // Confetti celebration
       try {
         confetti({
@@ -238,6 +253,48 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
                 ))}
               </select>
             </div>
+
+            {/* GPS Live Location Detection */}
+            <GPSLocationPicker
+              label="دیاریکردنی شوێنی وەرگرتنی داواکاری بە GPS (خێرا و ورد)"
+              required={true}
+              autoPrompt={true}
+              initialCity={city}
+              initialAddress={address}
+              initialGeoLocation={deliveryGeoLocation}
+              onLocationChange={(loc) => {
+                if (loc.city) setCity(loc.city);
+                if (loc.area) setArea(loc.area);
+                if (loc.address) setAddress(loc.address);
+                if (loc.geoLocation) {
+                  setDeliveryGeoLocation(loc.geoLocation);
+
+                  // Auto update user profile in database
+                  if (currentUser) {
+                    updateUserProfile({
+                      city: loc.city || city,
+                      area: loc.area || area,
+                      address: loc.address || address,
+                      geoLocation: loc.geoLocation
+                    });
+                  }
+
+                  // Calculate distance if seller coords or city coords are available
+                  const sellerCoords = primarySeller?.geoLocation || (primarySeller?.city ? KURDISTAN_CITIES_COORDS[primarySeller.city] : null);
+                  if (sellerCoords && loc.geoLocation) {
+                    const sLat = 'latitude' in sellerCoords ? sellerCoords.latitude : (sellerCoords as any).lat;
+                    const sLng = 'longitude' in sellerCoords ? sellerCoords.longitude : (sellerCoords as any).lng;
+                    const dist = calculateDistanceKm(
+                      sLat,
+                      sLng,
+                      loc.geoLocation.latitude,
+                      loc.geoLocation.longitude
+                    );
+                    if (dist > 0) setDistanceKm(Math.max(1, Math.min(dist, 50)));
+                  }
+                }
+              }}
+            />
 
             {/* Neighborhood Quick Chips */}
             <div className="space-y-2">

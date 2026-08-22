@@ -11,8 +11,24 @@ export type UserRole =
   | 'beauty_seller'
   | 'car_seller'
   | 'delivery_agent'
+  | 'store_driver'
   | 'admin'
   | 'super_admin';
+
+export type DeliveryMode = 'shakh_delivery' | 'store_delivery' | 'hybrid';
+
+export interface StoreDriver {
+  id: string;
+  sellerId: string;
+  name: string;
+  phone: string;
+  vehicleType: 'motorcycle' | 'car' | 'bicycle' | 'van';
+  plateNumber?: string;
+  isActive: boolean;
+  totalDeliveries?: number;
+  rating?: number;
+  createdAt?: string;
+}
 
 export type ProductCategory =
   | 'food'
@@ -43,6 +59,16 @@ export type CarAdStatus = 'pending_payment' | 'active' | 'expired' | 'rejected' 
 
 export type PaymentMethod = 'cash_on_delivery' | 'fib' | 'fastpay' | 'zaincash' | 'asiapay';
 
+export interface GeoLocation {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  city?: string;
+  area?: string;
+  address?: string;
+  mapUrl?: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
@@ -59,6 +85,7 @@ export interface UserProfile {
   isBlocked?: boolean;
   driverPoints?: number;
   acceptedShakhRules?: boolean;
+  geoLocation?: GeoLocation;
   createdAt: string;
   updatedAt?: string;
 }
@@ -109,6 +136,12 @@ export interface SellerProfile {
   totalSales: number;
   isVerified: boolean;
   deliveryZone?: DeliveryZoneSettings;
+  deliveryMode?: DeliveryMode;
+  ownDrivers?: StoreDriver[];
+  storeDeliveryFee?: number;
+  storeFreeDeliveryOver?: number;
+  storeDeliveryTimeMin?: number;
+  geoLocation?: GeoLocation;
   createdAt: string;
 }
 
@@ -201,6 +234,7 @@ export interface Order {
   customerCity: string;
   deliveryAddress?: string;
   deliveryCity?: string;
+  deliveryGeoLocation?: GeoLocation;
   customerNotes?: string;
   sellerId: string;
   sellerName: string;
@@ -222,6 +256,12 @@ export interface Order {
   deliveryAgentId?: string;
   deliveryAgentName?: string;
   deliveryAgentPhone?: string;
+  deliveryMode?: DeliveryMode;
+  isStoreDelivery?: boolean;
+  storeDriverId?: string;
+  storeDriverName?: string;
+  storeDriverPhone?: string;
+  storeDriverVehicle?: string;
   commissionCalculated: boolean;
   commissionRate: number;
   commissionAmount: number;
@@ -433,5 +473,42 @@ export interface UserFeedback {
   status: FeedbackStatus;
   adminResponse?: string;
   createdAt: string;
+}
+
+export type OccasionType =
+  | 'mawlid'           // مەولودی پێغەمبەر ﷺ
+  | 'ramadan'          // مانگی پیرۆزی ڕەمەزان
+  | 'eid_fitr'         // جەژنی ڕەمەزان
+  | 'eid_adha'         // جەژنی قوربان
+  | 'hijri_new_year'   // سەری ساڵی کۆچی
+  | 'isra_miraj'       // ئیسرا و میعراج
+  | 'newroz'           // جەژنی نەورۆز
+  | 'custom';          // بۆنەی تایبەت
+
+export type OccasionThemeStyle =
+  | 'emerald_gold'     // زمردی ئیسلامی و ئاڵتوونی
+  | 'royal_midnight'   // شینی شاهانە و زێڕین
+  | 'rose_amber'       // گوڵاوی و کەشفی ئارام
+  | 'warm_sunset'      // گەرمی پاییز و ئاڵتوونی
+  | 'pure_green';      // سەوزی پاک و گوڵی مەولود
+
+export interface OccasionBanner {
+  id: string;
+  isActive: boolean;
+  type: OccasionType;
+  badge: string;
+  title: string;
+  subtitle: string;
+  description?: string; // Poetic praise or Mawlid message (مەدحی پێغەمبەر ﷺ)
+  praisePoem?: string;  // Kurdish or Arabic verses / poem
+  imageUrl?: string;
+  themeStyle: OccasionThemeStyle;
+  showSalawatCounter: boolean;
+  salawatCount: number;
+  actionButtonText?: string;
+  actionButtonUrl?: string;
+  startDate?: string; // ISO date or YYYY-MM-DDTHH:mm for scheduling start
+  endDate?: string;   // ISO date or YYYY-MM-DDTHH:mm for scheduling end
+  updatedAt?: string;
 }
 

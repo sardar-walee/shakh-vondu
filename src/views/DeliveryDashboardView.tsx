@@ -21,7 +21,8 @@ import {
   Sparkles,
   Send,
   ThumbsUp,
-  User
+  User,
+  Store
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
@@ -49,10 +50,10 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
 
   const driverId = currentUser?.id || 'rebaz-driver';
 
-  // Orders ready for pickup or on the way
-  const availableOrders = orders.filter(o => o.status === 'ready' && !o.driverId);
-  const myDeliveries = orders.filter(o => (o.driverId === driverId || o.deliveryAgentId === driverId) && ['picked_up', 'on_the_way', 'ready'].includes(o.status));
-  const completedDeliveries = orders.filter(o => o.status === 'delivered' && (o.driverId === driverId || o.deliveryAgentId === driverId));
+  // Orders ready for pickup or on the way (Central Shakh Captain pool only, not in-house store deliveries)
+  const availableOrders = orders.filter(o => o.status === 'ready' && !o.driverId && !o.isStoreDelivery && o.deliveryMode !== 'store_delivery');
+  const myDeliveries = orders.filter(o => (o.driverId === driverId || o.deliveryAgentId === driverId) && !o.isStoreDelivery && ['picked_up', 'on_the_way', 'ready'].includes(o.status));
+  const completedDeliveries = orders.filter(o => o.status === 'delivered' && (o.driverId === driverId || o.deliveryAgentId === driverId) && !o.isStoreDelivery);
 
   const driverStats = getDriverStats(driverId);
   const driverReviews = getDriverReviews(driverId);
@@ -84,31 +85,42 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
     <div className="space-y-8 pb-16">
       
       {/* Header */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-teal-700 to-emerald-500 text-white flex items-center justify-center font-bold text-2xl shadow-md">
             <Truck className="w-8 h-8" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900">
-                داشبۆردی کاپتنی گەیاندن (Shakh Delivery)
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                داشبۆردی کاپتنی گەیاندنی شاخ (Shakh Express)
               </h1>
-              <span className="px-2.5 py-0.5 bg-amber-100 text-amber-800 text-[11px] font-extrabold rounded-full flex items-center gap-1 border border-amber-300">
+              <span className="px-2.5 py-0.5 bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 text-[11px] font-extrabold rounded-full flex items-center gap-1 border border-amber-300 dark:border-amber-700">
                 <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
                 کاپتنی زێڕین ({driverStats.rating || 4.9} ★)
               </span>
+              <span className="px-2.5 py-0.5 bg-teal-100 dark:bg-teal-950/50 text-teal-800 dark:text-teal-300 text-[11px] font-extrabold rounded-full border border-teal-300 dark:border-teal-700">
+                تۆڕی فەرمی شاخ
+              </span>
             </div>
-            <p className="text-xs text-slate-500 mt-1">
-              کاپتن: <span className="font-bold text-slate-800">{currentUser?.fullName || 'ڕێباز کاپتن'}</span> • شار: {currentUser?.city || 'هەولێر'}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              کاپتن: <span className="font-bold text-slate-800 dark:text-slate-200">{currentUser?.fullName || 'ڕێباز کاپتن'}</span> • شار: {currentUser?.city || 'هەولێر'} • ٨٠٪ قازانجی خاوێن بۆ کاپتن + پۆینت
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
           <button
+            onClick={() => onNavigate('store-delivery')}
+            className="px-4 py-3 bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 text-orange-800 dark:text-orange-300 border border-orange-200 dark:border-orange-800 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-xs"
+          >
+            <Store className="w-4 h-4 text-orange-600" />
+            <span>چوون بۆ بەشی دلیڤەری دوکان (Store Delivery)</span>
+          </button>
+
+          <button
             onClick={() => setShowShakhRulesModal(true)}
-            className="px-4 py-3 bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-800 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
+            className="px-4 py-3 bg-teal-50 dark:bg-teal-950/40 hover:bg-teal-100 border border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-300 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-teal-600" />
             <span>یاسای شاخ (Shakh Courier Rules)</span>
@@ -250,9 +262,21 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-teal-100">
-                      <div className="flex items-center gap-2 bg-white/5 p-3 rounded-xl">
-                        <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
-                        <span>گەیاندن بۆ: {order.deliveryAddress}</span>
+                      <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                          <span>گەیاندن بۆ: {order.deliveryAddress}</span>
+                        </div>
+                        {(order.deliveryGeoLocation?.mapUrl || order.deliveryAddress) && (
+                          <a
+                            href={order.deliveryGeoLocation?.mapUrl || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.deliveryAddress || '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] bg-orange-500 hover:bg-orange-600 text-white font-bold px-2 py-1 rounded-lg transition-colors flex items-center gap-1 shrink-0"
+                          >
+                            <span>نەخشەی GPS</span>
+                          </a>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 bg-white/5 p-3 rounded-xl">
                         <Phone className="w-4 h-4 text-emerald-400 flex-shrink-0" />

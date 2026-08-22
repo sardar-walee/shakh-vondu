@@ -35,7 +35,8 @@ import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { RoleBadge } from '../components/common/Badge';
 import { CITIES } from '../data/seedData';
-import { FeedbackType, UserRole } from '../types';
+import { FeedbackType, UserRole, GeoLocation } from '../types';
+import { GPSLocationPicker } from '../components/common/GPSLocationPicker';
 
 interface UserProfileViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -46,7 +47,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
     currentUser,
     updateUserProfile,
     logout,
-    switchUserRole,
     isSuperAdmin,
     isSeller,
     isDeliveryAgent
@@ -60,7 +60,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
   } = useMarketplace();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'terms' | 'feedback'>('profile');
-  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
 
   // Profile Form State
   const [fullName, setFullName] = useState(currentUser?.fullName || '');
@@ -68,6 +67,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
   const [city, setCity] = useState(currentUser?.city || 'Erbil (هەولێر)');
   const [address, setAddress] = useState(currentUser?.address || '');
   const [area, setArea] = useState(currentUser?.area || '');
+  const [geoLocation, setGeoLocation] = useState<GeoLocation | null>(currentUser?.geoLocation || null);
   const [savedToast, setSavedToast] = useState(false);
   const [redeemMsg, setRedeemMsg] = useState('');
 
@@ -91,7 +91,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
       phone,
       city,
       address,
-      area
+      area,
+      geoLocation: geoLocation || undefined
     });
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 3000);
@@ -315,15 +316,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
                   </div>
                 </div>
               </div>
-
-              {/* Quick Persona Switcher for testing */}
-              <button
-                onClick={() => setIsRoleModalOpen(true)}
-                className="px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563EB] text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto transition-colors cursor-pointer"
-              >
-                <Sparkles className="w-4 h-4 text-amber-500" />
-                <span>گۆڕینی ڕۆڵ (Demo Persona)</span>
-              </button>
             </div>
 
             {/* Quick Account Navigation Grid */}
@@ -426,15 +418,28 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">ناونیشانی وردی ماڵ یان کار:</label>
-                  <textarea
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    rows={2}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:bg-white focus:outline-hidden"
-                  />
-                </div>
+                {/* GPS Location Component */}
+                <GPSLocationPicker
+                  label="دیاریکردنی لۆکەیشنی GPS ی سەرەکی بۆ هەژمارەکەت"
+                  autoPrompt={!currentUser?.geoLocation}
+                  initialCity={city}
+                  initialAddress={address}
+                  initialGeoLocation={geoLocation}
+                  onLocationChange={(loc) => {
+                    if (loc.city) setCity(loc.city);
+                    if (loc.area) setArea(loc.area);
+                    if (loc.address) setAddress(loc.address);
+                    if (loc.geoLocation) {
+                      setGeoLocation(loc.geoLocation);
+                      updateUserProfile({
+                        city: loc.city || city,
+                        area: loc.area || area,
+                        address: loc.address || address,
+                        geoLocation: loc.geoLocation
+                      });
+                    }
+                  }}
+                />
 
                 <button
                   type="submit"
@@ -677,65 +682,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
             )}
           </div>
 
-        </div>
-      )}
-
-      {/* Role Switcher Modal (Demo Switcher) */}
-      {isRoleModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl p-6 border border-slate-100 text-right">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-              <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-orange-500" />
-                <span>هەڵبژاردنی کەسایەتی بەکارهێنەر (Role Switcher)</span>
-              </h3>
-              <button
-                onClick={() => setIsRoleModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-500 my-3">
-              بۆ تاقیکردنەوەی خێرای تەواوی بەشەکان، داشبۆردی سووپەر ئەدمین، فرۆشیارانی جیاواز، شۆفێر و کڕیار، یەکێک لەم ڕۆڵانە دیاریبکە:
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-96 overflow-y-auto pr-1">
-              {[
-                { role: 'admin' as UserRole, name: 'سووپەر ئەدمین (Super Admin)', email: 'shakh8002@gmail.com', color: 'border-red-500 bg-red-50/60 text-red-900' },
-                { role: 'restaurant_owner' as UserRole, name: 'هاکار (خاوەن چێشتخانەی دیلان)', email: 'hakar.rest@shakh.com', color: 'border-orange-500 bg-orange-50/60 text-orange-900' },
-                { role: 'market_owner' as UserRole, name: 'شاناز (سوپەرمارکێتی کاروان)', email: 'shanaz.market@shakh.com', color: 'border-blue-500 bg-blue-50/60 text-blue-900' },
-                { role: 'clothes_seller' as UserRole, name: 'ئالان (ئالان فاشیۆن پریمێم)', email: 'alan.fashion@shakh.com', color: 'border-purple-500 bg-purple-50/60 text-purple-900' },
-                { role: 'fruits_vegetables_seller' as UserRole, name: 'کۆسار (میوە و سەوزەی بەهەشت)', email: 'kamaran.fruits@shakh.com', color: 'border-emerald-500 bg-emerald-50/60 text-emerald-900' },
-                { role: 'fresh_meat_seller' as UserRole, name: 'سەردار قەساب (گۆشتفرۆشی مێرگەپان)', email: 'garmian.meat@shakh.com', color: 'border-rose-500 bg-rose-50/60 text-rose-900' },
-                { role: 'dairy_seller' as UserRole, name: 'دەریا (شیرەمەنی گوڵان)', email: 'darya.dairy@shakh.com', color: 'border-cyan-500 bg-cyan-50/60 text-cyan-900' },
-                { role: 'electronics_seller' as UserRole, name: 'دانا (دانا ئەلیکترۆنیکس)', email: 'dana.tech@shakh.com', color: 'border-indigo-500 bg-indigo-50/60 text-indigo-900' },
-                { role: 'beauty_seller' as UserRole, name: 'لوما (لوما کۆزمەتیک)', email: 'luma.beauty@shakh.com', color: 'border-pink-500 bg-pink-50/60 text-pink-900' },
-                { role: 'delivery_agent' as UserRole, name: 'ڕێباز (کاپتنی گەیاندن)', email: 'rebaz.delivery@shakh.com', color: 'border-teal-500 bg-teal-50/60 text-teal-900' },
-                { role: 'customer' as UserRole, name: 'شوان محەممەد (کڕیاری ئاسایی)', email: 'customer@shakh.com', color: 'border-slate-400 bg-slate-50 text-slate-900' }
-              ].map(item => (
-                <button
-                  key={item.role}
-                  onClick={() => {
-                    switchUserRole(item.role);
-                    setIsRoleModalOpen(false);
-                  }}
-                  className={`p-3 rounded-xl border text-right transition-all hover:scale-[1.02] cursor-pointer ${item.color} ${
-                    currentUser?.role === item.role ? 'ring-2 ring-orange-500 font-bold' : ''
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold">{item.name}</span>
-                    {currentUser?.role === item.role && (
-                      <span className="text-[10px] bg-orange-500 text-white px-1.5 py-0.2 rounded font-bold">چالاکە</span>
-                    )}
-                  </div>
-                  <span className="text-[10px] opacity-75 font-latin block mt-0.5">{item.email}</span>
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 

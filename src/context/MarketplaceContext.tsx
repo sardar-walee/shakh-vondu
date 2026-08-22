@@ -18,9 +18,14 @@ import {
   PointsTransaction,
   AgreementTier,
   UserRole,
-  UserFeedback
+  UserFeedback,
+  GeoLocation,
+  StoreDriver,
+  DeliveryMode,
+  OccasionBanner
 } from '../types';
 import { CAR_PACKAGES } from '../data/seedData';
+import { DEFAULT_MAWLID_BANNER } from '../data/occasionPresets';
 import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -58,6 +63,16 @@ interface MarketplaceContextType {
   updateSellerCommission: (sellerId: string, newRate: number) => Promise<void>;
   toggleSellerVerification: (sellerId: string) => Promise<void>;
   updateSellerDeliveryZone: (sellerId: string, zoneSettings: Partial<SellerProfile['deliveryZone']>) => Promise<void>;
+  updateStoreDeliverySettings: (sellerId: string, settings: {
+    deliveryMode?: DeliveryMode;
+    storeDeliveryFee?: number;
+    storeFreeDeliveryOver?: number;
+    storeDeliveryTimeMin?: number;
+  }) => Promise<void>;
+  addStoreDriver: (sellerId: string, driver: Omit<StoreDriver, 'id'>) => Promise<{ success: boolean; driverId?: string }>;
+  updateStoreDriver: (sellerId: string, driverId: string, updates: Partial<StoreDriver>) => Promise<void>;
+  deleteStoreDriver: (sellerId: string, driverId: string) => Promise<void>;
+  assignStoreDriverToOrder: (orderId: string, driverId: string, driverName: string, driverPhone: string, vehicleType?: string) => Promise<void>;
 
   // Order Actions
   createOrder: (orderData: {
@@ -71,6 +86,9 @@ interface MarketplaceContextType {
     customerNotes?: string;
     deliveryAddress?: string;
     deliveryCity?: string;
+    deliveryGeoLocation?: GeoLocation;
+    deliveryMode?: DeliveryMode;
+    isStoreDelivery?: boolean;
   }) => Promise<{ success: boolean; orderId?: string; orderNumber?: string; error?: string }>;
   updateOrderStatus: (orderId: string, status: OrderStatus, note?: string) => Promise<{ success: boolean; error?: string }>;
   assignDeliveryAgent: (orderId: string, agentId: string, agentName: string, agentPhone: string) => Promise<void>;
@@ -124,6 +142,11 @@ interface MarketplaceContextType {
   submitUserFeedback: (feedback: Omit<UserFeedback, 'id' | 'createdAt' | 'status'>) => Promise<{ success: boolean; message: string }>;
   updateFeedbackStatus: (feedbackId: string, status: UserFeedback['status'], adminResponse?: string) => Promise<void>;
 
+  // Occasions and Mawlid Banner
+  occasionBanner: OccasionBanner;
+  updateOccasionBanner: (banner: OccasionBanner) => Promise<void>;
+  incrementSalawatCount: () => Promise<void>;
+
   // Filter Helpers
   getProductsByCategory: (category: ProductCategory) => Product[];
   getSellerProducts: (sellerId: string) => Product[];
@@ -153,11 +176,35 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const { currentUser, isSuperAdmin, sellerCategory } = useAuth();
   const { addNotification } = useNotification();
 
-  // State initialization - no mock seed fallbacks
-  const [products, setProducts] = useState<Product[]>([]);
-  const [sellers, setSellers] = useState<SellerProfile[]>([]);
-  const [carAds, setCarAds] = useState<CarAd[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
+  // State initialization - load from local cache if present while Firestore live listener syncs
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = localStorage.getItem('shakh_products');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+  const [sellers, setSellers] = useState<SellerProfile[]>(() => {
+    const saved = localStorage.getItem('shakh_sellers');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+  const [carAds, setCarAds] = useState<CarAd[]>(() => {
+    const saved = localStorage.getItem('shakh_car_ads');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+  const [orders, setOrders] = useState<Order[]>(() => {
+    const saved = localStorage.getItem('shakh_orders');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
 
   const [commissionTransactions, setCommissionTransactions] = useState<CommissionTransaction[]>(() => {
     const saved = localStorage.getItem('shakh_commissions');
@@ -243,6 +290,15 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return [];
   });
 
+  // Occasions & Mawlid Banner State
+  const [occasionBanner, setOccasionBanner] = useState<OccasionBanner>(() => {
+    const saved = localStorage.getItem('shakh_occasion_banner');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return DEFAULT_MAWLID_BANNER;
+  });
+
   // Sync to local storage
   useEffect(() => { localStorage.setItem('shakh_products', JSON.stringify(products)); }, [products]);
   useEffect(() => { localStorage.setItem('shakh_sellers', JSON.stringify(sellers)); }, [sellers]);
@@ -259,6 +315,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => { localStorage.setItem('shakh_user_points', JSON.stringify(userPointsWallets)); }, [userPointsWallets]);
   useEffect(() => { localStorage.setItem('shakh_points_ledger', JSON.stringify(pointsTransactions)); }, [pointsTransactions]);
   useEffect(() => { localStorage.setItem('shakh_user_feedbacks', JSON.stringify(userFeedbacks)); }, [userFeedbacks]);
+  useEffect(() => { localStorage.setItem('shakh_occasion_banner', JSON.stringify(occasionBanner)); }, [occasionBanner]);
 
   // Firebase Firestore Real-Time Subscriptions
   useEffect(() => {
@@ -356,6 +413,18 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
             console.warn('Feedbacks onSnapshot error:', err);
           }
         );
+
+        // 7. Occasion Banner Listener
+        const bannerDocRef = doc(db, 'settings', 'occasion_banner');
+        onSnapshot(
+          bannerDocRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              setOccasionBanner(docSnap.data() as OccasionBanner);
+            }
+          },
+          (err) => console.warn('Banner onSnapshot error:', err)
+        );
       } catch (err) {
         console.error('Firestore real-time sync init error:', err);
       }
@@ -372,6 +441,32 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (unsubFeedbacks) unsubFeedbacks();
     };
   }, []);
+
+  const updateOccasionBanner = async (newBanner: OccasionBanner) => {
+    setOccasionBanner(newBanner);
+    localStorage.setItem('shakh_occasion_banner', JSON.stringify(newBanner));
+    try {
+      await setDoc(doc(db, 'settings', 'occasion_banner'), newBanner);
+    } catch (err) {
+      console.warn('Failed to update occasion banner in Firestore:', err);
+    }
+    addNotification({
+      userId: currentUser?.id || 'admin',
+      type: 'system',
+      title: 'بۆنە و یادەکان نوێکرایەوە 🌹',
+      message: 'ڕێکخستنەکان و نوسینی بۆنەکە بە سەرکەوتوویی جێبەجێ کران.'
+    });
+  };
+
+  const incrementSalawatCount = async () => {
+    setOccasionBanner(prev => {
+      const updated = { ...prev, salawatCount: (prev.salawatCount || 0) + 1 };
+      try {
+        setDoc(doc(db, 'settings', 'occasion_banner'), updated, { merge: true });
+      } catch (err) {}
+      return updated;
+    });
+  };
 
   // Product Management
   const addProduct = async (productData: Omit<Product, 'id' | 'createdAt'>): Promise<{ success: boolean; error?: string }> => {
@@ -509,6 +604,154 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     });
   };
 
+  const updateStoreDeliverySettings = async (sellerId: string, settings: {
+    deliveryMode?: DeliveryMode;
+    storeDeliveryFee?: number;
+    storeFreeDeliveryOver?: number;
+    storeDeliveryTimeMin?: number;
+  }) => {
+    setSellers(prev => prev.map(s => {
+      if (s.id === sellerId) {
+        return {
+          ...s,
+          ...settings
+        };
+      }
+      return s;
+    }));
+
+    try {
+      await updateDoc(doc(db, 'sellers', sellerId), settings);
+    } catch (e) {}
+
+    addNotification({
+      userId: sellerId,
+      title: 'ڕێکخستنی دلیڤەری فرۆشگا نوێکرایەوە',
+      message: 'شێوازی گەیاندن و تێچووی دلیڤەری تایبەتی فرۆشگا پاشەکەوت کرا.',
+      type: 'seller'
+    });
+  };
+
+  const addStoreDriver = async (sellerId: string, driverData: Omit<StoreDriver, 'id'>): Promise<{ success: boolean; driverId?: string }> => {
+    const newDriverId = `sdrv-${Date.now()}`;
+    const newDriver: StoreDriver = {
+      ...driverData,
+      id: newDriverId,
+      sellerId,
+      totalDeliveries: 0,
+      rating: 5.0,
+      createdAt: new Date().toISOString()
+    };
+
+    let updatedDrivers: StoreDriver[] = [];
+
+    setSellers(prev => prev.map(s => {
+      if (s.id === sellerId) {
+        updatedDrivers = [...(s.ownDrivers || []), newDriver];
+        return {
+          ...s,
+          ownDrivers: updatedDrivers
+        };
+      }
+      return s;
+    }));
+
+    try {
+      await updateDoc(doc(db, 'sellers', sellerId), { ownDrivers: updatedDrivers });
+    } catch (e) {}
+
+    addNotification({
+      userId: sellerId,
+      title: 'شۆفێری نوێ بۆ دوکان زیادکرا',
+      message: `شۆفێر ${driverData.name} بۆ تیمی دلیڤەری تایبەتی دوکانەکەت زیادکرا.`,
+      type: 'seller'
+    });
+
+    return { success: true, driverId: newDriverId };
+  };
+
+  const updateStoreDriver = async (sellerId: string, driverId: string, updates: Partial<StoreDriver>) => {
+    let updatedDrivers: StoreDriver[] = [];
+
+    setSellers(prev => prev.map(s => {
+      if (s.id === sellerId) {
+        updatedDrivers = (s.ownDrivers || []).map(d => d.id === driverId ? { ...d, ...updates } : d);
+        return {
+          ...s,
+          ownDrivers: updatedDrivers
+        };
+      }
+      return s;
+    }));
+
+    try {
+      await updateDoc(doc(db, 'sellers', sellerId), { ownDrivers: updatedDrivers });
+    } catch (e) {}
+  };
+
+  const deleteStoreDriver = async (sellerId: string, driverId: string) => {
+    let updatedDrivers: StoreDriver[] = [];
+
+    setSellers(prev => prev.map(s => {
+      if (s.id === sellerId) {
+        updatedDrivers = (s.ownDrivers || []).filter(d => d.id !== driverId);
+        return {
+          ...s,
+          ownDrivers: updatedDrivers
+        };
+      }
+      return s;
+    }));
+
+    try {
+      await updateDoc(doc(db, 'sellers', sellerId), { ownDrivers: updatedDrivers });
+    } catch (e) {}
+  };
+
+  const assignStoreDriverToOrder = async (
+    orderId: string,
+    driverId: string,
+    driverName: string,
+    driverPhone: string,
+    vehicleType: string = 'motorcycle'
+  ) => {
+    setOrders(prev => prev.map(o => (o.id === orderId ? {
+      ...o,
+      deliveryMode: 'store_delivery' as DeliveryMode,
+      isStoreDelivery: true,
+      storeDriverId: driverId,
+      storeDriverName: driverName,
+      storeDriverPhone: driverPhone,
+      storeDriverVehicle: vehicleType,
+      driverId: driverId,
+      driverName: driverName,
+      driverPhone: driverPhone,
+      status: 'picked_up'
+    } : o)));
+
+    try {
+      await updateDoc(doc(db, 'orders', orderId), {
+        deliveryMode: 'store_delivery',
+        isStoreDelivery: true,
+        storeDriverId: driverId,
+        storeDriverName: driverName,
+        storeDriverPhone: driverPhone,
+        storeDriverVehicle: vehicleType,
+        driverId: driverId,
+        driverName: driverName,
+        driverPhone: driverPhone,
+        status: 'picked_up'
+      });
+    } catch (e) {}
+
+    addNotification({
+      userId: driverId,
+      title: 'داواکاری گەیاندنی فرۆشگا بۆت دیاریکرا 🛵',
+      message: `تۆ وەک شۆفێری تایبەتی فرۆشگا بۆ گەیاندنی ئەم داواکارییە دانرایت.`,
+      type: 'delivery'
+    });
+  };
+
   const updateSellerCommissionRate = async (sellerId: string, newRate: number) => {
     if (!isSuperAdmin) {
       console.error('Only Super Admin can change commission rates.');
@@ -551,6 +794,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     customerNotes?: string;
     deliveryAddress?: string;
     deliveryCity?: string;
+    deliveryGeoLocation?: GeoLocation;
+    deliveryMode?: DeliveryMode;
+    isStoreDelivery?: boolean;
   }): Promise<{ success: boolean; orderId?: string; orderNumber?: string; error?: string }> => {
     if (!currentUser) return { success: false, error: 'تکایە بۆ داواکردن بچۆ ژوورەوە' };
     if (!orderData.items || orderData.items.length === 0) {
@@ -559,6 +805,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const firstProduct = products.find(p => p.id === orderData.items[0].productId);
     const seller = sellers.find(s => s.id === (firstProduct?.sellerId || 'store-rest-1')) || sellers[0];
+
+    const isStoreDel = Boolean(orderData.isStoreDelivery || orderData.deliveryMode === 'store_delivery');
+    const deliveryMode: DeliveryMode = isStoreDel ? 'store_delivery' : 'shakh_delivery';
 
     const orderNumber = `SHK-${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrderId = `ord-${Date.now()}`;
@@ -575,6 +824,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       customerAddress: orderData.deliveryAddress || currentUser.address || 'ناوبازاڕ',
       deliveryCity: orderData.deliveryCity || currentUser.city || 'Erbil (هەولێر)',
       deliveryAddress: orderData.deliveryAddress || currentUser.address || 'ناوبازاڕ',
+      deliveryGeoLocation: orderData.deliveryGeoLocation || currentUser.geoLocation,
       customerNotes: orderData.customerNotes,
       sellerId: seller.id,
       sellerName: seller.storeName,
@@ -586,6 +836,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       deliveryFee: orderData.deliveryFee,
       deliveryDistanceKm: orderData.deliveryDistanceKm,
       deliveryZoneStatus: orderData.deliveryZoneStatus || 'within_radius',
+      deliveryMode,
+      isStoreDelivery: isStoreDel,
       total: orderData.total,
       status: 'pending',
       paymentMethod: orderData.paymentMethod,
@@ -601,7 +853,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         {
           status: 'pending',
           timestamp: new Date().toISOString(),
-          note: 'داواکاری لە لایەن کڕیارەوە تۆمارکرا'
+          note: isStoreDel
+            ? 'داواکاری تۆمارکرا (گەیاندن بە شێوازی دلیڤەری تایبەتی فرۆشگا)'
+            : 'داواکاری تۆمارکرا (گەیاندن لەلایەن کاپتنی خێرای شاخ)'
         }
       ]
     };
@@ -680,6 +934,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       };
       setCommissionTransactions(prev => [commTx, ...prev]);
 
+      // Delivery fee allocation: 100% to Store if Store-Delivery, or 80/20 Shakh Captain split if Shakh-Delivery
+      const isStoreDel = Boolean(order.isStoreDelivery || order.deliveryMode === 'store_delivery');
+      const delFee = order.deliveryFee && order.deliveryFee > 0 ? order.deliveryFee : 3000;
+
       setSellerWallets(prev => {
         const curr = prev[order.sellerId] || {
           sellerId: order.sellerId,
@@ -689,12 +947,13 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           availableBalance: 0,
           pendingBalance: 0
         };
-        const earned = order.sellerAmount || (order.subtotal - order.commissionAmount);
+        // If store delivery, the seller also collects the delivery fee directly
+        const earned = (order.sellerAmount || (order.subtotal - order.commissionAmount)) + (isStoreDel ? delFee : 0);
         return {
           ...prev,
           [order.sellerId]: {
             ...curr,
-            totalGrossSales: curr.totalGrossSales + order.subtotal,
+            totalGrossSales: curr.totalGrossSales + order.subtotal + (isStoreDel ? delFee : 0),
             totalCommissionPaid: curr.totalCommissionPaid + order.commissionAmount,
             totalNetEarnings: curr.totalNetEarnings + earned,
             availableBalance: curr.availableBalance + earned,
@@ -721,36 +980,37 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const customerPointsEarned = Math.max(10, Math.round((order.subtotal * sellerAgreement.customerRewardPercent) / 100));
       const sellerPointsEarned = Math.max(10, Math.round((order.subtotal * sellerAgreement.sellerRewardPercent) / 100));
 
-      // Shakh Law 20% Delivery Fee Cut & Driver Captain Points Allocation
+      // 2. If Shakh Captain Delivery, apply 20% Shakh Platform Cut & Driver Points
       const dId = order.driverId || order.deliveryAgentId || currentUser?.id || 'rebaz-driver';
-      const delFee = order.deliveryFee && order.deliveryFee > 0 ? order.deliveryFee : 3000;
-      const shakhDeliveryCut = Math.round(delFee * 0.20); // 20% cut for Shakh platform
-      const driverNetEarnings = Math.round(delFee * 0.80);  // 80% net for driver
-      const driverPointsEarned = 25 + Math.round(delFee / 500) + (sellerAgreement.driverBonusPoints || 10);
+      const shakhDeliveryCut = isStoreDel ? 0 : Math.round(delFee * 0.20); // 20% cut for Shakh platform
+      const driverNetEarnings = isStoreDel ? delFee : Math.round(delFee * 0.80);  // 80% net for Shakh driver
+      const driverPointsEarned = isStoreDel ? 10 : (25 + Math.round(delFee / 500) + (sellerAgreement.driverBonusPoints || 10));
 
       // Update Driver Stats
-      setDriverStatsMap(prev => {
-        const curr = prev[dId] || {
-          driverId: dId,
-          totalDeliveries: 0,
-          totalDeliveryFees: 0,
-          totalShakhCommission: 0,
-          totalNetEarnings: 0,
-          points: 0
-        };
-        return {
-          ...prev,
-          [dId]: {
-            ...curr,
-            totalDeliveries: curr.totalDeliveries + 1,
-            totalDeliveryFees: curr.totalDeliveryFees + delFee,
-            totalShakhCommission: curr.totalShakhCommission + shakhDeliveryCut,
-            totalNetEarnings: curr.totalNetEarnings + driverNetEarnings,
-            points: curr.points + driverPointsEarned,
-            lastUpdated: new Date().toISOString()
-          }
-        };
-      });
+      if (!isStoreDel) {
+        setDriverStatsMap(prev => {
+          const curr = prev[dId] || {
+            driverId: dId,
+            totalDeliveries: 0,
+            totalDeliveryFees: 0,
+            totalShakhCommission: 0,
+            totalNetEarnings: 0,
+            points: 0
+          };
+          return {
+            ...prev,
+            [dId]: {
+              ...curr,
+              totalDeliveries: curr.totalDeliveries + 1,
+              totalDeliveryFees: curr.totalDeliveryFees + delFee,
+              totalShakhCommission: curr.totalShakhCommission + shakhDeliveryCut,
+              totalNetEarnings: curr.totalNetEarnings + driverNetEarnings,
+              points: curr.points + driverPointsEarned,
+              lastUpdated: new Date().toISOString()
+            }
+          };
+        });
+      }
 
       // Update User Points Wallets for all 3 roles
       const now = new Date().toISOString();
@@ -1484,6 +1744,11 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         updateSellerCommission,
         toggleSellerVerification,
         updateSellerDeliveryZone,
+        updateStoreDeliverySettings,
+        addStoreDriver,
+        updateStoreDriver,
+        deleteStoreDriver,
+        assignStoreDriverToOrder,
         createOrder,
         updateOrderStatus,
         assignDeliveryAgent,
@@ -1511,6 +1776,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         userFeedbacks,
         submitUserFeedback,
         updateFeedbackStatus,
+        occasionBanner,
+        updateOccasionBanner,
+        incrementSalawatCount,
         getProductsByCategory,
         getSellerProducts,
         getSellerOrders,

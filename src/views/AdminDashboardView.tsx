@@ -24,14 +24,22 @@ import {
   CheckCircle2,
   Search,
   Check,
-  PackagePlus
+  PackagePlus,
+  Sparkles,
+  Heart,
+  Save,
+  Image,
+  RefreshCw
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge, CategoryBadge, RoleBadge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { DynamicProductForm } from '../components/products/DynamicProductForm';
-import { Product, ProductCategory, OrderStatus, CarPackageType, FeedbackStatus } from '../types';
+import { Product, ProductCategory, OrderStatus, CarPackageType, FeedbackStatus, OccasionBanner, OccasionType, OccasionThemeStyle } from '../types';
+import { OCCASION_PRESETS } from '../data/occasionPresets';
+import { OccasionHeaderBanner } from '../components/common/OccasionHeaderBanner';
+import { OccasionBannerAdminPanel } from '../components/common/OccasionBannerAdminPanel';
 
 interface AdminDashboardViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -60,7 +68,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   } = useMarketplace();
   const { currentUser, isSuperAdmin } = useAuth();
 
-  const [tab, setTab] = useState<'overview' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'finances'>('overview');
+  const [tab, setTab] = useState<'overview' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances'>('overview');
 
   // Product Admin Management State
   const [productSearch, setProductSearch] = useState('');
@@ -162,6 +170,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
       <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-3 scrollbar-none">
         {[
           { id: 'overview', label: 'پوختەی دارایی و گشتی', icon: <TrendingUp className="w-4 h-4" /> },
+          { id: 'occasions', label: 'بۆنە و یادەکان (مەولود)', icon: <Sparkles className="w-4 h-4 text-amber-500" /> },
           { id: 'sellers', label: `فرۆشیاران (${sellers.length})`, icon: <Store className="w-4 h-4" /> },
           { id: 'agreements', label: 'ڕێککەوتنی پۆینتی شاخ و خاوەن کار', icon: <Award className="w-4 h-4 text-amber-500" /> },
           { id: 'feedback', label: `فیدباک و سەرنجەکان (${userFeedbacks.length})`, icon: <MessageSquare className="w-4 h-4 text-emerald-500" /> },
@@ -184,6 +193,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           </button>
         ))}
       </div>
+
+      {/* Occasions & Mawlid Banner Tab */}
+      {tab === 'occasions' && (
+        <OccasionBannerAdminPanel isModal={false} />
+      )}
 
       {/* Overview Tab */}
       {tab === 'overview' && (

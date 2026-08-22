@@ -48,7 +48,8 @@ export const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
     electronics_seller: { label: 'ئەلیکترۆنیات', color: 'bg-indigo-100 text-indigo-800' },
     beauty_seller: { label: 'جوانی و مکیاژ', color: 'bg-pink-100 text-pink-800' },
     car_seller: { label: 'فرۆشیاری ئۆتۆمبێل', color: 'bg-amber-100 text-amber-800' },
-    delivery_agent: { label: 'کاپتنی گەیاندن', color: 'bg-teal-100 text-teal-800' },
+    delivery_agent: { label: 'کاپتنی گەیاندنی شاخ', color: 'bg-teal-100 text-teal-800' },
+    store_driver: { label: 'شۆفێری تایبەتی دوکان', color: 'bg-orange-100 text-orange-800' },
     customer: { label: 'کڕیار', color: 'bg-slate-100 text-slate-800' }
   };
 

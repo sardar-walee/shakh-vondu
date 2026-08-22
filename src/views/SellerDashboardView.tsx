@@ -29,11 +29,14 @@ import {
   Star,
   MessageSquare,
   Send,
-  User
+  User,
+  UserCheck,
+  Save,
+  Phone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
-import { Product, Order, ProductCategory, DeliveryZoneSettings, SellerProfile } from '../types';
+import { Product, Order, ProductCategory, DeliveryZoneSettings, SellerProfile, StoreDriver, DeliveryMode } from '../types';
 import { StatusBadge, CategoryBadge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { ImageUpload } from '../components/common/ImageUpload';
@@ -54,6 +57,12 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
     updateProduct,
     deleteProduct,
     updateSellerDeliveryZone,
+    updateStoreDeliverySettings,
+    addStoreDriver,
+    updateStoreDriver,
+    deleteStoreDriver,
+    assignStoreDriverToOrder,
+    assignDriverToOrder,
     getSellerAgreement,
     getUserPointsWallet,
     redeemPoints,
@@ -62,15 +71,57 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
   } = useMarketplace();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'reviews' | 'agreement' | 'wallet' | 'delivery' | 'settings'>('overview');
+  const [deliverySection, setDeliverySection] = useState<'shakh_express' | 'store_inhouse' | 'drivers_team'>('shakh_express');
   const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<string>('');
+
+  // Dispatch Modal State for Orders
+  const [dispatchOrderModal, setDispatchOrderModal] = useState<Order | null>(null);
+  const [selectedDriverForDispatch, setSelectedDriverForDispatch] = useState<string>('');
 
   // Filter products and orders belonging to this seller
   const sellerId = sellerProfile?.id || (products[0]?.sellerId ?? 'store-rest-1');
   const myProducts = products.filter(p => p.sellerId === sellerId);
   const myOrders = orders.filter(o => o.sellerId === sellerId);
 
-  // Delivery Zone State
+  // Store In-House Delivery State
+  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>(sellerProfile?.deliveryMode || 'hybrid');
+  const [storeDeliveryFee, setStoreDeliveryFee] = useState<number>(sellerProfile?.storeDeliveryFee || 2000);
+  const [storeFreeDeliveryOver, setStoreFreeDeliveryOver] = useState<number>(sellerProfile?.storeFreeDeliveryOver || 30000);
+  const [storeEstimatedMins, setStoreEstimatedMins] = useState<number>(sellerProfile?.storeDeliveryTimeMin || 25);
+  const [storeDriversList, setStoreDriversList] = useState<StoreDriver[]>(sellerProfile?.ownDrivers || [
+    {
+      id: 'drv-1',
+      sellerId: sellerId,
+      name: 'هێمن ئەحمەد',
+      phone: '0750 444 8899',
+      vehicleType: 'motorcycle',
+      plateNumber: 'هەولێر 4321 B',
+      isActive: true,
+      totalDeliveries: 42,
+      rating: 4.9
+    },
+    {
+      id: 'drv-2',
+      sellerId: sellerId,
+      name: 'سەردار مەحموود',
+      phone: '0770 123 9988',
+      vehicleType: 'car',
+      plateNumber: 'هەولێر 8877 A',
+      isActive: true,
+      totalDeliveries: 28,
+      rating: 4.8
+    }
+  ]);
+
+  // Add Driver Form State
+  const [showAddDriverModal, setShowAddDriverModal] = useState(false);
+  const [newDriverName, setNewDriverName] = useState('');
+  const [newDriverPhone, setNewDriverPhone] = useState('');
+  const [newDriverVehicle, setNewDriverVehicle] = useState<'motorcycle' | 'car' | 'bicycle' | 'van'>('motorcycle');
+  const [newDriverPlate, setNewDriverPlate] = useState('');
+
+  // Delivery Zone State (Shakh Express)
   const defaultCategory = (sellerProfile?.category || currentUser?.category || 'food') as ProductCategory;
   const initialDeliveryZone: DeliveryZoneSettings = sellerProfile?.deliveryZone || getDefaultDeliveryZone(defaultCategory);
 
@@ -127,6 +178,88 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
     }
     setIsProductModalOpen(false);
     setEditingProduct(null);
+  };
+
+  const handleSaveDeliveryZone = async () => {
+    setIsSavingDelivery(true);
+    await updateSellerDeliveryZone(sellerId, {
+      minDistanceKm: minDist,
+      maxDistanceKm: maxDist,
+      baseFee,
+      baseDistanceThresholdKm: baseThresholdKm,
+      perKmExtraFee: perKmFee,
+      freeDeliveryThreshold: freeDeliveryOver,
+      isStrictRadius: isStrict,
+      estimatedMinutesBase: baseMins,
+      estimatedMinutesPerKm: perKmMins,
+      coveredNeighborhoods: neighborhoods,
+      deliveryAvailabilityNote: deliveryNote
+    });
+    setIsSavingDelivery(false);
+    setDeliverySaveSuccess(true);
+    setTimeout(() => setDeliverySaveSuccess(false), 3000);
+  };
+
+  const handleSaveStoreDeliverySettings = async () => {
+    setIsSavingDelivery(true);
+    await updateStoreDeliverySettings(sellerId, {
+      deliveryMode,
+      storeDeliveryFee,
+      storeFreeDeliveryOver,
+      storeDeliveryTimeMin: storeEstimatedMins
+    });
+    setIsSavingDelivery(false);
+    setDeliverySaveSuccess(true);
+    setTimeout(() => setDeliverySaveSuccess(false), 3000);
+  };
+
+  const handleAddStoreDriver = async () => {
+    if (!newDriverName.trim() || !newDriverPhone.trim()) return;
+    const newDriver: Omit<StoreDriver, 'id'> = {
+      sellerId,
+      name: newDriverName.trim(),
+      phone: newDriverPhone.trim(),
+      vehicleType: newDriverVehicle,
+      plateNumber: newDriverPlate.trim(),
+      isActive: true,
+      totalDeliveries: 0,
+      rating: 5.0
+    };
+    const res = await addStoreDriver(sellerId, newDriver);
+    if (res.success) {
+      const createdDriver: StoreDriver = {
+        ...newDriver,
+        id: res.driverId || `drv-${Date.now()}`
+      };
+      setStoreDriversList(prev => [...prev, createdDriver]);
+      setNewDriverName('');
+      setNewDriverPhone('');
+      setNewDriverPlate('');
+      setShowAddDriverModal(false);
+    }
+  };
+
+  const handleDeleteStoreDriver = async (driverId: string) => {
+    await deleteStoreDriver(sellerId, driverId);
+    setStoreDriversList(prev => prev.filter(d => d.id !== driverId));
+  };
+
+  const handleToggleStoreDriver = async (driver: StoreDriver) => {
+    const updated = { ...driver, isActive: !driver.isActive };
+    await updateStoreDriver(sellerId, driver.id, { isActive: !driver.isActive });
+    setStoreDriversList(prev => prev.map(d => d.id === driver.id ? updated : d));
+  };
+
+  const handleDispatchOrderToShakh = async (orderId: string) => {
+    await updateOrderStatus(orderId, 'ready', 'ڕەوانەکرا بۆ تۆڕی کاپتنانی خێرای شاخ');
+    setDispatchOrderModal(null);
+  };
+
+  const handleDispatchOrderToStoreDriver = async (orderId: string, driverId: string) => {
+    const drv = storeDriversList.find(d => d.id === driverId);
+    if (!drv) return;
+    await assignStoreDriverToOrder(orderId, drv.id, drv.name, drv.phone, drv.vehicleType);
+    setDispatchOrderModal(null);
   };
 
   return (
@@ -418,18 +551,29 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                 <div key={order.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-slate-900 font-latin">{order.orderNumber}</span>
                         <StatusBadge status={order.status} />
+                        {order.isStoreDelivery || order.deliveryMode === 'store_delivery' ? (
+                          <span className="px-2 py-0.5 bg-orange-100 text-orange-800 text-[10px] font-bold rounded-md flex items-center gap-1">
+                            <Store className="w-3 h-3" />
+                            دلیڤەری تایبەتی دوکان
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 bg-teal-100 text-teal-800 text-[10px] font-bold rounded-md flex items-center gap-1">
+                            <Truck className="w-3 h-3" />
+                            کاپتنی خێرای شاخ
+                          </span>
+                        )}
                       </div>
-                      <p className="text-xs text-slate-500 mt-0.5">کڕیار: {order.customerId} • ناونیشان: {order.deliveryAddress}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">کڕیار: {order.customerName || order.customerId} ({order.customerPhone || '0750...'}) • ناونیشان: {order.deliveryAddress}</p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {order.status === 'pending' && (
                         <button
                           onClick={() => updateOrderStatus(order.id, 'accepted')}
-                          className="px-3.5 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700"
+                          className="px-3.5 py-1.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 cursor-pointer"
                         >
                           پەسەندکردن
                         </button>
@@ -437,18 +581,38 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                       {order.status === 'accepted' && (
                         <button
                           onClick={() => updateOrderStatus(order.id, 'preparing')}
-                          className="px-3.5 py-1.5 bg-orange-500 text-white rounded-xl text-xs font-bold hover:bg-orange-600"
+                          className="px-3.5 py-1.5 bg-orange-500 text-white rounded-xl text-xs font-bold hover:bg-orange-600 cursor-pointer"
                         >
                           دەستپێکردنی ئامادەکردن
                         </button>
                       )}
-                      {order.status === 'preparing' && (
+                      {['accepted', 'preparing'].includes(order.status) && (
                         <button
-                          onClick={() => updateOrderStatus(order.id, 'ready')}
-                          className="px-3.5 py-1.5 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700"
+                          onClick={() => setDispatchOrderModal(order)}
+                          className="px-3.5 py-1.5 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 flex items-center gap-1 cursor-pointer shadow-xs"
                         >
-                          ئامادەیە بۆ شۆفێر
+                          <Navigation className="w-3.5 h-3.5" />
+                          <span>دیاریکردنی گەیاندن (Dispatch)</span>
                         </button>
+                      )}
+                      {order.status === 'ready' && !order.driverId && !order.storeDriverId && (
+                        <button
+                          onClick={() => setDispatchOrderModal(order)}
+                          className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 flex items-center gap-1 cursor-pointer shadow-xs"
+                        >
+                          <Truck className="w-3.5 h-3.5" />
+                          <span>ناردن بۆ شۆفێر / کاپتن</span>
+                        </button>
+                      )}
+                      {order.storeDriverName && (
+                        <span className="text-[11px] font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                          شۆفێری دوکان: {order.storeDriverName}
+                        </span>
+                      )}
+                      {order.driverName && !order.storeDriverName && (
+                        <span className="text-[11px] font-bold text-teal-700 bg-teal-50 px-2.5 py-1 rounded-lg border border-teal-200">
+                          کاپتنی شاخ: {order.driverName}
+                        </span>
                       )}
                     </div>
                   </div>
@@ -909,31 +1073,83 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
         <div className="space-y-6">
           
           {/* Header Banner */}
-          <div className="bg-gradient-to-l from-orange-600 to-amber-600 text-white p-6 sm:p-8 rounded-3xl shadow-lg relative overflow-hidden">
+          <div className="bg-gradient-to-l from-orange-600 to-amber-600 text-white p-6 sm:p-8 rounded-3xl shadow-lg relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="relative z-10 max-w-2xl space-y-2">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold">
                 <Compass className="w-4 h-4 text-amber-200" />
-                <span>دیاریکردنی سنوری جوگرافی و دوری گەیاندن</span>
+                <span>سیستەمی دوولایەنەی گەیاندن: شاخ ئێکسپرێس و دلیڤەری تایبەتی دوکان</span>
               </div>
               <h2 className="text-xl sm:text-2xl font-black">
-                سنوری دوری گەیاندن (لە ٠ کم تا {maxDist} کم)
+                بەڕێوەبردنی دلیڤەری شاخ و دلیڤەری دوکان بەجیا
               </h2>
               <p className="text-xs text-orange-100 leading-relaxed">
-                بەپێی جۆری فرۆشگاکەت (چێشتخانە، مارکێت، جلوبەرگ، سەوزە، گۆشت و هتد) سنوری دوری گەیاندن لە ٠ کیلۆمەترەوە هەتا ئەو دوراییەی دەتەوێت دیاری بکە، لەگەڵ نرخی بنەڕەتی و زیادەی هەر کیلۆمەترێک.
+                دەتوانیت بە ئارەزووی خۆت دیاری بکەیت کە کاڵاکانت لەلایەن تۆڕی کاپتنانی فەرمی شاخ بگەیەنرێن، یان لەلایەن شۆفێرە تایبەتەکانی دوکانەکەت خۆت (١٠٠٪ کرێی گەیاندن بۆ دوکان).
               </p>
             </div>
-            <div className="absolute -left-6 -bottom-10 opacity-15 pointer-events-none">
-              <MapPin className="w-56 h-56" />
+
+            <div className="flex items-center gap-2 flex-wrap z-10">
+              <button
+                type="button"
+                onClick={() => onNavigate('store-delivery')}
+                className="px-4 py-2.5 bg-white text-orange-900 hover:bg-orange-50 rounded-xl font-bold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer"
+              >
+                <Store className="w-4 h-4 text-orange-600" />
+                <span>داشبۆردی شۆفێرانی دوکان</span>
+              </button>
             </div>
           </div>
 
           {deliverySaveSuccess && (
             <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fadeIn">
               <Check className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-              <span>ڕێکخستنەکانی سنوری گەیاندن و نرخ بە سەرکەوتوویی پاشەکەوت کران!</span>
+              <span>ڕێکخستنەکان بە سەرکەوتوویی پاشەکەوت کران!</span>
             </div>
           )}
 
+          {/* Sub-channel Switcher Tabs */}
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-3 flex-wrap">
+            <button
+              type="button"
+              onClick={() => setDeliverySection('shakh_express')}
+              className={`px-5 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                deliverySection === 'shakh_express'
+                  ? 'bg-teal-700 text-white shadow-md shadow-teal-700/20'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <Truck className="w-4 h-4" />
+              <span>١. دلیڤەری خێرای شاخ (Shakh Express)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDeliverySection('store_inhouse')}
+              className={`px-5 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                deliverySection === 'store_inhouse'
+                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <Store className="w-4 h-4" />
+              <span>٢. دلیڤەری تایبەتی دوکان (Store In-House Delivery)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDeliverySection('drivers_team')}
+              className={`px-5 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                deliverySection === 'drivers_team'
+                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20'
+                  : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <UserCheck className="w-4 h-4" />
+              <span>٣. شۆفێرە تایبەتەکانی دوکان ({storeDriversList.length})</span>
+            </button>
+          </div>
+
+          {deliverySection === 'shakh_express' && (
+            <div className="space-y-6">
           {/* Quick Presets for Category */}
           <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-3">
             <div className="flex items-center justify-between">
@@ -1383,6 +1599,229 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
             </div>
 
           </div>
+          </div>
+          )}
+
+          {/* SECTION 2: STORE IN-HOUSE DELIVERY SETTINGS */}
+          {deliverySection === 'store_inhouse' && (
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <Store className="w-5 h-5 text-orange-500" />
+                    <span>ڕێکخستنەکانی دلیڤەری تایبەتی دوکان (In-House Delivery)</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    لێرە دیاری بکە کە ئایا دەتەوێت خۆت کاڵاکانت بە شۆفێری خۆت بگەیەنیت بە کڕیار، لەگەڵ دیاریکردنی کرێی گەیاندن.
+                  </p>
+                </div>
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-black rounded-full border border-emerald-300">
+                  ١٠٠٪ کرێی گەیاندن بۆ تۆیە
+                </span>
+              </div>
+
+              {/* Delivery Mode Choice */}
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-slate-800 block">
+                  شێوازی گەیاندنی فرۆشگاکەت لە ئەپڵیکەیشن:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { id: 'hybrid', title: 'دوولایەنە (Hybrid)', desc: 'کڕیار دەتوانێت لە نێوان دلیڤەری شاخ یان دلیڤەری دوکان هەڵبژێرێت', icon: '⚡' },
+                    { id: 'store_delivery', title: 'تەنها دلیڤەری دوکان', desc: 'تەواوی داواکارییەکان لەلایەن شۆفێرانی خۆت دەگەیەنرێن', icon: '🏪' },
+                    { id: 'shakh_delivery', title: 'تەنها دلیڤەری شاخ', desc: 'تەنها کاپتنانی خێرای شاخ داواکارییەکان دەگەیەنن', icon: '🛵' },
+                  ].map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => setDeliveryMode(m.id as DeliveryMode)}
+                      className={`p-4 rounded-2xl border text-right transition-all cursor-pointer space-y-1.5 ${
+                        deliveryMode === m.id
+                          ? 'border-orange-500 bg-orange-50/70 text-orange-950 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-xs">{m.title}</span>
+                        <span className="text-lg">{m.icon}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">{m.desc}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Store Delivery Pricing */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    کرێی دیاریکراوی دلیڤەری دوکان (دینار) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step={250}
+                      value={storeDeliveryFee}
+                      onChange={(e) => setStoreDeliveryFee(Number(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                    />
+                    <span className="absolute left-3 top-3 text-xs text-slate-400">د.ع</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">ئەم بڕە ڕاستەوخۆ دەچێتە سەر باڵانسی فرۆشگا</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    گەیاندنی بەخۆڕایی لە کڕینی سەرووی (دینار)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step={5000}
+                      value={storeFreeDeliveryOver}
+                      onChange={(e) => setStoreFreeDeliveryOver(Number(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                    />
+                    <span className="absolute left-3 top-3 text-xs text-slate-400">د.ع</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">بۆ هاندانی کڕیار بۆ کڕینی زیاتر</p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">
+                    کاتی خەمڵێنراوی گەیاندن (خولەک) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step={5}
+                      value={storeEstimatedMins}
+                      onChange={(e) => setStoreEstimatedMins(Number(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                    />
+                    <span className="absolute left-3 top-3 text-xs text-slate-400">خولەک</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400">وەک: ٢٠ بۆ ٣٠ خولەک</p>
+                </div>
+              </div>
+
+              {/* Save In-House Settings */}
+              <button
+                type="button"
+                onClick={handleSaveStoreDeliverySettings}
+                disabled={isSavingDelivery}
+                className="px-8 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-bold text-xs shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
+              >
+                <Save className="w-4 h-4" />
+                <span>{isSavingDelivery ? 'پاشەکەوت دەکرێت...' : 'پاشەکەوتکردنی ڕێکخستنەکانی دلیڤەری دوکان'}</span>
+              </button>
+            </div>
+          )}
+
+          {/* SECTION 3: STORE DRIVERS TEAM MANAGEMENT */}
+          {deliverySection === 'drivers_team' && (
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <UserCheck className="w-5 h-5 text-orange-500" />
+                    <span>تیمی شۆفێرانی تایبەتی دوکان ({storeDriversList.length} شۆفێر)</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    شۆفێرەکانت تۆمار بکە تا لە کاتی ئامادەبوونی داواکاری ڕاستەوخۆ ئاگاداربکرێنەوە و بە شۆفێری دیاریکراو ڕەوانە بکرێت.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAddDriverModal(true)}
+                  className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 flex items-center gap-2 cursor-pointer self-start sm:self-auto"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>زیادکردنی شۆفێری نوێ</span>
+                </button>
+              </div>
+
+              {storeDriversList.length === 0 ? (
+                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
+                  <UserCheck className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                  <p className="text-xs text-slate-500 font-bold">هیچ شۆفێرێکی تایبەتی دوکان تۆمار نەکراوە.</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddDriverModal(true)}
+                    className="mt-3 px-4 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold cursor-pointer"
+                  >
+                    زیادکردنی یەکەم شۆفێر
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {storeDriversList.map(drv => (
+                    <div
+                      key={drv.id}
+                      className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-3 hover:border-orange-300 transition-colors"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xl">
+                              {drv.vehicleType === 'car' ? '🚗' : drv.vehicleType === 'van' ? '🚐' : '🛵'}
+                            </span>
+                            <span className="font-bold text-sm text-slate-900">{drv.name}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStoreDriver(drv)}
+                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
+                              drv.isActive
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-slate-200 text-slate-600'
+                            }`}
+                          >
+                            {drv.isActive ? 'چالاکە ✓' : 'ناچالاکە'}
+                          </button>
+                        </div>
+
+                        <div className="text-xs text-slate-600 space-y-1">
+                          <p className="flex items-center gap-1 font-latin">
+                            <Phone className="w-3.5 h-3.5 text-orange-500" />
+                            <span>{drv.phone}</span>
+                          </p>
+                          {drv.plateNumber && (
+                            <p className="text-slate-500 font-latin text-[11px]">
+                              تابلۆ: {drv.plateNumber}
+                            </p>
+                          )}
+                          <p className="text-emerald-700 font-bold text-[11px]">
+                            کۆی گەیاندنەکان: {drv.totalDeliveries || 0}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-slate-200 pt-3">
+                        <a
+                          href={`tel:${drv.phone}`}
+                          className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-bold flex items-center gap-1.5"
+                        >
+                          <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>پەیوەندی</span>
+                        </a>
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteStoreDriver(drv.id)}
+                          className="px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                        >
+                          سڕینەوە
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       )}
 
@@ -1413,6 +1852,169 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
           </div>
         </div>
       )}
+
+      {/* Add Store Driver Modal */}
+      <Modal
+        isOpen={showAddDriverModal}
+        onClose={() => setShowAddDriverModal(false)}
+        title="زیادکردنی شۆفێری نوێ بۆ دلیڤەری دوکان"
+        maxWidth="md"
+      >
+        <div className="space-y-4 text-xs">
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">ناوی شۆفێر *</label>
+            <input
+              type="text"
+              value={newDriverName}
+              onChange={(e) => setNewDriverName(e.target.value)}
+              placeholder="وەک: ئارام کەریم"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3"
+            />
+          </div>
+
+          <div>
+            <label className="font-bold text-slate-700 block mb-1">ژمارەی مۆبایل *</label>
+            <input
+              type="tel"
+              value={newDriverPhone}
+              onChange={(e) => setNewDriverPhone(e.target.value)}
+              placeholder="0750 123 4567"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-latin"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">هۆکاری گواستنەوە</label>
+              <select
+                value={newDriverVehicle}
+                onChange={(e) => setNewDriverVehicle(e.target.value as any)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3"
+              >
+                <option value="motorcycle">ماتۆڕسکیل 🛵</option>
+                <option value="car">ئۆتۆمبێل 🚗</option>
+                <option value="van">پیکاب / ڤان 🚐</option>
+                <option value="bicycle">پاسکیل 🚲</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 block mb-1">ژمارەی تابلۆ (ئارەزوومەندانە)</label>
+              <input
+                type="text"
+                value={newDriverPlate}
+                onChange={(e) => setNewDriverPlate(e.target.value)}
+                placeholder="هەولێر 1234 A"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-latin"
+              />
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setShowAddDriverModal(false)}
+              className="px-4 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl cursor-pointer"
+            >
+              پاشگەزبوونەوە
+            </button>
+            <button
+              type="button"
+              onClick={handleAddStoreDriver}
+              disabled={!newDriverName.trim() || !newDriverPhone.trim()}
+              className="px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl disabled:opacity-50 cursor-pointer"
+            >
+              تۆمارکردنی شۆفێر
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Dispatch Order Modal */}
+      <Modal
+        isOpen={Boolean(dispatchOrderModal)}
+        onClose={() => setDispatchOrderModal(null)}
+        title={`دیاریکردنی شێوازی گەیاندن بۆ داواکاری ${dispatchOrderModal?.orderNumber || ''}`}
+        maxWidth="lg"
+      >
+        {dispatchOrderModal && (
+          <div className="space-y-5 text-xs">
+            <div className="bg-slate-50 p-4 rounded-2xl space-y-1">
+              <p className="font-bold text-slate-800">کڕیار: {dispatchOrderModal.customerName} ({dispatchOrderModal.customerPhone})</p>
+              <p className="text-slate-500">ناونیشان: {dispatchOrderModal.deliveryAddress}</p>
+              <p className="text-slate-900 font-bold font-latin">کۆی داواکاری: {dispatchOrderModal.total.toLocaleString()} د.ع</p>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-xs font-bold text-slate-800 block">
+                هەڵبژاردنی کەناڵی گەیاندن:
+              </label>
+
+              {/* Option A: Shakh Express */}
+              <div className="p-4 rounded-2xl border border-teal-200 bg-teal-50/60 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-600 text-white flex items-center justify-center font-bold">
+                    <Truck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900">ناردن بۆ تۆڕی کاپتنانی خێرای شاخ (Shakh Express)</h4>
+                    <p className="text-[11px] text-slate-500">کاپتنی نزیکترین لە فرۆشگاکەت داواکارییەکە وەردەگرێت.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDispatchOrderToShakh(dispatchOrderModal.id)}
+                  className="px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white font-bold rounded-xl shrink-0 cursor-pointer shadow-xs"
+                >
+                  داواکردنی کاپتن
+                </button>
+              </div>
+
+              {/* Option B: Store In-House Drivers */}
+              <div className="p-4 rounded-2xl border border-orange-200 bg-orange-50/60 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-bold">
+                      <Store className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">ناردن بە شۆفێری تایبەتی دوکان (Store Driver)</h4>
+                      <p className="text-[11px] text-slate-500">١٠٠٪ کرێی گەیاندن بۆ دوکان دەمێنێتەوە.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {storeDriversList.length === 0 ? (
+                  <p className="text-[11px] text-amber-700 bg-amber-100/70 p-2.5 rounded-xl font-bold">
+                    تکایە پێشتر شۆفێر لە بەشی دلیڤەری دوکان زیاد بکە.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2 pt-1">
+                    {storeDriversList.map(d => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => handleDispatchOrderToStoreDriver(dispatchOrderModal.id, d.id)}
+                        className="p-3 bg-white hover:bg-orange-100/50 border border-orange-200 rounded-xl font-bold text-xs flex items-center justify-between transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{d.vehicleType === 'car' ? '🚗' : '🛵'}</span>
+                          <span className="text-slate-800">{d.name}</span>
+                          <span className="text-slate-400 font-latin text-[11px]">({d.phone})</span>
+                        </div>
+                        <span className="px-2.5 py-1 bg-orange-500 text-white rounded-lg text-[10px]">
+                          دانان بۆ ئەم شۆفێرە
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* Add / Edit Product Modal with Dynamic Category Fields */}
       <Modal

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserProfile, UserRole, ProductCategory, SellerProfile } from '../types';
+import { UserProfile, UserRole, ProductCategory, SellerProfile, GeoLocation } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { db, auth } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
@@ -21,6 +21,7 @@ interface RegisterData {
   role: UserRole;
   storeName?: string;
   category?: ProductCategory;
+  geoLocation?: GeoLocation;
 }
 
 interface AuthContextType {
@@ -33,10 +34,10 @@ interface AuthContextType {
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
-  switchUserRole: (role: UserRole) => void;
   isSuperAdmin: boolean;
   isSeller: boolean;
   isDeliveryAgent: boolean;
+  isStoreDriver: boolean;
   isCustomer: boolean;
   canManageCategory: (category: ProductCategory) => boolean;
   sellerCategory: ProductCategory | null;
@@ -327,6 +328,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         address: data.address,
         role: data.role,
         category: data.category,
+        geoLocation: data.geoLocation,
         isVerified: true,
         createdAt: new Date().toISOString()
       };
@@ -385,19 +387,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUserProfile = updateProfile;
 
-  const switchUserRole = async (role: UserRole) => {
-    if (currentUser) {
-      const updated = { ...currentUser, role };
-      setCurrentUser(updated);
-      try {
-        await updateDoc(doc(db, 'users', currentUser.id), { role });
-      } catch (e) {}
-    }
-  };
-
   const isSuperAdmin = currentUser?.role === 'admin' || currentUser?.email === 'shakh8002@gmail.com';
-  const isDeliveryAgent = currentUser?.role === 'delivery_agent';
-  const isCustomer = currentUser?.role === 'customer';
   
   const roleToCategoryMap: Partial<Record<UserRole, ProductCategory>> = {
     restaurant_owner: 'food',
@@ -443,6 +433,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return sellerCategory === category;
   };
 
+  const isDeliveryAgent = currentUser?.role === 'delivery_agent';
+  const isStoreDriver = currentUser?.role === 'store_driver';
+  const isCustomer = currentUser?.role === 'customer' || !currentUser;
+
   return (
     <AuthContext.Provider
       value={{
@@ -455,10 +449,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         updateProfile,
         updateUserProfile,
-        switchUserRole,
         isSuperAdmin,
         isSeller,
         isDeliveryAgent,
+        isStoreDriver,
         isCustomer,
         canManageCategory,
         sellerCategory

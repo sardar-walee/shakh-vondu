@@ -12,9 +12,10 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { UserRole, ProductCategory } from '../types';
+import { UserRole, ProductCategory, GeoLocation } from '../types';
 import { Logo } from '../components/common/Logo';
 import { CITIES } from '../data/seedData';
+import { GPSLocationPicker } from '../components/common/GPSLocationPicker';
 
 interface AuthViewProps {
   initialMode?: 'login' | 'register';
@@ -22,7 +23,7 @@ interface AuthViewProps {
 }
 
 export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNavigate }) => {
-  const { login, register, switchUserRole } = useAuth();
+  const { login, register } = useAuth();
 
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [email, setEmail] = useState('');
@@ -33,6 +34,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
   const [category, setCategory] = useState<ProductCategory>('food');
   const [storeName, setStoreName] = useState('');
   const [city, setCity] = useState('Erbil (هەولێر)');
+  const [area, setArea] = useState('ناوەندی شار');
+  const [address, setAddress] = useState('');
+  const [geoLocation, setGeoLocation] = useState<GeoLocation | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -67,8 +71,9 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
           category: role.includes('seller') || role === 'restaurant_owner' || role === 'market_owner' ? category : undefined,
           storeName: storeName || fullName,
           city,
-          area: 'Center',
-          address: 'شارستانی ' + city
+          area: area || 'ناوەندی شار',
+          address: address || ('شارستانی ' + city),
+          geoLocation: geoLocation || undefined
         });
         if (res.success) {
           onNavigate('user-profile');
@@ -226,6 +231,7 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
                 />
               </div>
 
+              {/* City Selection */}
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700">شار *</label>
                 <select
@@ -236,6 +242,22 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
                   {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
+
+              {/* GPS & Live Location Picker */}
+              <GPSLocationPicker
+                label={role === 'customer' ? 'دیاریکردنی شوێنی کڕیار بە GPS (داواکردنی ڕاستەوخۆ)' : isSellerRole ? 'دیاریکردنی شوێنی فرۆشگا بە GPS' : 'دیاریکردنی شوێنی کاپتن بە GPS'}
+                required={true}
+                autoPrompt={true}
+                initialCity={city}
+                initialAddress={address}
+                initialGeoLocation={geoLocation}
+                onLocationChange={(loc) => {
+                  if (loc.city) setCity(loc.city);
+                  if (loc.area) setArea(loc.area);
+                  if (loc.address) setAddress(loc.address);
+                  if (loc.geoLocation) setGeoLocation(loc.geoLocation);
+                }}
+              />
             </>
           )}
 
@@ -337,19 +359,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
               </button>
             </p>
           )}
-        </div>
-
-        {/* Quick Demo Switcher Prompt */}
-        <div className="pt-2 text-center">
-          <button
-            onClick={() => {
-              switchUserRole('admin');
-              onNavigate('user-profile');
-            }}
-            className="text-[11px] text-blue-600 hover:underline font-semibold cursor-pointer"
-          >
-            چوونەژوورەوە بە هەژماری Super Admin بۆ تاقیکردنەوە
-          </button>
         </div>
 
       </div>

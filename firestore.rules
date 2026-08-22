@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // Helper Functions
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -11,36 +11,40 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function getUserRole() {
-      return request.auth.token.role != null ? request.auth.token.role : 'customer';
+    function getUserData() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
+        : null;
     }
 
     function isAdmin() {
       return isAuthenticated() && (
-        getUserRole() == 'admin' ||
         request.auth.token.email == 'admin@shakh.krd' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+        request.auth.token.email == 'itlobbybardarash@gmail.com' ||
+        request.auth.token.email == 'shakh8002@gmail.com' ||
+        (getUserData() != null && getUserData().role in ['admin', 'super_admin'])
       );
     }
 
     function isSeller() {
       return isAuthenticated() && (
-        getUserRole() == 'seller' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller')
+        isAdmin() ||
+        (getUserData() != null && getUserData().role in [
+          'seller', 'restaurant_owner', 'market_owner', 'clothes_seller',
+          'fruits_vegetables_seller', 'fresh_meat_seller', 'dairy_seller',
+          'electronics_seller', 'beauty_seller', 'car_seller'
+        ])
       );
     }
 
-    function isDeliveryDriver() {
+    function isDelivery() {
       return isAuthenticated() && (
-        getUserRole() == 'delivery' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'delivery')
+        isAdmin() ||
+        (getUserData() != null && getUserData().role in ['delivery_agent', 'delivery', 'store_driver'])
       );
     }
 
-    // Users Collection
+    // 1. Users Collection
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated() && request.auth.uid == userId;
@@ -48,25 +52,25 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // Sellers Collection
+    // 2. Sellers Collection (Public storefronts)
     match /sellers/{sellerId} {
       allow read: if true;
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         resource.data.userId == request.auth.uid ||
-        request.resource.data.userId == request.auth.uid ||
+        sellerId == request.auth.uid ||
         isAdmin()
       );
       allow delete: if isAdmin();
     }
 
-    // Products Collection
+    // 3. Products Collection (Global Catalog Visibility)
     match /products/{productId} {
       allow read: if true;
       allow create: if isAuthenticated() && (isSeller() || isAdmin());
       allow update: if isAuthenticated() && (
         resource.data.sellerId == request.auth.uid ||
-        isSeller() ||
+        request.resource.data.sellerId == request.auth.uid ||
         isAdmin()
       );
       allow delete: if isAuthenticated() && (
@@ -75,94 +79,92 @@ service cloud.firestore {
       );
     }
 
-    // Cars Marketplace Collection
+    // 4. Cars Collection (Public Marketplace)
     match /cars/{carId} {
       allow read: if true;
       allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
         resource.data.sellerId == request.auth.uid ||
         isAdmin()
       );
       allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
         resource.data.sellerId == request.auth.uid ||
         isAdmin()
       );
     }
 
-    // Orders Collection
+    // 5. Orders Collection (Customers, Sellers, Delivery Drivers & Admins)
     match /orders/{orderId} {
-      allow read: if isAuthenticated() && (
-        resource.data.customerId == request.auth.uid ||
-        resource.data.sellerId == request.auth.uid ||
-        resource.data.driverId == request.auth.uid ||
-        isDeliveryDriver() ||
-        isSeller() ||
-        isAdmin()
-      );
-      allow create: if isAuthenticated() && (
-        request.resource.data.customerId == request.auth.uid ||
-        isAdmin()
-      );
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (
         resource.data.customerId == request.auth.uid ||
         resource.data.sellerId == request.auth.uid ||
-        resource.data.driverId == request.auth.uid ||
-        isDeliveryDriver() ||
-        isSeller() ||
+        resource.data.deliveryAgentId == request.auth.uid ||
+        isDelivery() ||
         isAdmin()
       );
       allow delete: if isAdmin();
     }
 
-    // Reviews & Ratings Collection
+    // 6. Reviews & Ratings
     match /reviews/{reviewId} {
-      // Anyone can read reviews for transparent ratings
       allow read: if true;
-
-      // Authenticated users can create reviews
-      allow create: if isAuthenticated() &&
-        request.resource.data.userId == request.auth.uid &&
-        request.resource.data.rating is number &&
-        request.resource.data.rating >= 1 &&
-        request.resource.data.rating <= 5 &&
-        request.resource.data.targetType in ['seller', 'driver', 'product'] &&
-        request.resource.data.comment is string &&
-        request.resource.data.comment.size() > 0;
-
-      // Allow authors to update review, or allow reviewed seller/driver to reply
-      allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        resource.data.targetId == request.auth.uid ||
-        isSeller() ||
-        isDeliveryDriver() ||
-        isAdmin()
-      );
-
-      // Authors or admins can delete
-      allow delete: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        isAdmin()
-      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // Loyalty Wallets
+    // 7. Seller Wallets & Financial Ledger
     match /wallets/{walletId} {
       allow read: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid ||
+        walletId == request.auth.uid ||
         isAdmin()
       );
-      allow write: if isAuthenticated();
+      allow write: if isAuthenticated() && (
+        resource.data.sellerId == request.auth.uid ||
+        walletId == request.auth.uid ||
+        isAdmin()
+      );
     }
 
-    // Seller Agreements
+    // 8. Seller Agreements
     match /agreements/{agreementId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (isSeller() || isAdmin());
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // Default fallback
+    // 9. User Feedbacks
+    match /feedbacks/{feedbackId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // 10. Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // 11. Favorites Collection
+    match /favorites/{favoriteId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // 12. System Settings & Banners
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Catch-All Authenticated Access
     match /{document=**} {
-      allow read, write: if isAuthenticated() && isAdmin();
+      allow read, write: if isAuthenticated();
     }
   }
 }
