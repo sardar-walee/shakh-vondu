@@ -35,7 +35,7 @@ export const CarMarketplaceView: React.FC<CarMarketplaceViewProps> = ({
   const brands = ['Toyota', 'Mercedes-Benz', 'Hyundai', 'BMW', 'Kia', 'Nissan', 'Ford', 'Chevrolet'];
 
   // Filter ads
-  let filtered = carAds.filter(c => c.adStatus === 'active');
+  let filtered = carAds.filter(c => c.adStatus === 'active' || c.adStatus === 'sold');
 
   if (selectedBrand !== 'all') {
     filtered = filtered.filter(c => c.brand.toLowerCase() === selectedBrand.toLowerCase());

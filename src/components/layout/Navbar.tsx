@@ -19,7 +19,15 @@ import {
   Sparkles,
   Car,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  Star,
+  ArrowUp,
+  ArrowDown,
+  SlidersHorizontal,
+  Tag,
+  RotateCcw,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { useAuth } from '../../context/AuthContext';
@@ -27,6 +35,7 @@ import { useCart } from '../../context/CartContext';
 import { useNotification } from '../../context/NotificationContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useMarketplace } from '../../context/MarketplaceContext';
+import { useTheme } from '../../context/ThemeContext';
 import { CITIES } from '../../data/seedData';
 import { UserRole } from '../../types';
 
@@ -52,6 +61,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
   const { language, setLanguage, t } = useLanguage();
   const { products, sellers, carAds } = useMarketplace();
+
+  const { isDarkMode, toggleTheme } = useTheme();
 
   const [isCityOpen, setIsCityOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -81,21 +92,87 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const [searchFilter, setSearchFilter] = useState<'all' | 'price_low_high' | 'price_high_low' | 'top_rated' | 'free_delivery'>('all');
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+  const [isPriceFilterOpen, setIsPriceFilterOpen] = useState<boolean>(false);
+  const [priceSliderValue, setPriceSliderValue] = useState<number>(200000);
+
   // Filter search results preview
-  const searchResults = searchQuery.trim() === '' ? { products: [], sellers: [], cars: [] } : {
-    products: products.filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 4),
-    sellers: sellers.filter(s => s.storeName.toLowerCase().includes(searchQuery.toLowerCase()) || s.description.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 2),
-    cars: carAds.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()) || c.brand.toLowerCase().includes(searchQuery.toLowerCase())).slice(0, 2)
+  const categoriesList = [
+    { id: 'food', name: 'چێشتخانە و خواردن', keywords: ['خواردن', 'food', 'چێشتخانە', 'ڕێستۆرانت', 'کەباب', 'پیتزا'] },
+    { id: 'market', name: 'سوپەرمارکێت و مارکێت', keywords: ['مارکێت', 'market', 'سوپەرمارکێت', 'پێداویستی'] },
+    { id: 'clothes', name: 'جلوبەرگ و مۆدە', keywords: ['جل', 'جلوبەرگ', 'clothes', 'مۆدە', 'پێڵاو'] },
+    { id: 'fruits_vegetables', name: 'سەوزە و میوە', keywords: ['سەوزە', 'میوە', 'fruits', 'vegetables', 'فرێش'] },
+    { id: 'fresh_meat', name: 'گۆشتی تازەی کوردی', keywords: ['گۆشت', 'meat', 'مریشک'] },
+    { id: 'dairy', name: 'شیرەمەنی و ماست', keywords: ['شیر', 'ماست', 'پەنیر', 'dairy'] },
+    { id: 'electronics', name: 'ئەلیکترۆنیات و مۆبایل', keywords: ['مۆبایل', 'ئەلیکترۆنیات', 'phone', 'mobile', 'لاپتۆپ'] },
+    { id: 'beauty', name: 'جوانی و مکیاژ', keywords: ['مکیاژ', 'عەتر', 'جوانی', 'beauty', 'perfume'] },
+    { id: 'cars', name: 'بازاڕی ئۆتۆمبێل', keywords: ['ئۆتۆمبێل', 'سەیارە', 'car', 'cars', 'تۆیۆتا', 'مرسیدس'] }
+  ];
+
+  const q = searchQuery.trim().toLowerCase();
+
+  const matchedCategories = q === '' ? [] : categoriesList.filter(c =>
+    c.name.toLowerCase().includes(q) || c.keywords.some(k => k.toLowerCase().includes(q))
+  );
+
+  let rawProducts = q === '' ? [] : products.filter(p =>
+    p.title.toLowerCase().includes(q) ||
+    (p.description && p.description.toLowerCase().includes(q)) ||
+    (p.sellerName && p.sellerName.toLowerCase().includes(q)) ||
+    (p.category && p.category.toLowerCase().includes(q))
+  );
+
+  // Apply Min and Max Price filters if defined
+  const numMinPrice = minPrice !== '' ? parseFloat(minPrice) : null;
+  const numMaxPrice = maxPrice !== '' ? parseFloat(maxPrice) : null;
+
+  if (numMinPrice !== null && !isNaN(numMinPrice)) {
+    rawProducts = rawProducts.filter(p => (p.discountPrice || p.price) >= numMinPrice);
+  }
+
+  if (numMaxPrice !== null && !isNaN(numMaxPrice)) {
+    rawProducts = rawProducts.filter(p => (p.discountPrice || p.price) <= numMaxPrice);
+  }
+
+  if (searchFilter === 'price_low_high') {
+    rawProducts = [...rawProducts].sort((a, b) => (a.discountPrice || a.price) - (b.discountPrice || b.price));
+  } else if (searchFilter === 'price_high_low') {
+    rawProducts = [...rawProducts].sort((a, b) => (b.discountPrice || b.price) - (a.discountPrice || a.price));
+  } else if (searchFilter === 'top_rated') {
+    const rated = rawProducts.filter(p => (p.rating || 0) >= 4.0).sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    rawProducts = rated.length > 0 ? rated : [...rawProducts].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  } else if (searchFilter === 'free_delivery') {
+    const freeDel = rawProducts.filter(p => (p as any).isFreeDelivery || (p as any).freeShipping || (p.discountPrice && p.discountPrice < p.price) || (p.price >= 10000));
+    rawProducts = freeDel.length > 0 ? freeDel : rawProducts;
+  }
+
+  const searchResults = q === '' ? { categories: [], products: [], sellers: [], cars: [] } : {
+    categories: matchedCategories,
+    products: rawProducts.slice(0, 5),
+    sellers: sellers.filter(s =>
+      s.storeName.toLowerCase().includes(q) ||
+      (s.description && s.description.toLowerCase().includes(q)) ||
+      (s.city && s.city.toLowerCase().includes(q))
+    ).slice(0, 3),
+    cars: carAds.filter(c =>
+      c.title.toLowerCase().includes(q) ||
+      c.brand.toLowerCase().includes(q) ||
+      c.model.toLowerCase().includes(q) ||
+      (c.city && c.city.toLowerCase().includes(q))
+    ).slice(0, 3)
   };
 
-  const hasSearchResults = searchQuery.trim() !== '' && (
+  const hasSearchResults = q !== '' && (
+    (searchResults.categories && searchResults.categories.length > 0) ||
     (searchResults.products && searchResults.products.length > 0) ||
     (searchResults.sellers && searchResults.sellers.length > 0) ||
     (searchResults.cars && searchResults.cars.length > 0)
   );
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200 shadow-xs">
+    <header className="sticky top-0 z-40 bg-white dark:bg-[#0f172a]/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-xs transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-[72px] gap-3 md:gap-6">
           
@@ -173,8 +250,228 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Instant Search Dropdown Preview */}
             {isSearchFocused && hasSearchResults && (
               <div className="absolute top-full mt-2 w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-3 z-50 max-h-96 overflow-y-auto">
-                {searchResults.products && searchResults.products.length > 0 && (
+                {/* Clickable Horizontal Filter Chips Row */}
+                <div className="mb-3 pb-2.5 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto scrollbar-none px-1">
+                  <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 flex-shrink-0 ml-1">
+                    <SlidersHorizontal className="w-3 h-3 text-slate-400" />
+                    فیلتەر:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSearchFilter('all')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap transition-all cursor-pointer ${
+                      searchFilter === 'all'
+                        ? 'bg-[#F97316] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>هەمووی</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchFilter('price_low_high')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap transition-all cursor-pointer ${
+                      searchFilter === 'price_low_high'
+                        ? 'bg-[#F97316] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <ArrowUp className="w-3.5 h-3.5" />
+                    <span>Price Low-High</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchFilter('price_high_low')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap transition-all cursor-pointer ${
+                      searchFilter === 'price_high_low'
+                        ? 'bg-[#F97316] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <ArrowDown className="w-3.5 h-3.5" />
+                    <span>Price High-Low</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchFilter('top_rated')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap transition-all cursor-pointer ${
+                      searchFilter === 'top_rated'
+                        ? 'bg-[#F97316] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span>Top Rated</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSearchFilter('free_delivery')}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap transition-all cursor-pointer ${
+                      searchFilter === 'free_delivery'
+                        ? 'bg-[#F97316] text-white shadow-xs'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Truck className="w-3.5 h-3.5" />
+                    <span>Free Delivery</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsPriceFilterOpen(!isPriceFilterOpen)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 whitespace-nowrap transition-all cursor-pointer ${
+                      isPriceFilterOpen || minPrice !== '' || maxPrice !== ''
+                        ? 'bg-orange-100 text-[#F97316] border border-orange-300'
+                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    }`}
+                  >
+                    <Tag className="w-3.5 h-3.5" />
+                    <span>مەودای نرخ {minPrice || maxPrice ? `(${minPrice || '0'} - ${maxPrice || '∞'})` : ''}</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform ${isPriceFilterOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+
+                {/* Expandable Price Range Slider and Min/Max Input Controls */}
+                {(isPriceFilterOpen || minPrice !== '' || maxPrice !== '') && (
+                  <div className="mb-3 p-3 bg-slate-50/80 rounded-xl border border-slate-200 text-xs">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-slate-700 flex items-center gap-1">
+                        <Tag className="w-3.5 h-3.5 text-[#F97316]" />
+                        فیلتەرکردن بەپێی نرخ (د.ع)
+                      </span>
+                      {(minPrice !== '' || maxPrice !== '') && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMinPrice('');
+                            setMaxPrice('');
+                            setPriceSliderValue(200000);
+                          }}
+                          className="text-[11px] text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1 cursor-pointer"
+                        >
+                          <RotateCcw className="w-3 h-3" />
+                          پاککردنەوە
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Quick Preset Buttons */}
+                    <div className="flex items-center gap-1.5 mb-2.5 overflow-x-auto scrollbar-none">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMinPrice('0');
+                          setMaxPrice('10000');
+                          setPriceSliderValue(10000);
+                        }}
+                        className="px-2.5 py-1 bg-white border border-slate-200 hover:border-orange-300 text-[11px] text-slate-600 font-bold rounded-lg whitespace-nowrap transition-colors cursor-pointer"
+                      >
+                        کەمتر لە ۱۰,۰۰۰ د.ع
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMinPrice('10000');
+                          setMaxPrice('50000');
+                          setPriceSliderValue(50000);
+                        }}
+                        className="px-2.5 py-1 bg-white border border-slate-200 hover:border-orange-300 text-[11px] text-slate-600 font-bold rounded-lg whitespace-nowrap transition-colors cursor-pointer"
+                      >
+                        ۱۰,۰۰۰ - ۵۰,۰۰۰ د.ع
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMinPrice('50000');
+                          setMaxPrice('');
+                          setPriceSliderValue(200000);
+                        }}
+                        className="px-2.5 py-1 bg-white border border-slate-200 hover:border-orange-300 text-[11px] text-slate-600 font-bold rounded-lg whitespace-nowrap transition-colors cursor-pointer"
+                      >
+                        سەرتر لە ۵۰,۰۰۰ د.ع
+                      </button>
+                    </div>
+
+                    {/* Interactive Price Range Slider */}
+                    <div className="mb-3 px-1">
+                      <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
+                        <span>سەقفی نرخ: {priceSliderValue.toLocaleString()} د.ع</span>
+                        <span>۲۵۰,۰۰۰+ د.ع</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="2000"
+                        max="250000"
+                        step="2000"
+                        value={priceSliderValue}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setPriceSliderValue(val);
+                          setMaxPrice(val.toString());
+                        }}
+                        className="w-full accent-[#F97316] cursor-pointer h-1.5 bg-slate-200 rounded-lg appearance-none"
+                      />
+                    </div>
+
+                    {/* Min & Max Inputs */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">کەمترین نرخ (د.ع)</label>
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={minPrice}
+                          onChange={(e) => setMinPrice(e.target.value)}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-latin text-slate-800 focus:outline-none focus:border-[#F97316]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">زۆرترین نرخ (د.ع)</label>
+                        <input
+                          type="number"
+                          placeholder="250000"
+                          value={maxPrice}
+                          onChange={(e) => {
+                            setMaxPrice(e.target.value);
+                            if (e.target.value) {
+                              setPriceSliderValue(Number(e.target.value));
+                            }
+                          }}
+                          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-latin text-slate-800 focus:outline-none focus:border-[#F97316]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {searchResults.categories && searchResults.categories.length > 0 && (
                   <div className="mb-3">
+                    <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">بەشەکان</span>
+                    <div className="flex flex-wrap gap-1.5 px-1">
+                      {searchResults.categories.map(cat => (
+                        <button
+                          key={cat.id}
+                          onClick={() => {
+                            if (cat.id === 'cars') {
+                              onNavigate('car-marketplace');
+                            } else {
+                              onNavigate('category', cat.id);
+                            }
+                            setIsSearchFocused(false);
+                          }}
+                          className="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-[#F97316] text-xs font-bold rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <span>{cat.name}</span>
+                          <span className="text-[10px] text-orange-400">←</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {searchResults.products && searchResults.products.length > 0 && (
+                  <div className="mb-3 border-t border-slate-100 pt-2">
                     <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">کاڵاکان و خواردن</span>
                     {searchResults.products.map(p => (
                       <button
@@ -261,6 +558,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>{t('car.post_ad')}</span>
             </button>
 
+            {/* Dark Mode Toggle Button */}
+            <button
+              onClick={toggleTheme}
+              className="p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 transition-all cursor-pointer shadow-xs active:scale-90"
+              title={isDarkMode ? 'گۆڕین بۆ دۆخی ڕووناک (Light Mode)' : 'گۆڕین بۆ دۆخی تاریک (Dark Mode)'}
+              aria-label="Toggle dark mode"
+            >
+              {isDarkMode ? (
+                <Sun className="w-4 h-4 text-amber-400 animate-spin-slow" />
+              ) : (
+                <Moon className="w-4 h-4 text-slate-700" />
+              )}
+            </button>
+
             {/* Language Switcher */}
             <div className="relative hidden sm:block">
               <div className="flex items-center bg-slate-100 p-0.5 rounded-full text-xs font-bold">
@@ -312,72 +623,79 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
 
               {isNotifOpen && (
-                <div className="absolute top-full mt-2 w-80 sm:w-92 bg-white rounded-2xl shadow-xl border border-slate-100 p-3 z-50 left-0 sm:right-auto sm:left-0 animate-in fade-in">
-                  <div className="flex items-center justify-between pb-2 border-b border-slate-100 mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-slate-900">ئاگادارییەکان</span>
+                <>
+                  {/* Backdrop for mobile */}
+                  <div
+                    className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-40 sm:hidden"
+                    onClick={() => setIsNotifOpen(false)}
+                  />
+                  <div className="fixed sm:absolute top-[74px] sm:top-full mt-2 inset-x-3 sm:inset-x-auto left-3 right-3 sm:left-0 sm:right-auto max-w-sm sm:w-92 mx-auto sm:mx-0 bg-white rounded-3xl sm:rounded-2xl shadow-2xl sm:shadow-xl border border-slate-200 sm:border-slate-100 p-3.5 sm:p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-slate-900">ئاگادارییەکان</span>
+                        {unreadCount > 0 && (
+                          <span className="text-[10px] font-bold bg-orange-100 text-[#F97316] px-2 py-0.5 rounded-full font-latin">
+                            {unreadCount} نوێ
+                          </span>
+                        )}
+                      </div>
                       {unreadCount > 0 && (
-                        <span className="text-[10px] font-bold bg-orange-100 text-[#F97316] px-1.5 py-0.2 rounded-full font-latin">
-                          {unreadCount} نوێ
-                        </span>
+                        <button
+                          onClick={markAllAsRead}
+                          className="text-[11px] text-[#2563EB] hover:underline font-bold cursor-pointer"
+                        >
+                          هەمووی وەک خوێندراوە
+                        </button>
                       )}
                     </div>
-                    {unreadCount > 0 && (
-                      <button
-                        onClick={markAllAsRead}
-                        className="text-[11px] text-[#2563EB] hover:underline font-semibold cursor-pointer"
-                      >
-                        هەمووی وەک خوێندراوە
-                      </button>
-                    )}
-                  </div>
 
-                  <div className="max-h-72 overflow-y-auto space-y-2">
-                    {notifications.length === 0 ? (
-                      <p className="text-xs text-slate-400 text-center py-6">هیچ ئاگادارییەک نییە</p>
-                    ) : (
-                      notifications.slice(0, 6).map(n => (
-                        <div
-                          key={n.id}
-                          onClick={() => {
-                            markAsRead(n.id);
-                            setIsNotifOpen(false);
-                            if (n.linkUrl) {
-                              onNavigate(n.linkUrl.replace('/', ''), n.metadata?.orderId || n.metadata?.carAdId);
-                            } else {
-                              onNavigate('notifications');
-                            }
-                          }}
-                          className={`p-2.5 rounded-xl transition-colors cursor-pointer text-start ${
-                            n.isRead ? 'bg-slate-50/60 hover:bg-slate-100' : 'bg-blue-50/60 border border-blue-100 hover:bg-blue-100/60'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-1 mb-1">
-                            <span className="text-xs font-bold text-slate-900 line-clamp-1">{n.title}</span>
-                            <span className="text-[10px] text-slate-400 font-latin whitespace-nowrap">
-                              {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
+                    <div className="max-h-[60vh] sm:max-h-72 overflow-y-auto space-y-2 pr-0.5">
+                      {notifications.length === 0 ? (
+                        <p className="text-xs text-slate-400 text-center py-6">هیچ ئاگادارییەک نییە</p>
+                      ) : (
+                        notifications.slice(0, 8).map(n => (
+                          <div
+                            key={n.id}
+                            onClick={() => {
+                              markAsRead(n.id);
+                              setIsNotifOpen(false);
+                              if (n.linkUrl) {
+                                onNavigate(n.linkUrl.replace('/', ''), n.metadata?.orderId || n.metadata?.carAdId);
+                              } else {
+                                onNavigate('notifications');
+                              }
+                            }}
+                            className={`p-3 rounded-2xl transition-all cursor-pointer text-start ${
+                              n.isRead ? 'bg-slate-50/80 hover:bg-slate-100' : 'bg-blue-50/70 border border-blue-100/80 hover:bg-blue-100/70'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-1 mb-1">
+                              <span className="text-xs font-bold text-slate-900 line-clamp-1">{n.title}</span>
+                              <span className="text-[10px] text-slate-400 font-latin whitespace-nowrap">
+                                {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{n.message}</p>
                           </div>
-                          <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2">{n.message}</p>
-                        </div>
-                      ))
-                    )}
-                  </div>
+                        ))
+                      )}
+                    </div>
 
-                  {/* Open Full Notification Center link */}
-                  <div className="mt-2.5 pt-2 border-t border-slate-100">
-                    <button
-                      onClick={() => {
-                        setIsNotifOpen(false);
-                        onNavigate('notifications');
-                      }}
-                      className="w-full py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 text-[#2563EB] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <span>بینینی هەموو ئاگادارییەکان لە ناوەندی ئاگاداری</span>
-                      <ArrowLeft className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Open Full Notification Center link */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-100">
+                      <button
+                        onClick={() => {
+                          setIsNotifOpen(false);
+                          onNavigate('notifications');
+                        }}
+                        className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-blue-50 text-[#2563EB] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <span>بینینی هەموو ئاگادارییەکان لە ناوەندی ئاگاداری</span>
+                        <ArrowLeft className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
 
@@ -395,8 +713,8 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
 
-            {/* User Profile / Dashboard Menu */}
-            <div ref={userRef} className="relative">
+            {/* User Profile / Dashboard Menu - Hidden on mobile since mobile has bottom nav & drawer */}
+            <div ref={userRef} className="relative hidden md:block">
               {currentUser ? (
                 <button
                   onClick={() => setIsUserOpen(!isUserOpen)}
@@ -560,7 +878,36 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Menu Drawer */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2 shadow-lg">
+        <div className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-2.5 shadow-lg">
+          {/* User Account / Login Bar in Mobile Drawer */}
+          {currentUser ? (
+            <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 overflow-hidden">
+                <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center font-black text-sm flex-shrink-0">
+                  {currentUser.fullName?.charAt(0) || 'U'}
+                </div>
+                <div className="overflow-hidden text-right">
+                  <p className="text-xs font-bold text-slate-900 truncate">{currentUser.fullName}</p>
+                  <p className="text-[10px] text-slate-400 font-latin truncate">{currentUser.email}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => { onNavigate('user-profile'); setIsMobileMenuOpen(false); }}
+                className="px-3 py-1.5 bg-slate-900 text-white text-[11px] font-bold rounded-xl whitespace-nowrap cursor-pointer"
+              >
+                پڕۆفایل
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => { onNavigate('auth', 'login'); setIsMobileMenuOpen(false); }}
+              className="w-full py-2.5 rounded-xl bg-orange-500 text-white text-xs font-bold shadow-sm flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <User className="w-4 h-4" />
+              <span>چوونە ژوورەوە / دروستکردنی هەژمار</span>
+            </button>
+          )}
+
           <div className="flex items-center justify-between py-2 border-b border-slate-100">
             <span className="text-xs font-bold text-slate-500">شار:</span>
             <select

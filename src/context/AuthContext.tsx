@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { UserProfile, UserRole, ProductCategory } from '../types';
-import { INITIAL_PROFILES } from '../data/seedData';
+import { UserProfile, UserRole, ProductCategory, SellerProfile } from '../types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { db, auth } from '../firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
@@ -21,16 +20,19 @@ interface RegisterData {
   address: string;
   role: UserRole;
   storeName?: string;
+  category?: ProductCategory;
 }
 
 interface AuthContextType {
   currentUser: UserProfile | null;
+  sellerProfile?: SellerProfile | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
   register: (data: RegisterData) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   switchUserRole: (role: UserRole) => void;
   isSuperAdmin: boolean;
   isSeller: boolean;
@@ -52,10 +54,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error parsing stored user', e);
       }
     }
-    return INITIAL_PROFILES[0]; // Admin by default
+    return null;
   });
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (currentUser) {
@@ -74,11 +76,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const docSnap = await getDoc(userDocRef);
           if (docSnap.exists()) {
             setCurrentUser(docSnap.data() as UserProfile);
+          } else {
+            // Create user doc if auth exists but no doc
+            const newUser: UserProfile = {
+              id: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              fullName: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'بەکارهێنەر',
+              phone: firebaseUser.phoneNumber || '',
+              city: 'Erbil (هەولێر)',
+              area: 'Center',
+              address: '',
+              role: firebaseUser.email === 'shakh8002@gmail.com' ? 'admin' : 'customer',
+              isVerified: true,
+              createdAt: new Date().toISOString()
+            };
+            await setDoc(userDocRef, newUser);
+            setCurrentUser(newUser);
           }
         } catch (e) {
-          console.log('Firebase user doc fetch fallback:', e);
+          console.error('Firebase user doc fetch error:', e);
         }
       }
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -173,7 +192,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         } catch (firebaseErr: any) {
-          // If user doesn't exist yet, proceed with seamless profile detection
           console.log('Firebase auth attempt:', firebaseErr.message);
         }
       }
@@ -214,19 +232,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
 
-      // 3. Demo profile match
-      const found = INITIAL_PROFILES.find(p => p.email.toLowerCase() === email.toLowerCase());
-      if (found) {
-        setCurrentUser(found);
-        try {
-          await setDoc(doc(db, 'users', found.id), found, { merge: true });
-        } catch (e) {}
-        return { success: true };
-      }
-
-      // 4. Super Admin shortcut
+      // 3. Super Admin account check
       if (email.toLowerCase() === 'shakh8002@gmail.com') {
-        const adminUser = INITIAL_PROFILES.find(p => p.role === 'admin')!;
+        const adminId = auth.currentUser?.uid || 'admin-shakh';
+        const adminUser: UserProfile = {
+          id: adminId,
+          email: 'shakh8002@gmail.com',
+          fullName: 'سووپەر ئەدمینی شاخی (Super Admin)',
+          phone: '07504796924',
+          city: 'Bardarash (بەردەڕەش)',
+          area: 'ناو بازاڕ',
+          address: 'بەردەڕەش ناو بازاڕ',
+          role: 'admin',
+          isVerified: true,
+          createdAt: new Date().toISOString()
+        };
         setCurrentUser(adminUser);
         try {
           await setDoc(doc(db, 'users', adminUser.id), adminUser, { merge: true });
@@ -234,25 +254,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
       }
 
-      // 5. Create new session profile
-      const newUser: UserProfile = {
-        id: `user-${Date.now()}`,
-        email,
-        fullName: email.split('@')[0],
-        phone: '07501234567',
-        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-        city: 'Erbil (هەولێر)',
-        area: 'Center',
-        address: 'شارستانی هەولێر',
-        role: 'customer',
-        isVerified: true,
-        createdAt: new Date().toISOString()
-      };
-      setCurrentUser(newUser);
-      try {
-        await setDoc(doc(db, 'users', newUser.id), newUser);
-      } catch (e) {}
-      return { success: true };
+      return { success: false, error: 'ئیمەیڵ یان وشەی تێپەڕ هەڵەیە، تکایە سەرەتا خۆت تۆمار بکە.' };
     } catch (err: any) {
       return { success: false, error: err.message || 'هەڵەیەک لە چوونەژوورەوە ڕوویدا' };
     } finally {
@@ -324,6 +326,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         area: data.area,
         address: data.address,
         role: data.role,
+        category: data.category,
         isVerified: true,
         createdAt: new Date().toISOString()
       };
@@ -380,12 +383,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const switchUserRole = (role: UserRole) => {
-    const matchingProfile = INITIAL_PROFILES.find(p => p.role === role);
-    if (matchingProfile) {
-      setCurrentUser(matchingProfile);
-    } else if (currentUser) {
-      setCurrentUser({ ...currentUser, role });
+  const updateUserProfile = updateProfile;
+
+  const switchUserRole = async (role: UserRole) => {
+    if (currentUser) {
+      const updated = { ...currentUser, role };
+      setCurrentUser(updated);
+      try {
+        await updateDoc(doc(db, 'users', currentUser.id), { role });
+      } catch (e) {}
     }
   };
 
@@ -408,6 +414,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sellerCategory = currentUser?.role ? roleToCategoryMap[currentUser.role] || null : null;
   const isSeller = Boolean(sellerCategory);
 
+  const sellerProfile: SellerProfile | null = (currentUser && isSeller)
+    ? {
+        id: `store-${currentUser.id}`,
+        userId: currentUser.id,
+        storeName: currentUser.storeName || currentUser.fullName || 'فرۆشگا',
+        slug: `store-${currentUser.id}`,
+        category: sellerCategory!,
+        description: 'فرۆشگای فەرمی لە شاخی',
+        logoUrl: currentUser.avatarUrl || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
+        coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
+        rating: 5.0,
+        totalReviews: 0,
+        totalSales: 0,
+        city: currentUser.city || 'Erbil (هەولێر)',
+        address: currentUser.address || 'ناوبازاڕ',
+        phone: currentUser.phone || '07501234567',
+        isOpen: true,
+        isVerified: currentUser.isVerified ?? true,
+        commissionRate: 10,
+        createdAt: currentUser.createdAt || new Date().toISOString()
+      }
+    : null;
+
   const canManageCategory = (category: ProductCategory): boolean => {
     if (isSuperAdmin) return true;
     if (!currentUser) return false;
@@ -418,12 +447,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         currentUser,
+        sellerProfile,
         isAuthenticated: Boolean(currentUser),
         isLoading,
         login,
         register,
         logout,
         updateProfile,
+        updateUserProfile,
         switchUserRole,
         isSuperAdmin,
         isSeller,

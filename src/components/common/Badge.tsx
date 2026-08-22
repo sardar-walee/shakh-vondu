@@ -37,6 +37,8 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' })
 export const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
   const roleMap: Record<UserRole, { label: string; color: string }> = {
     admin: { label: 'Super Admin', color: 'bg-red-600 text-white' },
+    super_admin: { label: 'Super Admin', color: 'bg-red-600 text-white' },
+    seller: { label: 'خاوەن کار / فرۆشیار', color: 'bg-amber-100 text-amber-800' },
     restaurant_owner: { label: 'خاوەن چێشتخانە', color: 'bg-orange-100 text-orange-800' },
     market_owner: { label: 'خاوەن مارکێت', color: 'bg-blue-100 text-blue-800' },
     clothes_seller: { label: 'فرۆشیاری جلوبەرگ', color: 'bg-purple-100 text-purple-800' },

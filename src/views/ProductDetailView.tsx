@@ -14,11 +14,14 @@ import {
   ArrowRight,
   Share2,
   Clock,
-  Sparkles
+  Sparkles,
+  Eye,
+  Flame
 } from 'lucide-react';
 import { Product } from '../types';
 import { CategoryBadge } from '../components/common/Badge';
 import { ProductCard } from '../components/cards/ProductCard';
+import { ShareModal } from '../components/common/ShareModal';
 import { useCart } from '../context/CartContext';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
@@ -48,6 +51,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const [selectedColor, setSelectedColor] = useState<string | undefined>(product?.colors?.[0]);
   const [specialInstructions, setSpecialInstructions] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
   const [addedToast, setAddedToast] = useState(false);
@@ -67,6 +71,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   }
 
   const effectivePrice = product.discountPrice || product.price;
+  const isBestSeller = product.isBestSeller || (product.salesCount && product.salesCount > 30) || (product.rating && product.rating >= 4.8);
+  const views = (product.viewsCount || 420) + 1;
+  const likes = (product.likesCount || 35) + (isFav ? 1 : 0);
   const discountPercent = product.discountPrice
     ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : 0;
@@ -180,32 +187,62 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             
             {/* Header info & Category */}
             <div className="flex items-center justify-between gap-2">
-              <CategoryBadge category={product.category} />
-              {product.stock > 0 ? (
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  لە کۆگادا ماوە ({product.stock})
-                </span>
-              ) : (
-                <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
-                  تەواو بووە
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                <CategoryBadge category={product.category} />
+                {isBestSeller && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-black bg-rose-500 text-white px-2.5 py-1 rounded-full shadow-xs animate-pulse">
+                    <Flame className="w-3.5 h-3.5 fill-white" />
+                    <span>پرفرۆشترین</span>
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
+                  title="هاوبەشکردن"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+
+                {product.stock > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    لە کۆگادا ماوە ({product.stock})
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full">
+                    تەواو بووە
+                  </span>
+                )}
+              </div>
             </div>
 
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
               {product.title}
             </h1>
 
-            {/* Rating and Reviews Counter */}
-            <div className="flex items-center gap-2">
+            {/* Rating, Views and Likes Counter */}
+            <div className="flex items-center gap-4 text-xs">
               <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-xl">
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
                 <span className="text-xs font-black text-slate-800 font-latin">{product.rating || 4.9}</span>
               </div>
-              <span className="text-xs text-slate-500">
-                (بەپێی {productReviews.length + (product.reviewCount || 10)} هەڵسەنگاندن)
+              
+              <span className="text-slate-500">
+                ({productReviews.length + (product.reviewCount || 10)} هەڵسەنگاندن)
               </span>
+
+              <div className="flex items-center gap-1 text-slate-500 font-latin">
+                <Eye className="w-4 h-4 text-slate-400" />
+                <span>{views} بینراو</span>
+              </div>
+
+              <div className="flex items-center gap-1 text-slate-500 font-latin">
+                <Heart className={`w-4 h-4 ${isFav ? 'fill-rose-500 text-rose-500' : 'text-slate-400'}`} />
+                <span>{likes} لایک</span>
+              </div>
             </div>
 
             {/* Price Box */}
@@ -225,76 +262,294 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               {product.description}
             </p>
 
-            {/* Category Specific Configs */}
-            {/* Clothes Sizes */}
-            {product.sizes && product.sizes.length > 0 && (
-              <div className="space-y-2 pt-2">
-                <label className="text-xs font-bold text-slate-700">قەبارە هەڵبژێرە:</label>
-                <div className="flex flex-wrap gap-2">
-                  {product.sizes.map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setSelectedSize(s)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                        selectedSize === s
-                          ? 'border-orange-500 bg-orange-500 text-white shadow-xs'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Category Specific Dynamic Fields */}
+            
+            {/* Clothes Attributes */}
+            {product.category === 'clothes' && (
+              <div className="space-y-3 pt-2 bg-purple-50/50 p-4 rounded-2xl border border-purple-100">
+                <span className="text-xs font-black text-purple-950 block">تایبەتمەندییەکانی جلوبەرگ:</span>
+                
+                {/* Brand & Gender */}
+                {(product.brand || product.gender) && (
+                  <div className="flex flex-wrap gap-3 text-xs text-purple-900">
+                    {product.brand && (
+                      <div>
+                        <span className="text-slate-500">براند:</span> <span className="font-bold font-latin">{product.brand}</span>
+                      </div>
+                    )}
+                    {product.gender && (
+                      <div>
+                        <span className="text-slate-500">گونجاو بۆ:</span>{' '}
+                        <span className="font-bold">
+                          {product.gender === 'men' ? 'پیاوان' : product.gender === 'women' ? 'ئافرەتان' : product.gender === 'kids' ? 'منداڵان' : 'هەردوو ڕەگەز (Unisex)'}
+                        </span>
+                      </div>
+                    )}
+                    {product.material && (
+                      <div>
+                        <span className="text-slate-500">جۆری قوماش:</span> <span className="font-bold">{product.material}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-            {/* Clothes Colors */}
-            {product.colors && product.colors.length > 0 && (
-              <div className="space-y-2 pt-2">
-                <label className="text-xs font-bold text-slate-700">ڕەنگ هەڵبژێرە:</label>
-                <div className="flex flex-wrap gap-2">
-                  {product.colors.map(c => (
-                    <button
-                      key={c}
-                      onClick={() => setSelectedColor(c)}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                        selectedColor === c
-                          ? 'border-blue-600 bg-blue-600 text-white shadow-xs'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Food Ingredients */}
-            {product.ingredients && product.ingredients.length > 0 && (
-              <div className="space-y-1.5 pt-2">
-                <label className="text-xs font-bold text-slate-700">پێکهاتەکان:</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {product.ingredients.map(ing => (
-                    <span key={ing} className="bg-slate-100 text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
-                      {ing}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Electronics Specs */}
-            {product.specs && Object.keys(product.specs).length > 0 && (
-              <div className="space-y-1.5 pt-2 bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                <span className="text-xs font-bold text-slate-800 block mb-1">تایبەتمەندییەکان:</span>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  {Object.entries(product.specs).map(([key, val]) => (
-                    <div key={key} className="flex justify-between border-b border-slate-200 pb-1">
-                      <span className="text-slate-500">{key}:</span>
-                      <span className="font-bold text-slate-800 font-latin">{val}</span>
+                {/* Sizes */}
+                {product.sizes && product.sizes.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">قەبارە هەڵبژێرە:</label>
+                    <div className="flex flex-wrap gap-2">
+                      {product.sizes.map(s => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setSelectedSize(s)}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                            selectedSize === s
+                              ? 'border-purple-600 bg-purple-600 text-white shadow-xs'
+                              : 'border-purple-200 bg-white text-slate-700 hover:border-purple-300'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                )}
+
+                {/* Colors */}
+                {product.colors && product.colors.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">ڕەنگ هەڵبژێرە:</label>
+                    <div className="flex flex-wrap gap-2">
+                      {product.colors.map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setSelectedColor(c)}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                            selectedColor === c
+                              ? 'border-purple-600 bg-purple-600 text-white shadow-xs'
+                              : 'border-purple-200 bg-white text-slate-700 hover:border-purple-300'
+                          }`}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Electronics Attributes */}
+            {product.category === 'electronics' && (
+              <div className="space-y-3 pt-2 bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
+                <span className="text-xs font-black text-blue-950 block">تایبەتمەندییەکانی ئامێر:</span>
+                <div className="grid grid-cols-2 gap-2.5 text-xs">
+                  {product.brand && (
+                    <div className="bg-white p-2 rounded-xl border border-blue-100 flex justify-between">
+                      <span className="text-slate-500">براند:</span>
+                      <span className="font-bold text-slate-800 font-latin">{product.brand}</span>
+                    </div>
+                  )}
+                  {product.model && (
+                    <div className="bg-white p-2 rounded-xl border border-blue-100 flex justify-between">
+                      <span className="text-slate-500">مۆدێل:</span>
+                      <span className="font-bold text-slate-800 font-latin">{product.model}</span>
+                    </div>
+                  )}
+                  {product.warrantyMonths && (
+                    <div className="bg-white p-2 rounded-xl border border-blue-100 flex justify-between col-span-2">
+                      <span className="text-slate-500">ماوەی گارانتی:</span>
+                      <span className="font-bold text-emerald-700">{product.warrantyMonths} مانگی تەواو</span>
+                    </div>
+                  )}
+                </div>
+
+                {product.specs && Object.keys(product.specs).length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <span className="text-[11px] font-bold text-slate-600 block">وردەکاری زیاتر:</span>
+                    <div className="grid grid-cols-2 gap-2 text-xs">
+                      {Object.entries(product.specs).map(([key, val]) => (
+                        <div key={key} className="flex justify-between border-b border-blue-100 pb-1">
+                          <span className="text-slate-500">{key}:</span>
+                          <span className="font-bold text-slate-800 font-latin">{val}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Cars Attributes */}
+            {product.category === 'cars' && (
+              <div className="space-y-3 pt-2 bg-amber-50/60 p-4 rounded-2xl border border-amber-200">
+                <span className="text-xs font-black text-amber-950 block">تایبەتمەندییەکانی ئۆتۆمبێل:</span>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+                  {product.year && (
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[10px]">ساڵی دروستکردن</span>
+                      <span className="font-black text-slate-900 font-latin text-sm">{product.year}</span>
+                    </div>
+                  )}
+                  {product.mileageKm !== undefined && (
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[10px]">کیلۆمەتری ڕۆیشتوو</span>
+                      <span className="font-black text-slate-900 font-latin text-sm">{product.mileageKm.toLocaleString()} کم</span>
+                    </div>
+                  )}
+                  {product.transmission && (
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[10px]">جۆری گێڕ</span>
+                      <span className="font-bold text-slate-900 text-xs">
+                        {product.transmission === 'automatic' ? 'ئۆتۆماتیک' : 'دەستی (عادی)'}
+                      </span>
+                    </div>
+                  )}
+                  {product.fuelType && (
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[10px]">سووتەمەنی</span>
+                      <span className="font-bold text-slate-900 text-xs">
+                        {product.fuelType === 'gasoline' ? 'بەنزین' : product.fuelType === 'diesel' ? 'دیزڵ' : product.fuelType === 'electric' ? 'کارەبایی' : 'هایبرید'}
+                      </span>
+                    </div>
+                  )}
+                  {product.brand && (
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[10px]">کۆمپانیا</span>
+                      <span className="font-bold text-slate-900 text-xs font-latin">{product.brand}</span>
+                    </div>
+                  )}
+                  {product.model && (
+                    <div className="bg-white p-2 rounded-xl border border-amber-200">
+                      <span className="text-slate-400 block text-[10px]">مۆدێل</span>
+                      <span className="font-bold text-slate-900 text-xs font-latin">{product.model}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Food Attributes */}
+            {product.category === 'food' && (
+              <div className="space-y-3 pt-2 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-orange-950">تایبەتمەندییەکانی خواردن:</span>
+                  <div className="flex items-center gap-2">
+                    {product.isSpicy && (
+                      <span className="text-[11px] bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full">
+                        🔥 تیژ
+                      </span>
+                    )}
+                    {product.isVegetarian && (
+                      <span className="text-[11px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">
+                        🥗 گیاخۆری
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {product.prepTimeMinutes && (
+                  <div className="text-xs text-orange-900 bg-white p-2.5 rounded-xl border border-orange-100 flex items-center justify-between">
+                    <span className="text-slate-500">کاتی ئامادەکردن:</span>
+                    <span className="font-black text-orange-700 font-latin">⏱ {product.prepTimeMinutes} خولەک</span>
+                  </div>
+                )}
+
+                {product.ingredients && product.ingredients.length > 0 && (
+                  <div className="space-y-1.5 pt-1">
+                    <label className="text-xs font-bold text-slate-700">پێکهاتە سەرەکییەکان:</label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {product.ingredients.map(ing => (
+                        <span key={ing} className="bg-white border border-orange-200 text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
+                          {ing}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Fresh Meat Attributes */}
+            {product.category === 'fresh_meat' && (
+              <div className="space-y-2 pt-2 bg-rose-50/60 p-4 rounded-2xl border border-rose-100 text-xs">
+                <span className="text-xs font-black text-rose-950 block">زانیاری گۆشتی فرێش:</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {product.meatType && (
+                    <div className="bg-white p-2 rounded-xl border border-rose-100 flex justify-between">
+                      <span className="text-slate-500">جۆری گۆشت:</span>
+                      <span className="font-bold text-rose-900">{product.meatType}</span>
+                    </div>
+                  )}
+                  {product.cutType && (
+                    <div className="bg-white p-2 rounded-xl border border-rose-100 flex justify-between">
+                      <span className="text-slate-500">بڕینی تایبەت:</span>
+                      <span className="font-bold text-rose-900">{product.cutType}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Fruits & Vegetables */}
+            {product.category === 'fruits_vegetables' && (
+              <div className="space-y-2 pt-2 bg-emerald-50/60 p-4 rounded-2xl border border-emerald-100 text-xs">
+                <span className="text-xs font-black text-emerald-950 block">سەوزە و میوەی تەندروست:</span>
+                <div className="flex flex-wrap gap-3 items-center">
+                  {product.isOrganic && (
+                    <span className="bg-emerald-600 text-white font-bold px-2.5 py-1 rounded-lg text-xs flex items-center gap-1">
+                      🌿 ١٠٠٪ ئۆرگانیک و سروشتی
+                    </span>
+                  )}
+                  {product.origin && (
+                    <div className="bg-white px-3 py-1 rounded-lg border border-emerald-200">
+                      <span className="text-slate-500">سەرچاوە:</span> <span className="font-bold text-slate-800">{product.origin}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Dairy Attributes */}
+            {product.category === 'dairy' && (
+              <div className="space-y-2 pt-2 bg-cyan-50/60 p-4 rounded-2xl border border-cyan-100 text-xs">
+                <span className="text-xs font-black text-cyan-950 block">شیرەمەنی:</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {product.expiryInfo && (
+                    <div className="bg-white p-2 rounded-xl border border-cyan-100 flex justify-between">
+                      <span className="text-slate-500">بەسەرچوون:</span>
+                      <span className="font-bold text-cyan-900">{product.expiryInfo}</span>
+                    </div>
+                  )}
+                  {product.fatPercentage && (
+                    <div className="bg-white p-2 rounded-xl border border-cyan-100 flex justify-between">
+                      <span className="text-slate-500">ڕێژەی چەوری:</span>
+                      <span className="font-bold text-cyan-900">{product.fatPercentage}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Beauty Attributes */}
+            {product.category === 'beauty' && (
+              <div className="space-y-2 pt-2 bg-pink-50/60 p-4 rounded-2xl border border-pink-100 text-xs">
+                <span className="text-xs font-black text-pink-950 block">تایبەتمەندی جوانی و تەندروستی:</span>
+                <div className="grid grid-cols-2 gap-2">
+                  {product.brand && (
+                    <div className="bg-white p-2 rounded-xl border border-pink-100 flex justify-between">
+                      <span className="text-slate-500">براند:</span>
+                      <span className="font-bold font-latin">{product.brand}</span>
+                    </div>
+                  )}
+                  {product.volume && (
+                    <div className="bg-white p-2 rounded-xl border border-pink-100 flex justify-between">
+                      <span className="text-slate-500">قەبارە / کێش:</span>
+                      <span className="font-bold font-latin">{product.volume}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -492,6 +747,16 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           </div>
         </section>
       )}
+
+      {/* Share Modal */}
+      <ShareModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        title={product.title}
+        description={`کاڵای ${product.title} بە نرخی ${effectivePrice.toLocaleString()} د.ع لە شاخ`}
+        url={`${window.location.origin}/#product-${product.id}`}
+        image={product.images[0]}
+      />
 
     </div>
   );

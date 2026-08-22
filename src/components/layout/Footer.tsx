@@ -53,7 +53,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCategory }) 
           <div className="space-y-3">
             <Logo size="lg" variant="light" showTagline={true} />
             <p className="text-xs text-slate-400 leading-relaxed pt-2">
-              شاخی (Shakh) گەورەترین پلاتفۆرمی کڕین و فرۆشتن، داواکردنی خواردن، پێداویستی مارکێت، جلوبەرگ، مۆبایل، گۆشت و شیرەمەنی، و بازاڕی کڕین و فرۆشتنی ئۆتۆمبێلە لە کوردستان و عێراق.
+              شاخ (Shakh) گەورەترین پلاتفۆرمی کڕین و فرۆشتن، داواکردنی خواردن، پێداویستی مارکێت، جلوبەرگ، مۆبایل، گۆشت و شیرەمەنی، و بازاڕی کڕین و فرۆشتنی ئۆتۆمبێلە لە کوردستان و عێراق.
             </p>
             <div className="flex items-center gap-2 pt-2">
               <span className="text-xs font-semibold text-[#F97316] font-latin">daim-post.online</span>
@@ -103,7 +103,7 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCategory }) 
             <ul className="space-y-2 text-xs text-slate-300">
               <li>
                 <button onClick={() => onNavigate('auth', 'register')} className="hover:text-[#F97316] transition-colors cursor-pointer">
-                  تۆمارکردنی فرۆشگا لە شاخی
+                  تۆمارکردنی فرۆشگا لە شاخ
                 </button>
               </li>
               <li>
@@ -135,15 +135,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCategory }) 
             <ul className="space-y-3 text-xs text-slate-300">
               <li className="flex items-center gap-2.5">
                 <MapPin className="w-4 h-4 text-[#F97316] flex-shrink-0" />
-                <span>هەولێر، شەقامی ٦٠ مەتری - کوردستان</span>
+                <span>بەردەڕەش ناو بازاڕ تەنیشت ماست فرۆشی وریا</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-[#F97316] flex-shrink-0" />
-                <span className="font-latin">0750 800 2000</span>
+                <span dir="ltr" style={{ unicodeBidi: 'isolate', direction: 'ltr' }} className="font-latin inline-block text-left font-bold">
+                  0750 479 6924
+                </span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-[#F97316] flex-shrink-0" />
-                <span className="font-latin">shakh8002@gmail.com</span>
+                <span dir="ltr" style={{ unicodeBidi: 'isolate', direction: 'ltr' }} className="font-latin inline-block text-left">
+                  shakh8002@gmail.com
+                </span>
               </li>
               <li className="pt-2">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/20 text-[#F97316] text-xs font-bold border border-orange-500/30">
@@ -158,13 +162,19 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCategory }) 
 
         {/* Bottom copyright */}
         <div className="pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>© {new Date().getFullYear()} Shakh (شاخی) - daim-post.online. هەموو مافەکان پارێزراون.</p>
+          <p>© {new Date().getFullYear()} Shakh (شاخ) - daim-post.online. هەموو مافەکان پارێزراون.</p>
           <div className="flex items-center gap-4 text-slate-400">
-            <span className="hover:text-white cursor-pointer">یاساکان و مەرجەکان</span>
+            <button onClick={() => onNavigate('user-profile')} className="hover:text-white cursor-pointer transition-colors">
+              یاساکان و مەرجەکان
+            </button>
             <span>•</span>
-            <span className="hover:text-white cursor-pointer">سیاسەتی تایبەتمەندی</span>
+            <button onClick={() => onNavigate('user-profile')} className="hover:text-white cursor-pointer transition-colors">
+              فیدباک و پێشنیارەکان
+            </button>
             <span>•</span>
-            <span className="hover:text-white cursor-pointer">پەیوەندیکردن</span>
+            <button onClick={() => onNavigate('user-profile')} className="hover:text-white cursor-pointer transition-colors">
+              پەیوەندیکردن
+            </button>
           </div>
         </div>
       </div>

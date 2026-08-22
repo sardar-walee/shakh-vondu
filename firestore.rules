@@ -1,134 +1,169 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default deny
-    match /{document=**} {
-      allow read, write: if false;
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Global Helpers
-    function isSignedIn() { return request.auth != null; }
-    function incoming() { return request.resource.data; }
-    function existing() { return resource.data; }
-    
-    function isSuperAdmin() { 
-      return isSignedIn() && (
-        request.auth.token.email == 'shakh8002@gmail.com' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin')
-      ); 
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
-    function isStoreOwner(storeId) {
-      return isSignedIn() && (
-        (resource != null && resource.data.ownerId == request.auth.uid) ||
-        (request.resource != null && request.resource.data.ownerId == request.auth.uid)
+    function getUserRole() {
+      return request.auth.token.role != null ? request.auth.token.role : 'customer';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        getUserRole() == 'admin' ||
+        request.auth.token.email == 'admin@shakh.krd' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
       );
     }
 
-    function isStoreMember(storeId) { 
-      return isSignedIn() && (
-        isSuperAdmin() ||
-        isStoreOwner(storeId) ||
-        storeId == 'demo_store_01' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.storeId == storeId)
-      ); 
+    function isSeller() {
+      return isAuthenticated() && (
+        getUserRole() == 'seller' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'seller')
+      );
     }
 
-    function isStoreOwnerOrManager(storeId) { 
-      return isSignedIn() && (
-        isSuperAdmin() ||
-        isStoreOwner(storeId) ||
-        storeId == 'demo_store_01' ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.storeId == storeId &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['owner', 'manager'])
-      ); 
+    function isDeliveryDriver() {
+      return isAuthenticated() && (
+        getUserRole() == 'delivery' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'delivery')
+      );
     }
 
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
-
-    // User Profile Rules
+    // Users Collection
     match /users/{userId} {
-      allow get: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
-      allow list: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
-      allow delete: if isSuperAdmin();
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
     }
 
-    // Store Rules
-    match /stores/{storeId} {
-      allow get: if isSignedIn() && (isStoreMember(storeId) || storeId == 'demo_store_01' || isSuperAdmin());
-      allow list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (isStoreOwnerOrManager(storeId) || isSuperAdmin());
-      allow delete: if isSuperAdmin();
-
-      // Automated Backup Config
-      match /backup_config/{docId} {
-        allow read: if isStoreMember(storeId);
-        allow write: if isStoreOwnerOrManager(storeId);
-      }
-
-      // Backup Snapshots
-      match /backup_snapshots/{snapshotId} {
-        allow read: if isStoreMember(storeId);
-        allow create: if isStoreMember(storeId);
-        allow delete: if isStoreOwnerOrManager(storeId);
-      }
-
-      // Invoices
-      match /invoices/{invoiceId} {
-        allow read: if isStoreMember(storeId);
-        allow write: if isStoreOwnerOrManager(storeId);
-      }
-
-      // Permissions Matrix Config
-      match /permissions/{roleId} {
-        allow read: if isStoreMember(storeId);
-        allow write: if isStoreOwnerOrManager(storeId);
-      }
-
-      // Staff Member Directory
-      match /staff/{staffId} {
-        allow read: if isStoreMember(storeId);
-        allow write: if isStoreOwnerOrManager(storeId);
-      }
-
-      // Supplier Directory
-      match /suppliers/{supplierId} {
-        allow read, write: if isStoreMember(storeId);
-      }
-
-      // Supplier Returns (RMA)
-      match /supplier_returns/{returnId} {
-        allow read, write: if isStoreMember(storeId);
-      }
-
-      // Audit Logs
-      match /audit_logs/{logId} {
-        allow read: if isStoreMember(storeId);
-        allow create: if isStoreMember(storeId);
-        allow update, delete: if isSuperAdmin();
-      }
-      
-      // Products, Sales, Customers, Settings & All other subcollections
-      match /{allSubcollections=**} {
-        allow read, write: if isStoreMember(storeId);
-      }
+    // Sellers Collection
+    match /sellers/{sellerId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        request.resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
     }
-    
-    // Global Collections (Coupons, Plans)
-    match /subscription_plans/{planId} {
-      allow read: if isSignedIn();
-      allow write: if isSuperAdmin();
+
+    // Products Collection
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && (isSeller() || isAdmin());
+      allow update: if isAuthenticated() && (
+        resource.data.sellerId == request.auth.uid ||
+        isSeller() ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.sellerId == request.auth.uid ||
+        isAdmin()
+      );
     }
-    
-    match /coupons/{couponId} {
-      allow read: if isSignedIn();
-      allow write: if isSuperAdmin();
+
+    // Cars Marketplace Collection
+    match /cars/{carId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        resource.data.sellerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow delete: if isAuthenticated() && (
+        resource.data.sellerId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    // Orders Collection
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid ||
+        resource.data.driverId == request.auth.uid ||
+        isDeliveryDriver() ||
+        isSeller() ||
+        isAdmin()
+      );
+      allow create: if isAuthenticated() && (
+        request.resource.data.customerId == request.auth.uid ||
+        isAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        resource.data.customerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid ||
+        resource.data.driverId == request.auth.uid ||
+        isDeliveryDriver() ||
+        isSeller() ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Reviews & Ratings Collection
+    match /reviews/{reviewId} {
+      // Anyone can read reviews for transparent ratings
+      allow read: if true;
+
+      // Authenticated users can create reviews
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.rating is number &&
+        request.resource.data.rating >= 1 &&
+        request.resource.data.rating <= 5 &&
+        request.resource.data.targetType in ['seller', 'driver', 'product'] &&
+        request.resource.data.comment is string &&
+        request.resource.data.comment.size() > 0;
+
+      // Allow authors to update review, or allow reviewed seller/driver to reply
+      allow update: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        resource.data.targetId == request.auth.uid ||
+        isSeller() ||
+        isDeliveryDriver() ||
+        isAdmin()
+      );
+
+      // Authors or admins can delete
+      allow delete: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+    }
+
+    // Loyalty Wallets
+    match /wallets/{walletId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isAdmin()
+      );
+      allow write: if isAuthenticated();
+    }
+
+    // Seller Agreements
+    match /agreements/{agreementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isSeller() || isAdmin());
+    }
+
+    // Default fallback
+    match /{document=**} {
+      allow read, write: if isAuthenticated() && isAdmin();
     }
   }
 }
+

@@ -1,119 +1,248 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { StoreProvider } from './contexts/StoreContext';
-import { PermissionsProvider, usePermissions } from './contexts/PermissionsContext';
-import { BackupProvider } from './contexts/BackupContext';
-import { OfflineProvider } from './contexts/OfflineContext';
-import { NotificationProvider } from './contexts/NotificationContext';
-import { ThemeProvider } from './contexts/ThemeContext';
-import UnauthorizedAccessCard from './components/auth/UnauthorizedAccessCard';
-import DashboardLayout from './components/layout/DashboardLayout';
-import './lib/i18n';
+import React, { useState, useEffect } from 'react';
+import { ThemeProvider } from './context/ThemeContext';
+import { LanguageProvider } from './context/LanguageContext';
+import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { MarketplaceProvider } from './context/MarketplaceContext';
+import { CartProvider } from './context/CartContext';
 
-// Pages
-import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
-import CustomerPortalPage from './pages/CustomerPortalPage';
-import OnboardingPage from './pages/OnboardingPage';
-import DashboardPage from './pages/DashboardPage';
-import POSPage from './pages/POSPage';
-import ProductsPage from './pages/ProductsPage';
-import CustomersPage from './pages/CustomersPage';
-import SalesPage from './pages/SalesPage';
-import ReportsPage from './pages/ReportsPage';
-import LoyaltyPage from './pages/LoyaltyPage';
-import SMSPage from './pages/SMSPage';
-import SettingsPage from './pages/SettingsPage';
-import SubscriptionPage from './pages/SubscriptionPage';
-import SupplierReturnsPage from './pages/SupplierReturnsPage';
-import PermissionsPage from './pages/PermissionsPage';
-import BackupsPage from './pages/BackupsPage';
-import SuperAdminPage from './pages/SuperAdminPage';
+import { Navbar } from './components/layout/Navbar';
+import { CategoryNav } from './components/layout/CategoryNav';
+import { Footer } from './components/layout/Footer';
+import { CartDrawer } from './components/cart/CartDrawer';
+import { MobileBottomNav } from './components/layout/MobileBottomNav';
+import { AppDownloadModal } from './components/common/AppDownloadModal';
 
-const ProtectedRoute: React.FC<{ 
-  children: React.ReactNode; 
-  requiredRoute?: string; 
-  requiredPermission?: string;
-}> = ({ children, requiredRoute, requiredPermission }) => {
-  const { user, profile, loading: authLoading } = useAuth();
-  const { canAccessRoute, hasPermission, loading: permsLoading, currentRole } = usePermissions();
-  const location = useLocation();
+import { HomeView } from './views/HomeView';
+import { CategoryView } from './views/CategoryView';
+import { ProductDetailView } from './views/ProductDetailView';
+import { SellerStoreView } from './views/SellerStoreView';
+import { CartCheckoutView } from './views/CartCheckoutView';
+import { OrderTrackingView } from './views/OrderTrackingView';
+import { CustomerOrdersView } from './views/CustomerOrdersView';
+import { CarMarketplaceView } from './views/CarMarketplaceView';
+import { CarDetailView } from './views/CarDetailView';
+import { PostCarAdView } from './views/PostCarAdView';
+import { SellerDashboardView } from './views/SellerDashboardView';
+import { DeliveryDashboardView } from './views/DeliveryDashboardView';
+import { AdminDashboardView } from './views/AdminDashboardView';
+import { AuthView } from './views/AuthView';
+import { FavoritesView } from './views/FavoritesView';
+import { UserProfileView } from './views/UserProfileView';
+import { NotificationCenterView } from './views/NotificationCenterView';
+import { NotificationToast } from './components/notifications/NotificationToast';
+import { ProductCategory } from './types';
 
-  if (authLoading || permsLoading) return (
-    <div className="flex items-center justify-center h-screen bg-[#F3F4F6]">
-      <div className="flex items-center gap-3 text-sm font-bold text-gray-600">
-        <div className="w-4 h-4 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin"></div>
-        <span>Loading MobiStore SaaS...</span>
-      </div>
+const MainApp: React.FC = () => {
+  const [currentView, setCurrentView] = useState<string>('home');
+  const [viewParam, setViewParam] = useState<string>('');
+  const [selectedCity, setSelectedCity] = useState<string>('');
+  const [activeCategory, setActiveCategory] = useState<ProductCategory | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showAppDownloadModal, setShowAppDownloadModal] = useState<boolean>(false);
+
+  // Scroll to top upon navigating
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentView, viewParam]);
+
+  const handleNavigate = (view: string, param?: string) => {
+    setCurrentView(view);
+    if (param !== undefined) {
+      setViewParam(param);
+    }
+  };
+
+  const handleSelectCategory = (category: ProductCategory | 'all') => {
+    setActiveCategory(category);
+    if (category === 'all') {
+      setCurrentView('home');
+    } else if (category === 'cars') {
+      setCurrentView('car-marketplace');
+    } else {
+      setCurrentView('category');
+      setViewParam(category);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0b0f19] transition-colors duration-300 flex flex-col font-sans text-slate-900 dark:text-slate-100 selection:bg-orange-500 selection:text-white pb-16 md:pb-0">
+      {/* Sticky Top Navbar */}
+      <Navbar
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        selectedCity={selectedCity}
+        onSelectCity={setSelectedCity}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+      />
+
+      {/* Category Pills Navigation with Left/Right smooth scroll controls */}
+      <CategoryNav
+        activeCategory={activeCategory}
+        onSelectCategory={handleSelectCategory}
+      />
+
+      {/* Main App Body */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        {currentView === 'home' && (
+          <HomeView
+            onNavigate={handleNavigate}
+            onSelectCategory={(cat) => handleSelectCategory(cat)}
+            selectedCity={selectedCity}
+          />
+        )}
+
+        {currentView === 'category' && (
+          <CategoryView
+            category={(viewParam as ProductCategory) || 'food'}
+            onNavigate={handleNavigate}
+            selectedCity={selectedCity}
+          />
+        )}
+
+        {currentView === 'product-detail' && (
+          <ProductDetailView
+            productId={viewParam}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'seller-store' && (
+          <SellerStoreView
+            sellerId={viewParam}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'checkout' && (
+          <CartCheckoutView
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'order-tracking' && (
+          <OrderTrackingView
+            orderId={viewParam}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'customer-orders' && (
+          <CustomerOrdersView
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'car-marketplace' && (
+          <CarMarketplaceView
+            onNavigate={handleNavigate}
+            selectedCity={selectedCity}
+          />
+        )}
+
+        {currentView === 'car-detail' && (
+          <CarDetailView
+            carId={viewParam}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'post-car-ad' && (
+          <PostCarAdView
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'seller-dashboard' && (
+          <SellerDashboardView
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'delivery-dashboard' && (
+          <DeliveryDashboardView
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'admin-dashboard' && (
+          <AdminDashboardView
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'auth' && (
+          <AuthView
+            initialMode={(viewParam as 'login' | 'register') || 'login'}
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'favorites' && (
+          <FavoritesView
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'user-profile' && (
+          <UserProfileView
+            onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'notifications' && (
+          <NotificationCenterView
+            onNavigate={handleNavigate}
+          />
+        )}
+      </main>
+
+      {/* Global Live Notification Toast */}
+      <NotificationToast onNavigate={handleNavigate} />
+
+      {/* Cart Slide-Over Drawer */}
+      <CartDrawer onCheckout={() => setCurrentView('checkout')} />
+
+      {/* Global Footer */}
+      <Footer
+        onNavigate={handleNavigate}
+        onSelectCategory={(cat) => handleSelectCategory(cat)}
+      />
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        currentView={currentView}
+        onNavigate={handleNavigate}
+        onOpenCategoriesDrawer={() => handleSelectCategory('food')}
+        onOpenAppDownload={() => setShowAppDownloadModal(true)}
+      />
+
+      {/* App Download Modal */}
+      <AppDownloadModal
+        isOpen={showAppDownloadModal}
+        onClose={() => setShowAppDownloadModal(false)}
+      />
     </div>
   );
-
-  if (!user && !profile) return <Navigate to="/login" />;
-  if (profile?.role === 'customer') return <Navigate to="/customer-portal" />;
-  if (!profile || !profile.storeId) return <Navigate to="/onboarding" />;
-
-  const targetPath = requiredRoute || location.pathname;
-  const isAllowed = canAccessRoute(targetPath);
-
-  if (!isAllowed) {
-    return (
-      <DashboardLayout>
-        <UnauthorizedAccessCard 
-          requiredPermission={requiredPermission || targetPath} 
-          routeName={targetPath} 
-        />
-      </DashboardLayout>
-    );
-  }
-
-  return <>{children}</>;
 };
 
-export default function App() {
+export function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <StoreProvider>
-        <PermissionsProvider>
-          <BackupProvider>
-            <OfflineProvider>
-              <NotificationProvider>
-                <Router>
-                <Routes>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/login" element={<LoginPage />} />
-                  <Route path="/register" element={<RegisterPage />} />
-                  <Route path="/customer-portal" element={<CustomerPortalPage />} />
-                  <Route path="/onboarding" element={<OnboardingPage />} />
-                  
-                  {/* Store RBAC Protected Routes */}
-                  <Route path="/dashboard" element={<ProtectedRoute requiredRoute="/dashboard"><DashboardPage /></ProtectedRoute>} />
-                  <Route path="/pos" element={<ProtectedRoute requiredRoute="/pos"><POSPage /></ProtectedRoute>} />
-                  <Route path="/products" element={<ProtectedRoute requiredRoute="/products"><ProductsPage /></ProtectedRoute>} />
-                  <Route path="/customers" element={<ProtectedRoute requiredRoute="/customers"><CustomersPage /></ProtectedRoute>} />
-                  <Route path="/sales" element={<ProtectedRoute requiredRoute="/sales"><SalesPage /></ProtectedRoute>} />
-                  <Route path="/reports" element={<ProtectedRoute requiredRoute="/reports"><ReportsPage /></ProtectedRoute>} />
-                  <Route path="/loyalty" element={<ProtectedRoute requiredRoute="/loyalty"><LoyaltyPage /></ProtectedRoute>} />
-                  <Route path="/sms" element={<ProtectedRoute requiredRoute="/sms"><SMSPage /></ProtectedRoute>} />
-                  <Route path="/supplier-returns" element={<ProtectedRoute requiredRoute="/supplier-returns"><SupplierReturnsPage /></ProtectedRoute>} />
-                  <Route path="/backups" element={<ProtectedRoute requiredRoute="/backups"><BackupsPage /></ProtectedRoute>} />
-                  <Route path="/permissions" element={<ProtectedRoute requiredRoute="/settings"><PermissionsPage /></ProtectedRoute>} />
-                  <Route path="/subscription" element={<ProtectedRoute requiredRoute="/subscription"><SubscriptionPage /></ProtectedRoute>} />
-                  <Route path="/super-admin" element={<ProtectedRoute requiredRoute="/dashboard"><SuperAdminPage /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute requiredRoute="/settings"><SettingsPage /></ProtectedRoute>} />
-
-                  {/* Fallback */}
-                  <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
-              </Router>
-            </NotificationProvider>
-          </OfflineProvider>
-        </BackupProvider>
-      </PermissionsProvider>
-    </StoreProvider>
-  </AuthProvider>
-</ThemeProvider>
-);
+      <LanguageProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <MarketplaceProvider>
+              <CartProvider>
+                <MainApp />
+              </CartProvider>
+            </MarketplaceProvider>
+          </NotificationProvider>
+        </AuthProvider>
+      </LanguageProvider>
+    </ThemeProvider>
+  );
 }
+
+export default App;

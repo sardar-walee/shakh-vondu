@@ -80,6 +80,7 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
     setIsSubmitting(true);
 
     const result = await postCarAd({
+      userId: currentUser?.id || 'guest-car-seller',
       title,
       brand,
       model,
@@ -103,11 +104,12 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
 
     setIsSubmitting(false);
 
-    if (result.success && result.carId) {
+    const generatedCarId = result.adId;
+    if (result.success && generatedCarId) {
       try {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       } catch (e) {}
-      onNavigate('car-detail', result.carId);
+      onNavigate('car-detail', generatedCarId);
     } else {
       setErrorMessage(result.error || 'هەڵەیەک ڕوویدا لە دانانی ڕیکلام');
     }

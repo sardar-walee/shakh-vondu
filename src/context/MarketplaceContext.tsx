@@ -11,16 +11,16 @@ import {
   CarPackageType,
   PaymentMethod,
   Review,
-  ProductCategory
+  ProductCategory,
+  DriverStats,
+  ShakhPointsAgreement,
+  UserPointsWallet,
+  PointsTransaction,
+  AgreementTier,
+  UserRole,
+  UserFeedback
 } from '../types';
-import {
-  INITIAL_PRODUCTS,
-  INITIAL_SELLERS,
-  INITIAL_CAR_ADS,
-  INITIAL_ORDERS,
-  INITIAL_REVIEWS,
-  CAR_PACKAGES
-} from '../data/seedData';
+import { CAR_PACKAGES } from '../data/seedData';
 import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
@@ -55,6 +55,8 @@ interface MarketplaceContextType {
   // Seller Actions
   updateSellerProfile: (sellerId: string, updates: Partial<SellerProfile>) => Promise<void>;
   updateSellerCommissionRate: (sellerId: string, newRate: number) => Promise<void>;
+  updateSellerCommission: (sellerId: string, newRate: number) => Promise<void>;
+  toggleSellerVerification: (sellerId: string) => Promise<void>;
   updateSellerDeliveryZone: (sellerId: string, zoneSettings: Partial<SellerProfile['deliveryZone']>) => Promise<void>;
 
   // Order Actions
@@ -72,16 +74,55 @@ interface MarketplaceContextType {
   }) => Promise<{ success: boolean; orderId?: string; orderNumber?: string; error?: string }>;
   updateOrderStatus: (orderId: string, status: OrderStatus, note?: string) => Promise<{ success: boolean; error?: string }>;
   assignDeliveryAgent: (orderId: string, agentId: string, agentName: string, agentPhone: string) => Promise<void>;
+  assignDriverToOrder: (orderId: string, driverId: string, driverName: string, driverPhone?: string) => Promise<void>;
 
   // Car Actions
   createCarAd: (adData: Omit<CarAd, 'id' | 'createdAt' | 'paymentStatus' | 'adStatus'>) => Promise<{ success: boolean; adId?: string; error?: string }>;
+  postCarAd: (adData: Omit<CarAd, 'id' | 'createdAt' | 'paymentStatus' | 'adStatus'>) => Promise<{ success: boolean; adId?: string; error?: string }>;
   processCarPayment: (adId: string, packageType: CarPackageType, paymentMethod: PaymentMethod) => Promise<{ success: boolean; txRef?: string; error?: string }>;
   updateCarAdStatus: (adId: string, status: CarAd['adStatus']) => Promise<void>;
 
   // Reviews & Favorites
   addReview: (review: Omit<Review, 'id' | 'createdAt'>) => Promise<void>;
+  submitOrderReview: (params: {
+    orderId: string;
+    orderNumber: string;
+    sellerReview?: {
+      sellerId: string;
+      sellerName: string;
+      rating: number;
+      comment: string;
+      tags?: string[];
+    };
+    driverReview?: {
+      driverId: string;
+      driverName: string;
+      rating: number;
+      comment: string;
+      tags?: string[];
+    };
+  }) => Promise<{ success: boolean; message?: string }>;
+  replyToReview: (reviewId: string, replyText: string, replierRole: 'seller' | 'driver' | 'admin') => Promise<void>;
+  deleteReview: (reviewId: string) => Promise<void>;
+  getSellerReviews: (sellerId: string) => Review[];
+  getDriverReviews: (driverId: string) => Review[];
+  getProductReviews: (productId: string) => Review[];
   toggleFavoriteProduct: (productId: string) => void;
   toggleFavoriteSeller: (sellerId: string) => void;
+
+  // Shakh & Business Owner Points Agreement & Role Points System
+  shakhAgreements: ShakhPointsAgreement[];
+  pointsTransactions: PointsTransaction[];
+  getSellerAgreement: (sellerId: string) => ShakhPointsAgreement;
+  updateSellerAgreement: (sellerId: string, agreementData: Partial<ShakhPointsAgreement>) => void;
+  getUserPointsWallet: (userId: string, role?: UserRole) => UserPointsWallet;
+  getUserPointsHistory: (userId: string) => PointsTransaction[];
+  redeemPoints: (userId: string, pointsToRedeem: number, rewardDescription: string, role?: UserRole) => { success: boolean; message: string };
+
+  // User Feedbacks & Project Improvement Suggestions
+  userFeedbacks: UserFeedback[];
+  submitUserFeedback: (feedback: Omit<UserFeedback, 'id' | 'createdAt' | 'status'>) => Promise<{ success: boolean; message: string }>;
+  updateFeedbackStatus: (feedbackId: string, status: UserFeedback['status'], adminResponse?: string) => Promise<void>;
 
   // Filter Helpers
   getProductsByCategory: (category: ProductCategory) => Product[];
@@ -90,6 +131,8 @@ interface MarketplaceContextType {
   getCustomerOrders: (customerId: string) => Order[];
   getDeliveryOrders: (agentId?: string) => Order[];
   getSellerWallet: (sellerId: string) => SellerWallet;
+  driverStatsMap: Record<string, DriverStats>;
+  getDriverStats: (driverId: string) => DriverStats;
 
   // Global Analytics for Super Admin
   platformStats: {
@@ -110,96 +153,99 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const { currentUser, isSuperAdmin, sellerCategory } = useAuth();
   const { addNotification } = useNotification();
 
-  // State initialization
+  // State initialization - no mock seed fallbacks
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('shakh_products');
-    return saved ? JSON.parse(saved) : INITIAL_PRODUCTS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [sellers, setSellers] = useState<SellerProfile[]>(() => {
     const saved = localStorage.getItem('shakh_sellers');
-    return saved ? JSON.parse(saved) : INITIAL_SELLERS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [carAds, setCarAds] = useState<CarAd[]>(() => {
     const saved = localStorage.getItem('shakh_car_ads');
-    return saved ? JSON.parse(saved) : INITIAL_CAR_ADS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [orders, setOrders] = useState<Order[]>(() => {
     const saved = localStorage.getItem('shakh_orders');
-    return saved ? JSON.parse(saved) : INITIAL_ORDERS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [commissionTransactions, setCommissionTransactions] = useState<CommissionTransaction[]>(() => {
     const saved = localStorage.getItem('shakh_commissions');
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        id: 'comm-1',
-        orderId: 'ord-1001',
-        orderNumber: 'SHK-8901',
-        sellerId: 'store-rest-1',
-        sellerName: 'چێشتخانەی دیلان و کەباب',
-        orderTotal: 52500,
-        commissionRate: 10,
-        commissionAmount: 5250,
-        sellerAmount: 47250,
-        status: 'finalized',
-        createdAt: '2026-02-18T13:45:00Z'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [sellerWallets, setSellerWallets] = useState<Record<string, SellerWallet>>(() => {
     const saved = localStorage.getItem('shakh_wallets');
-    if (saved) return JSON.parse(saved);
-    return {
-      'store-rest-1': {
-        sellerId: 'store-rest-1',
-        totalGrossSales: 52500,
-        totalCommissionPaid: 5250,
-        totalNetEarnings: 47250,
-        availableBalance: 47250,
-        pendingBalance: 0,
-        lastPayoutDate: '2026-02-18T13:45:00Z'
-      }
-    };
+    return saved ? JSON.parse(saved) : {};
   });
 
   const [carPayments, setCarPayments] = useState<CarPayment[]>(() => {
     const saved = localStorage.getItem('shakh_car_payments');
-    if (saved) return JSON.parse(saved);
-    return [
-      {
-        id: 'pay-1',
-        userId: 'customer-1',
-        carAdId: 'car-ad-1',
-        carTitle: 'تۆیۆتا لاندکرۆزەر VXR مۆدێل ٢٠٢٤ بەسفر',
-        packageType: '1_month',
-        amountIqd: 10000,
-        currency: 'IQD',
-        status: 'paid',
-        paymentMethod: 'fib',
-        transactionReference: 'FIB-TX-984321',
-        createdAt: '2026-02-01T00:00:00Z'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [reviews, setReviews] = useState<Review[]>(() => {
     const saved = localStorage.getItem('shakh_reviews');
-    return saved ? JSON.parse(saved) : INITIAL_REVIEWS;
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('shakh_fav_products');
-    return saved ? JSON.parse(saved) : ['prod-food-1', 'prod-electro-1'];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [favoriteSellerIds, setFavoriteSellerIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('shakh_fav_sellers');
-    return saved ? JSON.parse(saved) : ['store-rest-1'];
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [driverStatsMap, setDriverStatsMap] = useState<Record<string, DriverStats>>(() => {
+    const saved = localStorage.getItem('shakh_driver_stats');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return {};
+  });
+
+  // Shakh & Business Owner Points Agreements
+  const [shakhAgreements, setShakhAgreements] = useState<ShakhPointsAgreement[]>(() => {
+    const saved = localStorage.getItem('shakh_agreements');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+
+  // User Points Wallets
+  const [userPointsWallets, setUserPointsWallets] = useState<Record<string, UserPointsWallet>>(() => {
+    const saved = localStorage.getItem('shakh_user_points');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return {};
+  });
+
+  // Points Ledger Transactions
+  const [pointsTransactions, setPointsTransactions] = useState<PointsTransaction[]>(() => {
+    const saved = localStorage.getItem('shakh_points_ledger');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+
+  // User Feedback & Suggestions State
+  const [userFeedbacks, setUserFeedbacks] = useState<UserFeedback[]>(() => {
+    const saved = localStorage.getItem('shakh_user_feedbacks');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
   });
 
   // Sync to local storage
@@ -213,82 +259,110 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   useEffect(() => { localStorage.setItem('shakh_reviews', JSON.stringify(reviews)); }, [reviews]);
   useEffect(() => { localStorage.setItem('shakh_fav_products', JSON.stringify(favoriteProductIds)); }, [favoriteProductIds]);
   useEffect(() => { localStorage.setItem('shakh_fav_sellers', JSON.stringify(favoriteSellerIds)); }, [favoriteSellerIds]);
+  useEffect(() => { localStorage.setItem('shakh_driver_stats', JSON.stringify(driverStatsMap)); }, [driverStatsMap]);
+  useEffect(() => { localStorage.setItem('shakh_agreements', JSON.stringify(shakhAgreements)); }, [shakhAgreements]);
+  useEffect(() => { localStorage.setItem('shakh_user_points', JSON.stringify(userPointsWallets)); }, [userPointsWallets]);
+  useEffect(() => { localStorage.setItem('shakh_points_ledger', JSON.stringify(pointsTransactions)); }, [pointsTransactions]);
+  useEffect(() => { localStorage.setItem('shakh_user_feedbacks', JSON.stringify(userFeedbacks)); }, [userFeedbacks]);
 
-  // Firebase Firestore Real-Time Subscriptions & Auto-Seeding
+  // Firebase Firestore Real-Time Subscriptions
   useEffect(() => {
     let unsubProducts: () => void;
     let unsubSellers: () => void;
     let unsubOrders: () => void;
     let unsubCars: () => void;
+    let unsubReviews: () => void;
+    let unsubFeedbacks: () => void;
 
     const setupFirestoreSync = async () => {
       try {
         // 1. Products Listener
         const prodCol = collection(db, 'products');
-        const prodSnap = await getDocs(prodCol);
-        if (prodSnap.empty) {
-          // Auto-seed initial products to cloud
-          INITIAL_PRODUCTS.forEach(async (p) => {
-            await setDoc(doc(db, 'products', p.id), p);
-          });
-        }
-
-        unsubProducts = onSnapshot(prodCol, (snapshot) => {
-          if (!snapshot.empty) {
+        unsubProducts = onSnapshot(
+          prodCol,
+          (snapshot) => {
             const list: Product[] = [];
-            snapshot.forEach(docSnap => list.push(docSnap.data() as Product));
+            snapshot.forEach((docSnap) => list.push(docSnap.data() as Product));
             setProducts(list);
+          },
+          (err) => {
+            console.warn('Products onSnapshot error:', err);
           }
-        });
+        );
 
         // 2. Sellers Listener
         const sellersCol = collection(db, 'sellers');
-        const sellersSnap = await getDocs(sellersCol);
-        if (sellersSnap.empty) {
-          INITIAL_SELLERS.forEach(async (s) => {
-            await setDoc(doc(db, 'sellers', s.id), s);
-          });
-        }
-
-        unsubSellers = onSnapshot(sellersCol, (snapshot) => {
-          if (!snapshot.empty) {
+        unsubSellers = onSnapshot(
+          sellersCol,
+          (snapshot) => {
             const list: SellerProfile[] = [];
-            snapshot.forEach(docSnap => list.push(docSnap.data() as SellerProfile));
+            snapshot.forEach((docSnap) => list.push(docSnap.data() as SellerProfile));
             setSellers(list);
+          },
+          (err) => {
+            console.warn('Sellers onSnapshot error:', err);
           }
-        });
+        );
 
         // 3. Orders Listener
         const ordersCol = collection(db, 'orders');
-        unsubOrders = onSnapshot(ordersCol, (snapshot) => {
-          if (!snapshot.empty) {
+        unsubOrders = onSnapshot(
+          ordersCol,
+          (snapshot) => {
             const list: Order[] = [];
-            snapshot.forEach(docSnap => list.push(docSnap.data() as Order));
-            // sort descending
+            snapshot.forEach((docSnap) => list.push(docSnap.data() as Order));
             list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setOrders(list);
+          },
+          (err) => {
+            console.warn('Orders onSnapshot error:', err);
           }
-        });
+        );
 
         // 4. Cars Listener
         const carsCol = collection(db, 'cars');
-        const carsSnap = await getDocs(carsCol);
-        if (carsSnap.empty) {
-          INITIAL_CAR_ADS.forEach(async (c) => {
-            await setDoc(doc(db, 'cars', c.id), c);
-          });
-        }
-
-        unsubCars = onSnapshot(carsCol, (snapshot) => {
-          if (!snapshot.empty) {
+        unsubCars = onSnapshot(
+          carsCol,
+          (snapshot) => {
             const list: CarAd[] = [];
-            snapshot.forEach(docSnap => list.push(docSnap.data() as CarAd));
+            snapshot.forEach((docSnap) => list.push(docSnap.data() as CarAd));
             list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setCarAds(list);
+          },
+          (err) => {
+            console.warn('Cars onSnapshot error:', err);
           }
-        });
+        );
+
+        // 5. Reviews Listener
+        const reviewsCol = collection(db, 'reviews');
+        unsubReviews = onSnapshot(
+          reviewsCol,
+          (snapshot) => {
+            const list: Review[] = [];
+            snapshot.forEach((docSnap) => list.push(docSnap.data() as Review));
+            setReviews(list);
+          },
+          (err) => {
+            console.warn('Reviews onSnapshot error:', err);
+          }
+        );
+
+        // 6. Feedbacks Listener
+        const feedbacksCol = collection(db, 'feedbacks');
+        unsubFeedbacks = onSnapshot(
+          feedbacksCol,
+          (snapshot) => {
+            const list: UserFeedback[] = [];
+            snapshot.forEach((docSnap) => list.push(docSnap.data() as UserFeedback));
+            setUserFeedbacks(list);
+          },
+          (err) => {
+            console.warn('Feedbacks onSnapshot error:', err);
+          }
+        );
       } catch (err) {
-        console.log('Firestore real-time sync initializing fallback:', err);
+        console.error('Firestore real-time sync init error:', err);
       }
     };
 
@@ -299,10 +373,12 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (unsubSellers) unsubSellers();
       if (unsubOrders) unsubOrders();
       if (unsubCars) unsubCars();
+      if (unsubReviews) unsubReviews();
+      if (unsubFeedbacks) unsubFeedbacks();
     };
   }, []);
 
-  // Product Management with Category Enforcement & Cloud Sync
+  // Product Management
   const addProduct = async (productData: Omit<Product, 'id' | 'createdAt'>): Promise<{ success: boolean; error?: string }> => {
     if (!currentUser) return { success: false, error: 'تکایە سەرەتا بچۆ ژوورەوە' };
 
@@ -321,14 +397,12 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     setProducts(prev => [newProduct, ...prev]);
 
-    // Firestore Cloud Save
     try {
       await setDoc(doc(db, 'products', newProduct.id), newProduct);
     } catch (e) {
       console.log('Firestore addProduct notice:', e);
     }
 
-    // Supabase Cloud Save
     if (isSupabaseConfigured) {
       try {
         await supabase.from('products').insert([{
@@ -391,7 +465,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return { success: true };
   };
 
-  // Seller Management & Cloud Sync
+  // Seller Management
   const updateSellerProfile = async (sellerId: string, updates: Partial<SellerProfile>) => {
     setSellers(prev => prev.map(s => (s.id === sellerId ? { ...s, ...updates } : s)));
     try {
@@ -453,12 +527,24 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     addNotification({
       userId: sellerId,
       title: 'گۆڕانکاری لە ڕێژەی کۆمسیۆن',
-      message: `ڕێژەی کۆمسیۆنی شاخی بۆ فرۆشگاکەت گۆڕدرا بۆ ${newRate}%.`,
+      message: `ڕێژەی کۆمسیۆنی شاخ بۆ فرۆشگاکەت گۆڕدرا بۆ ${newRate}%.`,
       type: 'commission'
     });
   };
 
-  // Orders & Cloud Persistence
+  const updateSellerCommission = updateSellerCommissionRate;
+
+  const toggleSellerVerification = async (sellerId: string) => {
+    const seller = sellers.find(s => s.id === sellerId);
+    if (!seller) return;
+    const newStatus = !seller.isVerified;
+    setSellers(prev => prev.map(s => (s.id === sellerId ? { ...s, isVerified: newStatus } : s)));
+    try {
+      await updateDoc(doc(db, 'sellers', sellerId), { isVerified: newStatus });
+    } catch (e) {}
+  };
+
+  // Orders
   const createOrder = async (orderData: {
     items: Order['items'];
     subtotal: number;
@@ -481,6 +567,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const orderNumber = `SHK-${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrderId = `ord-${Date.now()}`;
+    const calculatedCommissionAmount = Math.round((orderData.subtotal * seller.commissionRate) / 100);
+    const calculatedSellerAmount = Math.round(orderData.subtotal - calculatedCommissionAmount);
 
     const newOrder: Order = {
       id: newOrderId,
@@ -490,6 +578,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       customerPhone: currentUser.phone || '07501234567',
       customerCity: orderData.deliveryCity || currentUser.city || 'Erbil (هەولێر)',
       customerAddress: orderData.deliveryAddress || currentUser.address || 'ناوبازاڕ',
+      deliveryCity: orderData.deliveryCity || currentUser.city || 'Erbil (هەولێر)',
+      deliveryAddress: orderData.deliveryAddress || currentUser.address || 'ناوبازاڕ',
       customerNotes: orderData.customerNotes,
       sellerId: seller.id,
       sellerName: seller.storeName,
@@ -507,8 +597,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       isPaid: orderData.paymentMethod !== 'cash_on_delivery',
       commissionCalculated: true,
       commissionRate: seller.commissionRate,
-      commissionAmount: Math.round((orderData.subtotal * seller.commissionRate) / 100),
-      sellerAmount: Math.round(orderData.subtotal - ((orderData.subtotal * seller.commissionRate) / 100)),
+      commissionAmount: calculatedCommissionAmount,
+      sellerAmount: calculatedSellerAmount,
+      sellerEarnings: calculatedSellerAmount,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       statusTimeline: [
@@ -522,14 +613,12 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     setOrders(prev => [newOrder, ...prev]);
 
-    // Save to Firestore Orders collection
     try {
       await setDoc(doc(db, 'orders', newOrder.id), newOrder);
     } catch (e) {
       console.log('Firestore createOrder notice:', e);
     }
 
-    // Save to Supabase if configured
     if (isSupabaseConfigured) {
       try {
         await supabase.from('orders').insert([{
@@ -552,7 +641,6 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       } catch (e) {}
     }
 
-    // Send notifications
     addNotification({
       userId: currentUser.id,
       title: 'داواکاری نوێ تۆمارکرا',
@@ -581,7 +669,6 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       await updateDoc(doc(db, 'orders', orderId), { status, updatedAt: new Date().toISOString() });
     } catch (e) {}
 
-    // When status changes to delivered, finalize commission & wallet
     if (status === 'delivered') {
       const commTx: CommissionTransaction = {
         id: `comm-${Date.now()}`,
@@ -592,7 +679,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         orderTotal: order.subtotal,
         commissionRate: order.commissionRate,
         commissionAmount: order.commissionAmount,
-        sellerAmount: order.sellerEarnings,
+        sellerAmount: order.sellerAmount || (order.subtotal - order.commissionAmount),
         status: 'finalized',
         createdAt: new Date().toISOString()
       };
@@ -607,17 +694,166 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           availableBalance: 0,
           pendingBalance: 0
         };
+        const earned = order.sellerAmount || (order.subtotal - order.commissionAmount);
         return {
           ...prev,
           [order.sellerId]: {
             ...curr,
             totalGrossSales: curr.totalGrossSales + order.subtotal,
             totalCommissionPaid: curr.totalCommissionPaid + order.commissionAmount,
-            totalNetEarnings: curr.totalNetEarnings + order.sellerEarnings,
-            availableBalance: curr.availableBalance + order.sellerEarnings,
+            totalNetEarnings: curr.totalNetEarnings + earned,
+            availableBalance: curr.availableBalance + earned,
             lastPayoutDate: new Date().toISOString()
           }
         };
+      });
+
+      // Shakh & Business Owner Points Agreement Processing
+      const sellerAgreement = shakhAgreements.find(a => a.sellerId === order.sellerId) || {
+        id: `ag-${order.sellerId}`,
+        sellerId: order.sellerId,
+        sellerName: order.sellerName,
+        tier: 'Standard' as AgreementTier,
+        customerRewardPercent: 2,
+        sellerRewardPercent: 1.5,
+        driverBonusPoints: 10,
+        shakhCommissionDiscount: 0.5,
+        agreementDate: new Date().toISOString().split('T')[0],
+        status: 'active' as const
+      };
+
+      // 1. Calculate points per role according to Shakh & Merchant agreement
+      const customerPointsEarned = Math.max(10, Math.round((order.subtotal * sellerAgreement.customerRewardPercent) / 100));
+      const sellerPointsEarned = Math.max(10, Math.round((order.subtotal * sellerAgreement.sellerRewardPercent) / 100));
+
+      // Shakh Law 20% Delivery Fee Cut & Driver Captain Points Allocation
+      const dId = order.driverId || order.deliveryAgentId || currentUser?.id || 'rebaz-driver';
+      const delFee = order.deliveryFee && order.deliveryFee > 0 ? order.deliveryFee : 3000;
+      const shakhDeliveryCut = Math.round(delFee * 0.20); // 20% cut for Shakh platform
+      const driverNetEarnings = Math.round(delFee * 0.80);  // 80% net for driver
+      const driverPointsEarned = 25 + Math.round(delFee / 500) + (sellerAgreement.driverBonusPoints || 10);
+
+      // Update Driver Stats
+      setDriverStatsMap(prev => {
+        const curr = prev[dId] || {
+          driverId: dId,
+          totalDeliveries: 0,
+          totalDeliveryFees: 0,
+          totalShakhCommission: 0,
+          totalNetEarnings: 0,
+          points: 0
+        };
+        return {
+          ...prev,
+          [dId]: {
+            ...curr,
+            totalDeliveries: curr.totalDeliveries + 1,
+            totalDeliveryFees: curr.totalDeliveryFees + delFee,
+            totalShakhCommission: curr.totalShakhCommission + shakhDeliveryCut,
+            totalNetEarnings: curr.totalNetEarnings + driverNetEarnings,
+            points: curr.points + driverPointsEarned,
+            lastUpdated: new Date().toISOString()
+          }
+        };
+      });
+
+      // Update User Points Wallets for all 3 roles
+      const now = new Date().toISOString();
+      setUserPointsWallets(prev => {
+        const cWallet = prev[order.customerId] || { userId: order.customerId, role: 'customer' as UserRole, totalPoints: 0, lifetimeEarnedPoints: 0, lifetimeRedeemedPoints: 0 };
+        const sWallet = prev[order.sellerId] || { userId: order.sellerId, role: 'seller' as UserRole, totalPoints: 0, lifetimeEarnedPoints: 0, lifetimeRedeemedPoints: 0 };
+        const dWallet = prev[dId] || { userId: dId, role: 'delivery_agent' as UserRole, totalPoints: 0, lifetimeEarnedPoints: 0, lifetimeRedeemedPoints: 0 };
+
+        return {
+          ...prev,
+          [order.customerId]: {
+            ...cWallet,
+            totalPoints: cWallet.totalPoints + customerPointsEarned,
+            lifetimeEarnedPoints: cWallet.lifetimeEarnedPoints + customerPointsEarned,
+            lastUpdated: now
+          },
+          [order.sellerId]: {
+            ...sWallet,
+            totalPoints: sWallet.totalPoints + sellerPointsEarned,
+            lifetimeEarnedPoints: sWallet.lifetimeEarnedPoints + sellerPointsEarned,
+            lastUpdated: now
+          },
+          [dId]: {
+            ...dWallet,
+            totalPoints: dWallet.totalPoints + driverPointsEarned,
+            lifetimeEarnedPoints: dWallet.lifetimeEarnedPoints + driverPointsEarned,
+            lastUpdated: now
+          }
+        };
+      });
+
+      // Ledger Transactions for all 3 roles
+      const txCustomer: PointsTransaction = {
+        id: `pt-c-${Date.now()}`,
+        userId: order.customerId,
+        userName: order.customerName,
+        role: 'customer',
+        points: customerPointsEarned,
+        type: 'order_reward',
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        sellerId: order.sellerId,
+        sellerName: order.sellerName,
+        description: `پۆینتی شڕینی بەپێی ڕێککەوتنی شاخ و ${order.sellerName} (${sellerAgreement.customerRewardPercent}٪)`,
+        createdAt: now
+      };
+
+      const txSeller: PointsTransaction = {
+        id: `pt-s-${Date.now()}`,
+        userId: order.sellerId,
+        userName: order.sellerName,
+        role: 'seller',
+        points: sellerPointsEarned,
+        type: 'seller_agreement_bonus',
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        sellerId: order.sellerId,
+        sellerName: order.sellerName,
+        description: `پۆینتی گەشەی خاوەن کار بەپێی ڕێککەوتنی ئاستی ${sellerAgreement.tier}ی شاخ (${sellerAgreement.sellerRewardPercent}٪)`,
+        createdAt: now
+      };
+
+      const txDriver: PointsTransaction = {
+        id: `pt-d-${Date.now()}`,
+        userId: dId,
+        role: 'delivery_agent',
+        points: driverPointsEarned,
+        type: 'driver_delivery',
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        sellerId: order.sellerId,
+        sellerName: order.sellerName,
+        description: `پۆینتی گەیاندنی کاپتن بەپێی ڕێککەوتنی شاخ (+${sellerAgreement.driverBonusPoints} پۆینتی بۆنس)`,
+        createdAt: now
+      };
+
+      setPointsTransactions(prev => [txCustomer, txSeller, txDriver, ...prev]);
+
+      // Notifications for all roles
+      addNotification({
+        userId: order.customerId,
+        title: 'پۆینتی پاداشتی شاخ و خاوەن کار! 🎁',
+        message: `پیرۆزە! +${customerPointsEarned} پۆینت بۆ هەژمارەکەت زیادکرا لەسەر کڕینی داواکاری ${order.orderNumber} لە ${order.sellerName} (بەپێی ڕێککەوتنی شاخ).`,
+        type: 'points'
+      });
+
+      addNotification({
+        userId: order.sellerId,
+        title: 'پۆینتی گەشەی خاوەن کار! 📈',
+        message: `+${sellerPointsEarned} پۆینت بۆ هەژماری فرۆشیارەکەت زیادکرا بەپێی ڕێککەوتنی شاخ و خاوەن کار (ئاستی ${sellerAgreement.tier}).`,
+        type: 'points'
+      });
+
+      addNotification({
+        userId: dId,
+        title: 'پۆینتی کاپتن زیادکرا! 🛵',
+        message: `داواکاری ${order.orderNumber} بە سەرکەوتوویی گەیەندرا. +${driverPointsEarned} پۆینتی شاخ بەدەستهات (قازانجی خاوێن: ${driverNetEarnings.toLocaleString()} د.ع).`,
+        type: 'delivery'
       });
     }
 
@@ -637,6 +873,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       deliveryAgentId: agentId,
       deliveryAgentName: agentName,
       deliveryAgentPhone: agentPhone,
+      driverId: agentId,
+      driverName: agentName,
+      driverPhone: agentPhone,
       status: 'picked_up'
     } : o)));
 
@@ -645,6 +884,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         deliveryAgentId: agentId,
         deliveryAgentName: agentName,
         deliveryAgentPhone: agentPhone,
+        driverId: agentId,
+        driverName: agentName,
+        driverPhone: agentPhone,
         status: 'picked_up'
       });
     } catch (e) {}
@@ -657,16 +899,30 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     });
   };
 
-  // Car Actions & Cloud Persistence
+  const assignDriverToOrder = async (orderId: string, driverId: string, driverName: string, driverPhone?: string) => {
+    return assignDeliveryAgent(orderId, driverId, driverName, driverPhone || '');
+  };
+
+  // Car Actions
   const createCarAd = async (adData: Omit<CarAd, 'id' | 'createdAt' | 'paymentStatus' | 'adStatus'>): Promise<{ success: boolean; adId?: string; error?: string }> => {
     if (!currentUser) return { success: false, error: 'تکایە سەرەتا بچۆ ژوورەوە' };
 
+    const durationDays = adData.packageType === '1_month' ? 30 : adData.packageType === '15_days' ? 15 : 7;
+    const now = Date.now();
+    const startDate = new Date(now).toISOString();
+    const expirationDate = new Date(now + durationDays * 24 * 60 * 60 * 1000).toISOString();
+
     const newAd: CarAd = {
       ...adData,
-      id: `car-${Date.now()}`,
+      id: `car-${now}`,
       adStatus: 'active',
       paymentStatus: 'paid',
-      createdAt: new Date().toISOString()
+      startDate,
+      expirationDate,
+      viewsCount: 1,
+      likesCount: 0,
+      sharesCount: 0,
+      createdAt: startDate
     };
 
     setCarAds(prev => [newAd, ...prev]);
@@ -705,6 +961,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     return { success: true, adId: newAd.id };
   };
+
+  const postCarAd = createCarAd;
 
   const processCarPayment = async (adId: string, packageType: CarPackageType, paymentMethod: PaymentMethod): Promise<{ success: boolean; txRef?: string; error?: string }> => {
     const pkg = CAR_PACKAGES.find(p => p.id === packageType) || CAR_PACKAGES[0];
@@ -754,13 +1012,221 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const addReview = async (reviewData: Omit<Review, 'id' | 'createdAt'>) => {
     const newReview: Review = {
       ...reviewData,
-      id: `rev-${Date.now()}`,
+      id: `rev-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       createdAt: new Date().toISOString()
     };
     setReviews(prev => [newReview, ...prev]);
     try {
       await setDoc(doc(db, 'reviews', newReview.id), newReview);
     } catch (e) {}
+  };
+
+  const submitOrderReview = async (params: {
+    orderId: string;
+    orderNumber: string;
+    sellerReview?: {
+      sellerId: string;
+      sellerName: string;
+      rating: number;
+      comment: string;
+      tags?: string[];
+    };
+    driverReview?: {
+      driverId: string;
+      driverName: string;
+      rating: number;
+      comment: string;
+      tags?: string[];
+    };
+  }): Promise<{ success: boolean; message?: string }> => {
+    const now = new Date().toISOString();
+    const newReviewsToAdd: Review[] = [];
+
+    // 1. Process Seller Review
+    if (params.sellerReview) {
+      const sRev: Review = {
+        id: `rev-s-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        orderId: params.orderId,
+        orderNumber: params.orderNumber,
+        userId: currentUser?.id || 'customer-1',
+        userName: currentUser?.fullName || 'کڕیاری شاخ',
+        userAvatar: currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+        targetId: params.sellerReview.sellerId,
+        targetType: 'seller',
+        targetName: params.sellerReview.sellerName,
+        rating: params.sellerReview.rating,
+        comment: params.sellerReview.comment,
+        tags: params.sellerReview.tags || [],
+        createdAt: now
+      };
+      newReviewsToAdd.push(sRev);
+
+      // Notify seller
+      addNotification({
+        userId: params.sellerReview.sellerId,
+        title: 'هەڵسەنگاندنی نوێ لە کڕیارەوە ⭐',
+        message: `کڕیارێک بۆ داواکاری ${params.orderNumber} هەڵسەنگاندنی ${params.sellerReview.rating} ئەستێرەی پێداویت: "${params.sellerReview.comment.slice(0, 45)}..."`,
+        type: 'order'
+      });
+    }
+
+    // 2. Process Driver Review
+    if (params.driverReview) {
+      const dRev: Review = {
+        id: `rev-d-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        orderId: params.orderId,
+        orderNumber: params.orderNumber,
+        userId: currentUser?.id || 'customer-1',
+        userName: currentUser?.fullName || 'کڕیاری شاخ',
+        userAvatar: currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+        targetId: params.driverReview.driverId,
+        targetType: 'driver',
+        targetName: params.driverReview.driverName,
+        rating: params.driverReview.rating,
+        comment: params.driverReview.comment,
+        tags: params.driverReview.tags || [],
+        createdAt: now
+      };
+      newReviewsToAdd.push(dRev);
+
+      // Notify driver
+      addNotification({
+        userId: params.driverReview.driverId,
+        title: 'پێداچوونەوەی گەیاندن 🛵',
+        message: `کڕیار ڕای خۆی لەسەر گەیاندنی داواکاری ${params.orderNumber} تۆمارکرد (${params.driverReview.rating} ئەستێرە).`,
+        type: 'delivery'
+      });
+    }
+
+    // Update Reviews state & Firestore
+    if (newReviewsToAdd.length > 0) {
+      setReviews(prev => [...newReviewsToAdd, ...prev]);
+      for (const rev of newReviewsToAdd) {
+        try {
+          await setDoc(doc(db, 'reviews', rev.id), rev);
+        } catch (e) {}
+      }
+    }
+
+    // 3. Mark Order as Reviewed
+    setOrders(prev => prev.map(o => {
+      if (o.id === params.orderId) {
+        return {
+          ...o,
+          isReviewedSeller: params.sellerReview ? true : o.isReviewedSeller,
+          isReviewedDriver: params.driverReview ? true : o.isReviewedDriver,
+          sellerRating: params.sellerReview ? params.sellerReview.rating : o.sellerRating,
+          driverRating: params.driverReview ? params.driverReview.rating : o.driverRating,
+          sellerReviewComment: params.sellerReview ? params.sellerReview.comment : o.sellerReviewComment,
+          driverReviewComment: params.driverReview ? params.driverReview.comment : o.driverReviewComment,
+          updatedAt: now
+        };
+      }
+      return o;
+    }));
+
+    try {
+      await updateDoc(doc(db, 'orders', params.orderId), {
+        isReviewedSeller: true,
+        isReviewedDriver: true,
+        sellerRating: params.sellerReview?.rating || 5,
+        driverRating: params.driverReview?.rating || 5,
+        sellerReviewComment: params.sellerReview?.comment || '',
+        driverReviewComment: params.driverReview?.comment || '',
+        updatedAt: now
+      });
+    } catch (e) {}
+
+    // 4. Award bonus +15 loyalty points to customer for reviewing
+    if (currentUser) {
+      setUserPointsWallets(prev => {
+        const curr = prev[currentUser.id] || {
+          userId: currentUser.id,
+          role: 'customer' as UserRole,
+          totalPoints: 0,
+          lifetimeEarnedPoints: 0,
+          lifetimeRedeemedPoints: 0
+        };
+        return {
+          ...prev,
+          [currentUser.id]: {
+            ...curr,
+            totalPoints: curr.totalPoints + 15,
+            lifetimeEarnedPoints: curr.lifetimeEarnedPoints + 15,
+            lastUpdated: now
+          }
+        };
+      });
+
+      const bonusTx: PointsTransaction = {
+        id: `pt-rev-${Date.now()}`,
+        userId: currentUser.id,
+        userName: currentUser.fullName,
+        role: 'customer',
+        points: 15,
+        type: 'order_reward',
+        orderId: params.orderId,
+        orderNumber: params.orderNumber,
+        description: `پاداشتی هەڵسەنگاندنی داواکاری ${params.orderNumber} (دیاری شاخ)`,
+        createdAt: now
+      };
+      setPointsTransactions(prev => [bonusTx, ...prev]);
+
+      addNotification({
+        userId: currentUser.id,
+        title: 'پاداشتی هەڵسەنگاندن وەرگیرا! 🎁',
+        message: `سوپاس بۆ نووسینی ڕا و هەڵسەنگاندنەکەت. +١٥ پۆینتی دیاری شاخ بۆ هەژمارەکەت زیادکرا!`,
+        type: 'points'
+      });
+    }
+
+    return { success: true, message: 'هەڵسەنگاندنەکەت بە سەرکەوتوویی تۆمارکرا.' };
+  };
+
+  const replyToReview = async (reviewId: string, replyText: string, replierRole: 'seller' | 'driver' | 'admin') => {
+    const now = new Date().toISOString();
+    setReviews(prev => prev.map(r => {
+      if (r.id === reviewId) {
+        if (replierRole === 'seller') {
+          return {
+            ...r,
+            sellerReply: { comment: replyText, createdAt: now }
+          };
+        } else if (replierRole === 'driver') {
+          return {
+            ...r,
+            driverReply: { comment: replyText, createdAt: now }
+          };
+        }
+      }
+      return r;
+    }));
+
+    try {
+      const updateData = replierRole === 'seller' 
+        ? { sellerReply: { comment: replyText, createdAt: now } }
+        : { driverReply: { comment: replyText, createdAt: now } };
+      await updateDoc(doc(db, 'reviews', reviewId), updateData);
+    } catch (e) {}
+  };
+
+  const deleteReview = async (reviewId: string) => {
+    setReviews(prev => prev.filter(r => r.id !== reviewId));
+    try {
+      await deleteDoc(doc(db, 'reviews', reviewId));
+    } catch (e) {}
+  };
+
+  const getSellerReviews = (sId: string): Review[] => {
+    return reviews.filter(r => r.targetId === sId && r.targetType === 'seller');
+  };
+
+  const getDriverReviews = (dId: string): Review[] => {
+    return reviews.filter(r => (r.targetType === 'driver' || r.targetType === 'delivery_partner') && (r.targetId === dId || dId.includes('rebaz') || r.targetId.includes('rebaz') || r.targetId === 'delivery-1'));
+  };
+
+  const getProductReviews = (productId: string): Review[] => {
+    return reviews.filter(r => r.targetId === productId && r.targetType === 'product');
   };
 
   const toggleFavoriteProduct = (productId: string) => {
@@ -781,8 +1247,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const getSellerOrders = (sId: string) => orders.filter(o => o.sellerId === sId);
   const getCustomerOrders = (cId: string) => orders.filter(o => o.customerId === cId);
   const getDeliveryOrders = (agentId?: string) => {
-    if (agentId) return orders.filter(o => o.deliveryAgentId === agentId);
-    return orders.filter(o => ['ready_for_pickup', 'picked_up', 'out_for_delivery'].includes(o.status));
+    if (agentId) return orders.filter(o => o.deliveryAgentId === agentId || o.driverId === agentId);
+    return orders.filter(o => ['ready', 'ready_for_pickup', 'picked_up', 'on_the_way'].includes(o.status));
   };
   const getSellerWallet = (sId: string): SellerWallet => {
     return sellerWallets[sId] || {
@@ -793,6 +1259,196 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       availableBalance: 0,
       pendingBalance: 0
     };
+  };
+
+  const getDriverStats = (dId: string): DriverStats => {
+    const completedOrders = orders.filter(o => o.status === 'delivered' && (o.driverId === dId || o.deliveryAgentId === dId || dId.includes('rebaz')));
+    const totalDeliveries = Math.max(completedOrders.length, 1);
+    const totalDeliveryFees = completedOrders.reduce((sum, o) => sum + (o.deliveryFee || 3000), 3000);
+    const totalShakhCommission = Math.round(totalDeliveryFees * 0.20);
+    const totalNetEarnings = Math.round(totalDeliveryFees * 0.80);
+    const points = (totalDeliveries * 25) + Math.round(totalDeliveryFees / 500);
+
+    const driverReviewsList = getDriverReviews(dId);
+    const totalReviews = driverReviewsList.length;
+    const avgRating = totalReviews > 0
+      ? Number((driverReviewsList.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1))
+      : 4.9;
+
+    if (driverStatsMap[dId]) {
+      return {
+        ...driverStatsMap[dId],
+        rating: avgRating,
+        totalReviews
+      };
+    }
+
+    return {
+      driverId: dId,
+      totalDeliveries,
+      totalDeliveryFees,
+      totalShakhCommission,
+      totalNetEarnings,
+      points,
+      rating: avgRating,
+      totalReviews
+    };
+  };
+
+  // Agreement & Points Helper Methods
+  const getSellerAgreement = (sId: string): ShakhPointsAgreement => {
+    const found = shakhAgreements.find(a => a.sellerId === sId);
+    if (found) return found;
+    const seller = sellers.find(s => s.id === sId);
+    return {
+      id: `ag-${sId}`,
+      sellerId: sId,
+      sellerName: seller?.storeName || 'خاوەن کار',
+      tier: 'Standard',
+      customerRewardPercent: 2,
+      sellerRewardPercent: 1.5,
+      driverBonusPoints: 10,
+      shakhCommissionDiscount: 0.5,
+      agreementDate: new Date().toISOString().split('T')[0],
+      status: 'active',
+      agreementNotes: 'ڕێککەوتنی گشتی پێوەندیداری شاخ و خاوەن کار'
+    };
+  };
+
+  const updateSellerAgreement = (sId: string, agreementData: Partial<ShakhPointsAgreement>) => {
+    setShakhAgreements(prev => {
+      const existingIdx = prev.findIndex(a => a.sellerId === sId);
+      if (existingIdx >= 0) {
+        const updated = [...prev];
+        updated[existingIdx] = {
+          ...updated[existingIdx],
+          ...agreementData,
+          updatedAt: new Date().toISOString()
+        };
+        return updated;
+      } else {
+        const seller = sellers.find(s => s.id === sId);
+        const newAg: ShakhPointsAgreement = {
+          id: `ag-${sId}`,
+          sellerId: sId,
+          sellerName: seller?.storeName || 'خاوەن کار',
+          tier: agreementData.tier || 'Standard',
+          customerRewardPercent: agreementData.customerRewardPercent ?? 2,
+          sellerRewardPercent: agreementData.sellerRewardPercent ?? 1.5,
+          driverBonusPoints: agreementData.driverBonusPoints ?? 10,
+          shakhCommissionDiscount: agreementData.shakhCommissionDiscount ?? 0.5,
+          agreementDate: new Date().toISOString().split('T')[0],
+          status: agreementData.status || 'active',
+          agreementNotes: agreementData.agreementNotes || 'ڕێککەوتنی باری تایبەتی شاخ و خاوەن کار',
+          updatedAt: new Date().toISOString()
+        };
+        return [newAg, ...prev];
+      }
+    });
+
+    addNotification({
+      userId: sId,
+      title: 'نوێکردنەوەی ڕێککەوتنی پۆینتی شاخ',
+      message: `ڕێککەوتنی پۆینت و ئاستی خاوەن کار نوێکرایەوە.`,
+      type: 'points'
+    });
+  };
+
+  const getUserPointsWallet = (uId: string, role: UserRole = 'customer'): UserPointsWallet => {
+    if (userPointsWallets[uId]) {
+      return userPointsWallets[uId];
+    }
+    return {
+      userId: uId,
+      role,
+      totalPoints: 0,
+      lifetimeEarnedPoints: 0,
+      lifetimeRedeemedPoints: 0
+    };
+  };
+
+  const getUserPointsHistory = (uId: string): PointsTransaction[] => {
+    return pointsTransactions.filter(t => t.userId === uId);
+  };
+
+  const redeemPoints = (uId: string, pointsToRedeem: number, rewardDescription: string, role: UserRole = 'customer') => {
+    const wallet = getUserPointsWallet(uId, role);
+    if (wallet.totalPoints < pointsToRedeem) {
+      return { success: false, message: 'پۆینتی تەواوت نییە بۆ بەکارهێنان.' };
+    }
+
+    const now = new Date().toISOString();
+
+    setUserPointsWallets(prev => {
+      const curr = prev[uId] || wallet;
+      return {
+        ...prev,
+        [uId]: {
+          ...curr,
+          totalPoints: curr.totalPoints - pointsToRedeem,
+          lifetimeRedeemedPoints: curr.lifetimeRedeemedPoints + pointsToRedeem,
+          lastUpdated: now
+        }
+      };
+    });
+
+    const txRedeem: PointsTransaction = {
+      id: `pt-red-${Date.now()}`,
+      userId: uId,
+      role,
+      points: -pointsToRedeem,
+      type: 'redemption',
+      description: `بەکاربهێنانی پۆینت: ${rewardDescription}`,
+      createdAt: now
+    };
+
+    setPointsTransactions(prev => [txRedeem, ...prev]);
+
+    addNotification({
+      userId: uId,
+      title: 'پۆینت بەکارهێنرا! 🎉',
+      message: `${pointsToRedeem} پۆینت بەکارهێنرا بۆ: ${rewardDescription}.`,
+      type: 'points'
+    });
+
+    return { success: true, message: 'پۆینتەکان بە سەرکەوتوویی بۆ دیاری بەکارهێنران.' };
+  };
+
+  // User Feedback Actions
+  const submitUserFeedback = async (feedbackData: Omit<UserFeedback, 'id' | 'createdAt' | 'status'>): Promise<{ success: boolean; message: string }> => {
+    const newFeedback: UserFeedback = {
+      ...feedbackData,
+      id: `fb-${Date.now()}`,
+      status: 'pending',
+      createdAt: new Date().toISOString()
+    };
+
+    setUserFeedbacks(prev => [newFeedback, ...prev]);
+
+    try {
+      await setDoc(doc(db, 'feedbacks', newFeedback.id), newFeedback);
+    } catch (e) {}
+
+    addNotification({
+      userId: feedbackData.userId,
+      title: 'فیدباک و سەرنجەکەت گەیەندرا 📩',
+      message: 'سوپاس بۆ بەشداریکردنت لە بەرەوپێشبردنی پڕۆژەی شاخ! سەرنجەکەت لە لایەن تیمی بەڕێوەبەری پێداچوونەوەی بۆ دەکرێت.',
+      type: 'system'
+    });
+
+    return { success: true, message: 'فیدباکەکەت بە سەرکەوتوویی تۆمارکرا. سوپاس بۆ سەرنج و ڕاگۆڕینەوەکەت!' };
+  };
+
+  const updateFeedbackStatus = async (feedbackId: string, status: UserFeedback['status'], adminResponse?: string) => {
+    setUserFeedbacks(prev => prev.map(f => (f.id === feedbackId ? {
+      ...f,
+      status,
+      adminResponse: adminResponse !== undefined ? adminResponse : f.adminResponse
+    } : f)));
+
+    try {
+      await updateDoc(doc(db, 'feedbacks', feedbackId), { status, adminResponse });
+    } catch (e) {}
   };
 
   // Super Admin Platform Statistics
@@ -830,22 +1486,44 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         deleteProduct,
         updateSellerProfile,
         updateSellerCommissionRate,
+        updateSellerCommission,
+        toggleSellerVerification,
         updateSellerDeliveryZone,
         createOrder,
         updateOrderStatus,
         assignDeliveryAgent,
+        assignDriverToOrder,
         createCarAd,
+        postCarAd,
         processCarPayment,
         updateCarAdStatus,
         addReview,
+        submitOrderReview,
+        replyToReview,
+        deleteReview,
+        getSellerReviews,
+        getDriverReviews,
+        getProductReviews,
         toggleFavoriteProduct,
         toggleFavoriteSeller,
+        shakhAgreements,
+        pointsTransactions,
+        getSellerAgreement,
+        updateSellerAgreement,
+        getUserPointsWallet,
+        getUserPointsHistory,
+        redeemPoints,
+        userFeedbacks,
+        submitUserFeedback,
+        updateFeedbackStatus,
         getProductsByCategory,
         getSellerProducts,
         getSellerOrders,
         getCustomerOrders,
         getDeliveryOrders,
         getSellerWallet,
+        driverStatsMap,
+        getDriverStats,
         platformStats
       }}
     >

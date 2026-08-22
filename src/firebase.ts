@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, initializeFirestore } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import firebaseConfigData from '../firebase-applet-config.json';
 
@@ -12,15 +12,35 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigData.appId,
 };
 
-// Initialize Firebase App
-export const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase App safely
+let appInstance;
+try {
+  appInstance = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+} catch (e) {
+  console.warn('Firebase init fallback:', e);
+  appInstance = initializeApp({
+    apiKey: firebaseConfigData.apiKey,
+    authDomain: firebaseConfigData.authDomain,
+    projectId: firebaseConfigData.projectId,
+    appId: firebaseConfigData.appId
+  });
+}
 
-const customDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || firebaseConfigData.firestoreDatabaseId;
+export const app = appInstance;
 
-// Initialize Firestore with custom databaseId if configured
-export const db = customDatabaseId && customDatabaseId !== '(default)'
-  ? getFirestore(app, customDatabaseId)
-  : getFirestore(app);
+// Initialize Firestore safely
+let firestoreInstance;
+try {
+  const customDatabaseId = import.meta.env.VITE_FIREBASE_DATABASE_ID || firebaseConfigData.firestoreDatabaseId;
+  firestoreInstance = customDatabaseId && customDatabaseId !== '(default)'
+    ? getFirestore(app, customDatabaseId)
+    : getFirestore(app);
+} catch (e) {
+  console.warn('Custom databaseId fallback to default firestore instance:', e);
+  firestoreInstance = getFirestore(app);
+}
+
+export const db = firestoreInstance;
 
 // Initialize Firebase Auth
 export const auth = getAuth(app);

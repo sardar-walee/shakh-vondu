@@ -1,604 +1,437 @@
-export type Language = 'ku' | 'ar' | 'en' | 'tr' | 'fa';
+export type UserRole =
+  | 'customer'
+  | 'seller'
+  | 'restaurant_owner'
+  | 'market_owner'
+  | 'clothes_seller'
+  | 'fruits_vegetables_seller'
+  | 'fresh_meat_seller'
+  | 'dairy_seller'
+  | 'electronics_seller'
+  | 'beauty_seller'
+  | 'car_seller'
+  | 'delivery_agent'
+  | 'admin'
+  | 'super_admin';
 
-export type UserRole = 'superadmin' | 'owner' | 'manager' | 'cashier' | 'technician' | 'inventory_clerk' | 'customer';
+export type ProductCategory =
+  | 'food'
+  | 'market'
+  | 'clothes'
+  | 'fruits_vegetables'
+  | 'fresh_meat'
+  | 'dairy'
+  | 'electronics'
+  | 'beauty'
+  | 'cars';
 
-export type BusinessType = 
-  | 'mobile_electronics' 
-  | 'pharmacy_medical' 
-  | 'supermarket_grocery' 
-  | 'clothing_fashion' 
-  | 'auto_parts' 
-  | 'restaurant_cafe' 
-  | 'cosmetics_perfumes' 
-  | 'general_retail';
+export type OrderStatus =
+  | 'pending'
+  | 'accepted'
+  | 'preparing'
+  | 'ready'
+  | 'picked_up'
+  | 'on_the_way'
+  | 'delivered'
+  | 'cancelled';
 
-export interface BusinessTypeDefinition {
-  id: BusinessType;
-  name: string;
-  nameKu: string;
-  nameAr: string;
-  icon: string;
-  description: string;
-  descriptionKu: string;
-  defaultCategories: string[];
-  features: {
-    hasImei: boolean;
-    hasExpiryDate: boolean;
-    hasBatchNumber: boolean;
-    hasSizeColor: boolean;
-    hasPartNumber: boolean;
-    hasUnits: boolean;
-    hasPrescription: boolean;
-    hasKitchenTables: boolean;
-  };
-}
+export type CarPackageType = '1_week' | '15_days' | '1_month';
 
-export type PermissionKey =
-  // POS & Checkout
-  | 'pos:access'
-  | 'pos:discount'
-  | 'pos:custom_price'
-  // Sales History & Refunds
-  | 'sales:view_all'
-  | 'sales:view_own'
-  | 'sales:refund_void'
-  // Products & Inventory
-  | 'products:view'
-  | 'products:view_cost_price'
-  | 'products:create'
-  | 'products:edit'
-  | 'products:delete'
-  | 'inventory:adjust_stock'
-  // Supplier Returns (RMA)
-  | 'returns:view'
-  | 'returns:create'
-  | 'returns:settle'
-  | 'returns:suppliers_manage'
-  // Customers & Loyalty
-  | 'customers:view'
-  | 'customers:manage'
-  | 'customers:give_credit'
-  | 'loyalty:manage'
-  | 'loyalty:redeem'
-  // SMS Gateway
-  | 'sms:send'
-  | 'sms:configure'
-  // Reports & Audits
-  | 'reports:view_financial'
-  | 'reports:view_inventory'
-  | 'reports:export'
-  // Store Settings & Administration
-  | 'settings:store_profile'
-  | 'settings:permissions'
-  | 'settings:audit_logs'
-  | 'subscription:manage';
+export type CarPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
-export interface PermissionDefinition {
-  key: PermissionKey;
-  label: string;
-  labelKu?: string;
-  labelAr?: string;
-  description: string;
-  category: 'pos' | 'products' | 'returns' | 'customers' | 'sms' | 'reports' | 'settings';
-  dangerLevel?: 'low' | 'medium' | 'high';
-}
+export type CarAdStatus = 'pending_payment' | 'active' | 'expired' | 'rejected' | 'sold';
 
-export interface RolePermissionsConfig {
-  id?: string;
-  role: UserRole;
-  permissions: PermissionKey[];
-  maxDiscountPercent?: number;
-  canViewCostPrices?: boolean;
-  canVoidSales?: boolean;
-  canProcessReturns?: boolean;
-  canExportReports?: boolean;
-  updatedAt?: string;
-  updatedBy?: string;
-}
-
-export interface StaffMember {
-  id: string;
-  userId?: string;
-  displayName: string;
-  email: string;
-  phone?: string;
-  role: UserRole;
-  branchId?: string;
-  branchName?: string;
-  isActive: boolean;
-  customPermissions?: PermissionKey[];
-  createdAt: string;
-  lastLoginAt?: string;
-}
+export type PaymentMethod = 'cash_on_delivery' | 'fib' | 'fastpay' | 'zaincash' | 'asiapay';
 
 export interface UserProfile {
-  id?: string;
+  id: string;
   email: string;
-  role: UserRole;
-  userType?: 'store_owner' | 'customer' | 'staff';
-  storeId?: string;
-  customerStoreId?: string;
-  customerId?: string;
-  branchId?: string;
-  displayName?: string;
-  phone?: string;
-  customPermissions?: PermissionKey[];
-}
-
-export interface Store {
-  id: string;
-  name: string;
-  ownerId: string;
-  subscriberEmail?: string;
-  backupEmail?: string;
-  autoBackupGmail?: boolean;
-  businessType?: BusinessType;
-  phone?: string;
-  address?: string;
-  currency?: string;
-  language?: Language;
-  subscriptionStatus: 'trial' | 'active' | 'expiring_soon' | 'expired' | 'suspended' | 'cancelled';
-  trialEndDate?: string;
-  subscriptionEndDate?: string;
-  subscriptionPeriod?: '3_months' | '6_months' | '1_year' | 'monthly' | 'trial';
-  licenseKey?: string;
-  planId?: 'free_trial' | 'starter' | 'pro' | 'enterprise' | string;
-  billingCycle?: 'monthly' | 'yearly';
-  paymentMethod?: {
-    brand: string;
-    last4: string;
-    expMonth: number;
-    expYear: number;
-  };
-  createdAt: string;
-  loyaltyConfig?: LoyaltyConfig;
-  smsConfig?: SMSConfig;
-}
-
-export type SubscriptionTierId = 'free_trial' | 'starter' | 'pro' | 'enterprise';
-
-export interface SubscriptionPlan {
-  id: SubscriptionTierId;
-  name: string;
-  nameKu: string;
-  nameAr: string;
-  description: string;
-  badge?: string;
-  priceMonthly: number;
-  priceYearly: number; // Discounted annual price
-  priceIqd?: number;
-  durationMonths?: number;
-  limits: {
-    branches: number | 'Unlimited';
-    staffSeats: number | 'Unlimited';
-    smsMonthly: number | 'Unlimited';
-    productsMax: number | 'Unlimited';
-    aiInsights: boolean;
-    customWebhook: boolean;
-    dedicatedSmsSender: boolean;
-    prioritySupport: boolean;
-  };
-  highlightFeatures: string[];
-  popular?: boolean;
-}
-
-export interface BillingInvoice {
-  id: string;
-  invoiceNumber: string;
-  planId: string;
-  planName: string;
-  amount: number;
-  currency: string;
-  billingCycle: 'monthly' | 'yearly';
-  status: 'paid' | 'pending' | 'failed' | 'refunded';
-  paymentMethod: string;
-  cardLast4?: string;
-  couponCode?: string;
-  discountAmount?: number;
-  taxAmount?: number;
-  subtotal?: number;
-  receiptUrl?: string;
-  createdAt: string;
-}
-
-export interface PromoCoupon {
-  code: string;
-  discountPercent?: number;
-  discountFixed?: number;
-  description: string;
-  minAmount?: number;
-}
-
-// ---------------- Supplier & Returns (RMA) Types ----------------
-export type ReturnReason = 
-  | 'damaged_on_arrival' 
-  | 'screen_hardware_fault' 
-  | 'excess_stock' 
-  | 'wrong_item_shipped' 
-  | 'recall_manufacturer' 
-  | 'customer_return_to_vendor';
-
-export type ReturnSettlement = 
-  | 'supplier_credit' 
-  | 'cash_refund' 
-  | 'replacement_stock' 
-  | 'pending_inspection';
-
-export type ReturnStatus = 
-  | 'draft' 
-  | 'pending_approval' 
-  | 'shipped_to_supplier' 
-  | 'received_by_supplier' 
-  | 'resolved_credit' 
-  | 'resolved_refund' 
-  | 'resolved_replacement' 
-  | 'rejected';
-
-export type ItemCondition = 
-  | 'new_sealed' 
-  | 'open_box' 
-  | 'damaged_cracked' 
-  | 'defective_hardware' 
-  | 'missing_accessories';
-
-export interface Supplier {
-  id: string;
-  name: string;
-  contactPerson?: string;
+  fullName: string;
+  storeName?: string;
   phone: string;
-  email?: string;
-  address?: string;
-  companyName?: string;
-  creditBalance: number;
-  totalReturnsCount?: number;
-  notes?: string;
-  createdAt?: string;
-}
-
-export interface SupplierReturnItem {
-  id: string;
-  productId: string;
-  productName: string;
-  brand: string;
-  category?: string;
-  quantity: number;
-  unitCost: number;
-  totalCost: number;
-  condition: ItemCondition;
-  faultDescription?: string;
-  imeis?: string[];
-  barcode?: string;
-}
-
-export interface SupplierReturn {
-  id: string;
-  returnNumber: string; // e.g. RMA-2026-0012
-  supplierId: string;
-  supplierName: string;
-  supplierPhone?: string;
-  supplierEmail?: string;
-  supplierAddress?: string;
-  reason: ReturnReason;
-  reasonDetails?: string;
-  items: SupplierReturnItem[];
-  totalCost: number;
-  settlementType: ReturnSettlement;
-  status: ReturnStatus;
-  trackingNumber?: string;
-  courierName?: string;
-  autoInventoryDeducted: boolean;
-  notes?: string;
-  createdBy: string;
-  createdByName: string;
-  branchId?: string;
-  branchName?: string;
-  settlementAmount?: number;
-  settledAt?: string;
-  rejectionReason?: string;
+  avatarUrl?: string;
+  city: string;
+  area: string;
+  address: string;
+  role: UserRole;
+  category?: ProductCategory;
+  isVerified?: boolean;
+  isBlocked?: boolean;
+  driverPoints?: number;
+  acceptedShakhRules?: boolean;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
-// ---------------- Audit Trail Types ----------------
-export interface AuditLog {
+export interface DriverStats {
+  driverId: string;
+  totalDeliveries: number;
+  totalDeliveryFees: number;
+  totalShakhCommission: number; // 20% cut for Shakh platform
+  totalNetEarnings: number;      // 80% net for courier
+  points: number;                // Captain points earned
+  rating?: number;               // Average star rating (1-5)
+  totalReviews?: number;         // Total customer ratings received
+  lastUpdated?: string;
+}
+
+export interface DeliveryZoneSettings {
+  minDistanceKm: number;
+  maxDistanceKm: number;
+  baseFee: number;
+  baseDistanceThresholdKm: number;
+  perKmExtraFee: number;
+  freeDeliveryThreshold?: number;
+  isStrictRadius: boolean;
+  estimatedMinutesBase: number;
+  estimatedMinutesPerKm: number;
+  coveredNeighborhoods: string[];
+  deliveryAvailabilityNote?: string;
+}
+
+export interface SellerProfile {
   id: string;
-  entityType: 'supplier_return' | 'product' | 'sale' | 'supplier' | 'inventory' | 'user' | 'backup' | 'store';
-  entityId: string;
-  action: 'created' | 'updated' | 'status_changed' | 'inventory_deducted' | 'inventory_restored' | 'settled' | 'rejected' | 'deleted';
-  title: string;
-  details?: string;
-  performedBy: string;
-  performedByName: string;
-  role?: string;
-  changes?: Record<string, { old: any; new: any }>;
+  userId: string;
+  storeName: string;
+  slug: string;
+  category: ProductCategory;
+  description: string;
+  logoUrl?: string;
+  coverUrl?: string;
+  city: string;
+  address: string;
+  phone: string;
+  commissionRate: number;
+  isOpen: boolean;
+  openingHours?: string;
+  rating: number;
+  totalReviews: number;
+  totalSales: number;
+  isVerified: boolean;
+  deliveryZone?: DeliveryZoneSettings;
   createdAt: string;
 }
 
 export interface Product {
   id: string;
-  name: string;
-  brand: string;
-  model?: string;
-  category: string;
-  sku?: string;
-  barcode?: string;
-  purchasePrice: number;
-  sellingPrice: number;
-  wholesalePrice?: number;
+  sellerId: string;
+  sellerName?: string;
+  category: ProductCategory;
+  subcategory?: string;
+  title: string;
+  description: string;
+  price: number;
+  discountPrice?: number;
+  images: string[];
   stock: number;
-  minStock?: number;
-  hasImei?: boolean;
-  imei?: string;
-  imeis?: string[];
-  warrantyMonths?: number;
-  description?: string;
-  images?: string[];
-}
+  isAvailable: boolean;
+  unit?: string;
+  rating?: number;
+  reviewCount?: number;
+  createdAt: string;
+  updatedAt?: string;
 
-export interface Customer {
-  id: string;
-  name: string;
-  phone: string;
-  address?: string;
-  debt: number;
-  loyaltyPoints?: number;
-  totalSpent?: number;
-  tier?: 'bronze' | 'silver' | 'gold' | 'platinum';
-  createdAt?: string;
+  // Category specific dynamic fields
+  sizes?: string[];
+  colors?: string[];
+  brand?: string;
+  gender?: 'men' | 'women' | 'kids' | 'unisex';
+  material?: string;
+  ingredients?: string[];
+  prepTimeMinutes?: number;
+  isSpicy?: boolean;
+  isVegetarian?: boolean;
+  weight?: string;
+  origin?: string;
+  expiryInfo?: string;
+  model?: string;
+  specs?: Record<string, string>;
+  warrantyMonths?: number;
+  skinType?: string;
+  volume?: string;
+
+  // Cars / Vehicles Category specific fields
+  year?: number;
+  mileageKm?: number;
+  fuelType?: 'gasoline' | 'diesel' | 'hybrid' | 'electric';
+  transmission?: 'automatic' | 'manual';
+
+  // Meat / Fresh Foods specific fields
+  meatType?: string;
+  cutType?: string;
+  isOrganic?: boolean;
+  fatPercentage?: string;
+
+  // Analytics, Best Sellers & Social
+  viewsCount?: number;
+  likesCount?: number;
+  salesCount?: number;
+  isBestSeller?: boolean;
+  isFeatured?: boolean;
 }
 
 export interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  purchasePrice?: number;
+  product: Product;
   quantity: number;
-  brand?: string;
-  category?: string;
-  imei?: string;
-  warrantyMonths?: number;
-  rewardId?: string;
+  selectedSize?: string;
+  selectedColor?: string;
+  specialInstructions?: string;
 }
 
-export interface Sale {
+export interface OrderItem {
   id: string;
-  customerId?: string;
-  customerName?: string;
-  customerPhone?: string;
-  items: CartItem[];
-  subtotal: number;
-  discount: number;
+  productId: string;
+  productTitle: string;
+  productImage: string;
+  price: number;
+  quantity: number;
+  selectedSize?: string;
+  selectedColor?: string;
+  specialInstructions?: string;
   total: number;
-  cost?: number;
-  profit?: number;
-  paid: number;
-  remaining?: number;
-  paymentMethod: 'cash' | 'card' | 'debt' | 'points';
-  employeeId?: string;
-  employeeName?: string;
-  branchId?: string;
-  branchName?: string;
-  loyaltyPointsEarned?: number;
-  loyaltyPointsRedeemed?: number;
-  smsSent?: boolean;
-  createdAt: string;
 }
 
-// ---------------- Loyalty Program Types ----------------
-export type LoyaltyTier = 'bronze' | 'silver' | 'gold' | 'platinum';
-
-export interface LoyaltyConfig {
-  isEnabled: boolean;
-  pointsPerSpend: number; // e.g. 1 point per $10 spent => 0.1 pts/dollar
-  pointValueInCurrency: number; // e.g. 1 point = $0.05 discount
-  minPointsToRedeem: number; // e.g. 50 points
-  tierRules: {
-    silverMinPoints: number; // e.g. 500
-    goldMinPoints: number; // e.g. 1000
-    platinumMinPoints: number; // e.g. 2500
-    silverBonusMultiplier: number; // e.g. 1.05
-    goldBonusMultiplier: number; // e.g. 1.10
-    platinumBonusMultiplier: number; // e.g. 1.20
-  };
-}
-
-export interface LoyaltyReward {
+export interface Order {
   id: string;
-  name: string;
-  pointsRequired: number;
-  type: 'discount' | 'free_item' | 'service' | 'voucher';
-  discountAmount?: number;
-  itemCategory?: string;
-  description?: string;
-  isActive: boolean;
-}
-
-export interface LoyaltyHistoryItem {
-  id: string;
-  customerId: string;
-  customerName?: string;
-  saleId?: string;
-  points: number;
-  action: 'earned' | 'redeemed' | 'adjusted' | 'bonus';
-  reason?: string;
-  createdAt: string;
-}
-
-// ---------------- SMS Gateway & Alert Types ----------------
-export type SMSProvider = 'twilio' | 'fastsms' | 'asiacell' | 'korek' | 'zain' | 'custom_webhook';
-
-export interface SMSConfig {
-  provider: SMSProvider;
-  apiKey?: string;
-  accountSid?: string;
-  senderId: string;
-  webhookUrl?: string;
-  testPhone?: string;
-  isEnabled: boolean;
-  autoLowStockAlert: boolean;
-  autoSubscriptionAlert: boolean;
-  autoWarrantyAlert: boolean;
-  autoInstallmentAlert: boolean;
-  managerPhone?: string;
-}
-
-export type SMSEventType = 
-  | 'low_stock' 
-  | 'expiring_subscription' 
-  | 'expiring_warranty' 
-  | 'upcoming_installment' 
-  | 'sale_receipt' 
-  | 'custom';
-
-export interface SMSTemplate {
-  id: string;
-  eventType: SMSEventType;
-  title: string;
-  body: string;
-  language: string;
-  isActive: boolean;
-}
-
-export interface SMSLog {
-  id: string;
-  recipientPhone: string;
-  recipientName?: string;
-  eventType: SMSEventType | string;
-  message: string;
-  status: 'delivered' | 'sent' | 'failed' | 'pending';
-  gatewayResponse?: string;
-  createdAt: string;
-}
-
-export interface InstallmentSchedule {
-  id: string;
+  orderNumber: string;
   customerId: string;
   customerName: string;
   customerPhone: string;
-  saleId?: string;
-  totalDebt: number;
-  installmentAmount: number;
-  dueDate: string;
-  status: 'pending' | 'paid' | 'overdue';
-  remindedAt?: string;
+  customerAddress: string;
+  customerCity: string;
+  deliveryAddress?: string;
+  deliveryCity?: string;
+  customerNotes?: string;
+  sellerId: string;
+  sellerName: string;
+  sellerPhone?: string;
+  sellerAddress?: string;
+  category: ProductCategory;
+  items: OrderItem[];
+  subtotal: number;
+  deliveryFee: number;
+  deliveryDistanceKm?: number;
+  deliveryZoneStatus?: 'within_radius' | 'custom_distance' | 'out_of_range';
+  total: number;
+  status: OrderStatus;
+  paymentMethod: PaymentMethod;
+  isPaid: boolean;
+  driverId?: string;
+  driverName?: string;
+  driverPhone?: string;
+  deliveryAgentId?: string;
+  deliveryAgentName?: string;
+  deliveryAgentPhone?: string;
+  commissionCalculated: boolean;
+  commissionRate: number;
+  commissionAmount: number;
+  sellerAmount: number;
+  sellerEarnings?: number;
+  isReviewedSeller?: boolean;
+  isReviewedDriver?: boolean;
+  sellerRating?: number;
+  driverRating?: number;
+  sellerReviewComment?: string;
+  driverReviewComment?: string;
+  createdAt: string;
+  updatedAt: string;
+  deliveredAt?: string;
+  statusTimeline: {
+    status: OrderStatus;
+    timestamp: string;
+    note?: string;
+  }[];
 }
 
-// ---------------- Reports & Filtering Types ----------------
-export interface ReportFilter {
-  dateRange: 'today' | 'yesterday' | 'week' | 'month' | 'last_month' | 'year' | 'all' | 'custom';
-  startDate?: string;
-  endDate?: string;
-  employeeId?: string;
-  customerId?: string;
-  category?: string;
-  branchId?: string;
-  paymentMethod?: string;
-  searchQuery?: string;
-}
-
-export interface ReportSort {
-  field: 'createdAt' | 'id' | 'customerName' | 'total' | 'profit' | 'itemsCount' | 'employeeName' | 'branchName';
-  direction: 'asc' | 'desc';
-}
-
-// ---------------- Database Backup & Automated Snapshot Types ----------------
-export type BackupFrequency = 'daily' | 'weekly' | 'monthly' | 'manual';
-export type BackupTriggerType = 'automatic_schedule' | 'manual_full' | 'manual_collection';
-export type BackupFormat = 'json' | 'csv_bundle' | 'csv_single';
-
-export interface BackupCollectionCounts {
-  sales: number;
-  products: number;
-  customers: number;
-  suppliers: number;
-  supplierReturns: number;
-  staff: number;
-  smsLogs?: number;
-  auditLogs?: number;
-}
-
-export interface BackupConfig {
-  isAutoBackupEnabled: boolean;
-  frequency: BackupFrequency;
-  retentionDays: number;
-  includeSales: boolean;
-  includeProducts: boolean;
-  includeCustomers: boolean;
-  includeSuppliers: boolean;
-  includeSupplierReturns: boolean;
-  lastAutoBackupAt?: string;
-  nextScheduledBackupAt?: string;
-  updatedAt?: string;
-}
-
-export interface BackupSnapshot {
+export interface CommissionTransaction {
   id: string;
-  snapshotNumber: string;
-  triggerType: BackupTriggerType;
-  status: 'completed' | 'in_progress' | 'failed';
-  counts: BackupCollectionCounts;
-  totalRecords: number;
-  fileSizeBytes: number;
-  format: BackupFormat;
-  includedCollections: string[];
-  checksum: string;
-  downloadPayload?: string; // Cache data or summary
-  notes?: string;
-  createdBy?: string;
-  createdByName?: string;
+  orderId: string;
+  orderNumber: string;
+  sellerId: string;
+  sellerName: string;
+  orderTotal: number;
+  commissionRate: number;
+  commissionAmount: number;
+  sellerAmount: number;
+  status: 'finalized' | 'pending' | 'refunded';
   createdAt: string;
 }
 
-export interface FullStoreBackupData {
-  version: string;
-  storeId: string;
-  storeName: string;
-  exportedAt: string;
-  exportedBy: string;
-  checksum: string;
-  counts: BackupCollectionCounts;
-  data: {
-    products: Product[];
-    sales: Sale[];
-    customers: Customer[];
-    suppliers: Supplier[];
-    supplierReturns: SupplierReturn[];
-    staff: StaffMember[];
-    rolePermissions?: Record<string, PermissionKey[]>;
-  };
+export interface SellerWallet {
+  sellerId: string;
+  totalGrossSales: number;
+  totalCommissionPaid: number;
+  totalNetEarnings: number;
+  availableBalance: number;
+  pendingBalance: number;
+  lastPayoutDate?: string;
 }
 
-export interface ExportFilterOptions {
-  collections: ('products' | 'sales' | 'customers' | 'suppliers' | 'supplierReturns')[];
-  format: 'json' | 'csv';
-  dateRange: 'all' | 'today' | 'last_7_days' | 'last_30_days' | 'this_month' | 'custom';
-  startDate?: string;
-  endDate?: string;
+export interface CarPackage {
+  id: CarPackageType;
+  name: string;
+  durationDays: number;
+  priceIqd: number;
+  features: string[];
 }
 
-// ---------------- Real-Time Notification System Types ----------------
-export type NotificationType = 'low_inventory' | 'subscription_renewal' | 'system_update' | 'sale' | 'general';
-export type NotificationSeverity = 'info' | 'warning' | 'urgent' | 'success';
-
-export interface StoreNotification {
+export interface CarAd {
   id: string;
+  userId: string;
+  userPhone: string;
+  userName: string;
+  title: string;
+  brand: string;
+  model: string;
+  year: number;
+  mileageKm: number;
+  priceIqd: number;
+  priceUsd?: number;
+  fuelType: 'gasoline' | 'diesel' | 'hybrid' | 'electric';
+  transmission: 'automatic' | 'manual';
+  color: string;
+  city: string;
+  locationDetails?: string;
+  damageStatus?: string;
+  licensePlateStatus?: string;
+  description: string;
+  images: string[];
+  packageType: CarPackageType;
+  packagePrice: number;
+  paymentStatus: CarPaymentStatus;
+  paymentRef?: string;
+  adStatus: CarAdStatus;
+  startDate?: string;
+  expirationDate?: string;
+  viewsCount?: number;
+  likesCount?: number;
+  sharesCount?: number;
+  createdAt: string;
+}
+
+export interface CarPayment {
+  id: string;
+  userId: string;
+  carAdId: string;
+  carTitle: string;
+  packageType: CarPackageType;
+  amountIqd: number;
+  currency: 'IQD';
+  status: CarPaymentStatus;
+  paymentMethod: PaymentMethod;
+  transactionReference: string;
+  createdAt: string;
+}
+
+export type ReviewTargetType = 'seller' | 'driver' | 'delivery_partner' | 'product';
+
+export interface Review {
+  id: string;
+  orderId?: string;
+  orderNumber?: string;
+  userId: string;
+  userName: string;
+  userAvatar?: string;
+  targetId: string;
+  targetType: ReviewTargetType;
+  targetName?: string;
+  rating: number; // 1 to 5
+  comment: string;
+  tags?: string[];
+  sellerReply?: {
+    comment: string;
+    createdAt: string;
+  };
+  driverReply?: {
+    comment: string;
+    createdAt: string;
+  };
+  createdAt: string;
+}
+
+export type NotificationType = 'order' | 'commission' | 'car' | 'payment' | 'system' | 'seller' | 'delivery' | 'points';
+export type NotificationStatus = 'info' | 'success' | 'warning' | 'error';
+
+export interface NotificationItem {
+  id: string;
+  userId: string;
   title: string;
   message: string;
   type: NotificationType;
-  severity: NotificationSeverity;
-  read: boolean;
-  link?: string;
+  status?: NotificationStatus;
+  isRead: boolean;
+  linkUrl?: string;
+  actionLabel?: string;
   metadata?: {
-    productId?: string;
-    productName?: string;
-    stock?: number;
-    minStock?: number;
-    planName?: string;
-    subscriptionEndDate?: string;
-    updateVersion?: string;
-    [key: string]: any;
+    orderId?: string;
+    orderNumber?: string;
+    carAdId?: string;
+    amount?: number;
+    paymentMethod?: string;
+    reason?: string;
+    sellerId?: string;
+    daysLeft?: number;
+    pointsEarned?: number;
   };
   createdAt: string;
-  createdBy?: string;
+}
+
+export type AgreementTier = 'Standard' | 'Silver' | 'Gold' | 'VIP_Custom';
+
+export interface ShakhPointsAgreement {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  tier: AgreementTier;
+  customerRewardPercent: number; // e.g. 2% customer reward in points
+  sellerRewardPercent: number;   // e.g. 1.5% merchant growth points
+  driverBonusPoints: number;     // e.g. 10 extra points per delivery
+  shakhCommissionDiscount: number; // e.g. 0.5% discount on commission when redeeming points
+  agreementDate: string;
+  status: 'active' | 'pending_approval' | 'suspended';
+  agreementNotes?: string;
+  updatedAt?: string;
+}
+
+export interface UserPointsWallet {
+  userId: string;
+  role: UserRole;
+  totalPoints: number;
+  lifetimeEarnedPoints: number;
+  lifetimeRedeemedPoints: number;
+  lastUpdated?: string;
+}
+
+export interface PointsTransaction {
+  id: string;
+  userId: string;
+  userName?: string;
+  role: UserRole;
+  points: number;
+  type: 'order_reward' | 'seller_agreement_bonus' | 'driver_delivery' | 'redemption' | 'admin_adjustment';
+  orderId?: string;
+  orderNumber?: string;
+  sellerId?: string;
+  sellerName?: string;
+  description: string;
+  createdAt: string;
+}
+
+export type FeedbackType = 'feature_request' | 'bug_report' | 'general_review' | 'category_suggestion';
+export type FeedbackStatus = 'pending' | 'reviewed' | 'implemented';
+
+export interface UserFeedback {
+  id: string;
+  userId: string;
+  userName: string;
+  userPhone?: string;
+  userRole: UserRole;
+  feedbackType: FeedbackType;
+  title: string;
+  message: string;
+  rating: number; // 1 to 5
+  status: FeedbackStatus;
+  adminResponse?: string;
+  createdAt: string;
 }
 

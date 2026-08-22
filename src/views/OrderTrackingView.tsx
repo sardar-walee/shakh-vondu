@@ -13,12 +13,16 @@ import {
   RotateCcw,
   ArrowRight,
   AlertCircle,
-  ShieldCheck
+  ShieldCheck,
+  Award,
+  Sparkles,
+  MessageSquare
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge } from '../components/common/Badge';
 import { OrderStatus } from '../types';
+import { OrderRatingModal } from '../components/reviews/OrderRatingModal';
 
 interface OrderTrackingViewProps {
   orderId: string;
@@ -29,15 +33,13 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
   orderId,
   onNavigate
 }) => {
-  const { orders, sellers, updateOrderStatus, addReview } = useMarketplace();
+  const { orders, sellers, updateOrderStatus } = useMarketplace();
   const { currentUser, isSuperAdmin, isDeliveryAgent } = useAuth();
 
   const order = orders.find(o => o.id === orderId) || orders[0];
   const seller = sellers.find(s => s.id === order?.sellerId);
 
   const [ratingModal, setRatingModal] = useState(false);
-  const [stars, setStars] = useState(5);
-  const [reviewText, setReviewText] = useState('');
 
   if (!order) {
     return (
@@ -75,23 +77,6 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
       const nextStatus = statusOrder[currentIndex + 1];
       updateOrderStatus(order.id, nextStatus);
     }
-  };
-
-  const handleReviewSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!currentUser || !reviewText.trim()) return;
-
-    await addReview({
-      userId: currentUser.id,
-      userName: currentUser.fullName,
-      userAvatar: currentUser.avatarUrl,
-      targetId: order.sellerId,
-      targetType: 'seller',
-      rating: stars,
-      comment: reviewText
-    });
-    setRatingModal(false);
-    alert('سوپاس بۆ هەڵسەنگاندنەکەت!');
   };
 
   return (
@@ -195,16 +180,27 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
 
         {/* Rate Delivery & Seller upon arrival */}
         {isDelivered && (
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-white flex items-center justify-between gap-3 shadow-md">
-            <div>
-              <h4 className="text-sm font-bold">داواکارییەکەت بە سەرکەوتوویی گەیشت! 🎉</h4>
-              <p className="text-xs text-orange-100">تکایە چەند چرکەیەک تەرخان بکە بۆ هەڵسەنگاندنی فرۆشیار و کاپتنی گەیاندن.</p>
+          <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center flex-shrink-0">
+                <Sparkles className="w-6 h-6 text-amber-200" />
+              </div>
+              <div>
+                <h4 className="text-sm sm:text-base font-black">
+                  {order.isReviewedSeller || order.isReviewedDriver ? 'هەڵسەنگاندنت بۆ ئەم داواکارییە تۆمارکراوە ✓' : 'داواکارییەکەت بە سەرکەوتوویی گەیشت! 🎉'}
+                </h4>
+                <p className="text-xs text-amber-100 mt-0.5">
+                  {order.isReviewedSeller || order.isReviewedDriver 
+                    ? `فرۆشگا: ${order.sellerRating || 5}★ • کاپتنی گەیاندن: ${order.driverRating || 5}★ - دەتوانیت دەستکاری بکەیتەوە`
+                    : 'ڕای خۆت دەربارەی فرۆشیار و کاپتنی گەیاندن تۆمار بکە و +١٥ پۆینت وەربگرە.'}
+                </p>
+              </div>
             </div>
             <button
               onClick={() => setRatingModal(true)}
-              className="px-4 py-2 bg-white text-orange-600 font-bold text-xs rounded-xl shadow cursor-pointer whitespace-nowrap"
+              className="px-5 py-2.5 bg-white text-orange-600 hover:bg-orange-50 font-black text-xs rounded-2xl shadow-md cursor-pointer whitespace-nowrap transition-transform hover:scale-105"
             >
-              هەڵسەنگاندن بنووسە
+              {order.isReviewedSeller || order.isReviewedDriver ? 'بینین و دەستکاریکردنی هەڵسەنگاندن ⭐' : 'هەڵسەنگاندنی فرۆشیار و گەیاندن ⭐'}
             </button>
           </div>
         )}
@@ -280,46 +276,12 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
 
       </div>
 
-      {/* Review Modal */}
-      {ratingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full border border-slate-100 shadow-2xl space-y-4 text-right">
-            <h3 className="text-base font-black text-slate-900">هەڵسەنگاندنی خزمەتگوزاری</h3>
-            <p className="text-xs text-slate-500">چۆن بوو ئەزموونی کڕینت لە {order.sellerName}؟</p>
-
-            <div className="flex justify-center gap-2 py-2">
-              {[1, 2, 3, 4, 5].map(s => (
-                <button key={s} type="button" onClick={() => setStars(s)} className="p-1">
-                  <Star className={`w-7 h-7 ${s <= stars ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
-                </button>
-              ))}
-            </div>
-
-            <textarea
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
-              placeholder="سەرنجەکانت لێرە بنووسە..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:outline-hidden"
-              rows={3}
-            />
-
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setRatingModal(false)}
-                className="px-4 py-2 text-xs font-bold text-slate-600"
-              >
-                داخستن
-              </button>
-              <button
-                onClick={handleReviewSubmit}
-                className="px-4 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold shadow"
-              >
-                ناردن
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Dual Order Rating Modal (Seller & Courier) */}
+      <OrderRatingModal
+        order={order}
+        isOpen={ratingModal}
+        onClose={() => setRatingModal(false)}
+      />
 
     </div>
   );

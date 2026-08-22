@@ -12,7 +12,7 @@ export const SellerCard: React.FC<SellerCardProps> = ({ seller, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className="group relative bg-white rounded-2xl border border-slate-200 hover:border-[#2563EB] shadow-xs hover:shadow-sm transition-all duration-200 overflow-hidden flex flex-col cursor-pointer"
+      className="group relative bg-white dark:bg-[#1e293b] rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-[#2563EB] dark:hover:border-blue-500 shadow-xs hover:shadow-sm transition-all duration-200 overflow-hidden flex flex-col cursor-pointer"
     >
       {/* Cover Image */}
       <div className="relative h-28 w-full bg-slate-100 overflow-hidden">

@@ -22,7 +22,14 @@ import {
   Check,
   Compass,
   Sparkles,
-  X
+  X,
+  Award,
+  Gift,
+  FileText,
+  Star,
+  MessageSquare,
+  Send,
+  User
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
@@ -30,6 +37,7 @@ import { Product, Order, ProductCategory, DeliveryZoneSettings, SellerProfile } 
 import { StatusBadge, CategoryBadge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { ImageUpload } from '../components/common/ImageUpload';
+import { DynamicProductForm } from '../components/products/DynamicProductForm';
 import { getDefaultDeliveryZone, calculateDeliveryFee, CITY_NEIGHBORHOOD_DISTANCES } from '../utils/deliveryUtils';
 
 interface SellerDashboardViewProps {
@@ -38,9 +46,24 @@ interface SellerDashboardViewProps {
 
 export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavigate }) => {
   const { currentUser, sellerProfile, canManageCategory, isSeller } = useAuth();
-  const { products, orders, updateOrderStatus, addProduct, updateProduct, deleteProduct, updateSellerDeliveryZone } = useMarketplace();
+  const {
+    products,
+    orders,
+    updateOrderStatus,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    updateSellerDeliveryZone,
+    getSellerAgreement,
+    getUserPointsWallet,
+    redeemPoints,
+    getSellerReviews,
+    replyToReview
+  } = useMarketplace();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'wallet' | 'delivery' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'reviews' | 'agreement' | 'wallet' | 'delivery' | 'settings'>('overview');
+  const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState<string>('');
 
   // Filter products and orders belonging to this seller
   const sellerId = sellerProfile?.id || (products[0]?.sellerId ?? 'store-rest-1');
@@ -86,84 +109,24 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Product Form State
-  const [pTitle, setPTitle] = useState('');
-  const [pDescription, setPDescription] = useState('');
-  const [pPrice, setPPrice] = useState(10000);
-  const [pDiscountPrice, setPDiscountPrice] = useState<number | undefined>(undefined);
-  const [pCategory, setPCategory] = useState<ProductCategory>(defaultCategory);
-  const [pSubcategory, setPSubcategory] = useState('');
-  const [pStock, setPStock] = useState(50);
-  const [pUnit, setPUnit] = useState('دانە');
-  const [pPrepTime, setPPrepTime] = useState<number | undefined>(20);
-  const [pImages, setPImages] = useState<string[]>(['https://images.unsplash.com/photo-1544025162-d76694265947?w=600']);
-
   const openAddModal = () => {
     setEditingProduct(null);
-    setPTitle('');
-    setPDescription('');
-    setPPrice(10000);
-    setPDiscountPrice(undefined);
-    setPCategory(defaultCategory);
-    setPSubcategory('');
-    setPStock(50);
-    setPUnit('دانە');
-    setPPrepTime(20);
-    setPImages(['https://images.unsplash.com/photo-1544025162-d76694265947?w=600']);
     setIsProductModalOpen(true);
   };
 
   const openEditModal = (p: Product) => {
     setEditingProduct(p);
-    setPTitle(p.title);
-    setPDescription(p.description);
-    setPPrice(p.price);
-    setPDiscountPrice(p.discountPrice);
-    setPCategory(p.category);
-    setPSubcategory(p.subcategory || '');
-    setPStock(p.stock);
-    setPUnit(p.unit || 'دانە');
-    setPPrepTime(p.prepTimeMinutes);
-    setPImages(p.images);
     setIsProductModalOpen(true);
   };
 
-  const handleSaveProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!pTitle.trim() || pPrice <= 0) return;
-
+  const handleSaveProduct = async (productData: Omit<Product, 'id' | 'createdAt'>) => {
     if (editingProduct) {
-      await updateProduct(editingProduct.id, {
-        title: pTitle,
-        description: pDescription,
-        price: Number(pPrice),
-        discountPrice: pDiscountPrice ? Number(pDiscountPrice) : undefined,
-        category: pCategory,
-        subcategory: pSubcategory,
-        stock: Number(pStock),
-        unit: pUnit,
-        prepTimeMinutes: pPrepTime ? Number(pPrepTime) : undefined,
-        images: pImages
-      });
+      await updateProduct(editingProduct.id, productData);
     } else {
-      await addProduct({
-        sellerId: sellerId,
-        sellerName: sellerProfile?.storeName || 'فرۆشگای من',
-        title: pTitle,
-        description: pDescription,
-        price: Number(pPrice),
-        discountPrice: pDiscountPrice ? Number(pDiscountPrice) : undefined,
-        category: pCategory,
-        subcategory: pSubcategory,
-        stock: Number(pStock),
-        unit: pUnit,
-        prepTimeMinutes: pPrepTime ? Number(pPrepTime) : undefined,
-        images: pImages,
-        isAvailable: true
-      });
+      await addProduct(productData);
     }
-
     setIsProductModalOpen(false);
+    setEditingProduct(null);
   };
 
   return (
@@ -205,6 +168,8 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
           { id: 'overview', label: 'پوختەی گشتی', icon: <TrendingUp className="w-4 h-4" /> },
           { id: 'orders', label: `داواکارییەکان (${myOrders.length})`, icon: <ShoppingBag className="w-4 h-4" /> },
           { id: 'products', label: `لیستی کاڵاکان (${myProducts.length})`, icon: <Package className="w-4 h-4" /> },
+          { id: 'reviews', label: `ڕا و هەڵسەنگاندن (${getSellerReviews(sellerId).length})`, icon: <Star className="w-4 h-4 text-amber-500" /> },
+          { id: 'agreement', label: 'ڕێککەوتنی پۆینتی شاخ و خاوەن کار', icon: <Award className="w-4 h-4 text-amber-500" /> },
           { id: 'delivery', label: 'ناوچە و دوری گەیاندن (Delivery Radius)', icon: <MapPin className="w-4 h-4 text-orange-500" /> },
           { id: 'wallet', label: 'جزدان و قازانج', icon: <DollarSign className="w-4 h-4" /> },
           { id: 'settings', label: 'ڕێکخستنی فرۆشگا', icon: <Settings className="w-4 h-4" /> }
@@ -223,6 +188,165 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
           </button>
         ))}
       </div>
+
+      {/* Shakh & Business Owner Agreement Tab */}
+      {activeTab === 'agreement' && (() => {
+        const agreement = getSellerAgreement(sellerId);
+        const merchantWallet = getUserPointsWallet(sellerId, 'seller');
+
+        return (
+          <div className="space-y-6">
+            
+            {/* Main Agreement Banner */}
+            <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-black">
+                  <Award className="w-4 h-4 text-amber-200" />
+                  <span>ڕێککەوتنی شەریکایەتی و پۆینتی شاخ (Shakh Partnership)</span>
+                </div>
+                <h2 className="text-2xl font-black">{agreement.sellerName}</h2>
+                <p className="text-xs text-amber-100/90 max-w-xl leading-relaxed">
+                  سیستەمی پۆینتی شاخ و خاوەن کار ڕێککەوتنێکی دوولایەنەیە بۆ پاداشتکردنی کڕیاران، خاوەن کاران، و شۆفێرانی گەیاندن لەسەر هەر فرۆشێک.
+                </p>
+              </div>
+
+              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 text-center min-w-[180px]">
+                <span className="text-xs text-amber-100 font-bold block">ئاستی ڕێککەوتنی چالاك:</span>
+                <span className="text-2xl font-black font-latin text-amber-300 block my-1">
+                  {agreement.tier} Tier
+                </span>
+                <span className="text-[10px] text-emerald-300 font-bold bg-emerald-950/40 px-2.5 py-0.5 rounded-full border border-emerald-400/30">
+                  {agreement.status === 'active' ? 'چالاککراوە ✓' : 'لە چاوەڕوانیدایە'}
+                </span>
+              </div>
+            </div>
+
+            {/* Agreement Terms Breakdown Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              
+              {/* Customer Points Rate */}
+              <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>پاداشتی کڕیاران (Customer Reward)</span>
+                  <Gift className="w-5 h-5 text-amber-500" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 font-latin">
+                  {agreement.customerRewardPercent}٪ <span className="text-xs font-sans text-slate-500">لە بڕی داواکاری</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  کڕیار لەسەر هەر داواکارییەکی {agreement.sellerName} {agreement.customerRewardPercent}٪ی بڕەکە بە پۆینتی شڕینی بەدەستدەهێنێت.
+                </p>
+              </div>
+
+              {/* Merchant Growth Points Rate */}
+              <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>پۆینتی گەشەی خاوەن کار (Merchant Growth)</span>
+                  <TrendingUp className="w-5 h-5 text-emerald-500" />
+                </div>
+                <h3 className="text-2xl font-black text-emerald-600 font-latin">
+                  {agreement.sellerRewardPercent}٪ <span className="text-xs font-sans text-slate-500">لە کۆی فرۆش</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  تۆ وەک خاوەن کار {agreement.sellerRewardPercent}٪ لە بڕی فرۆشەکەت بە پۆینت وەردەگریت بۆ داشکاندنی کۆمسیۆن یان ڕیکلام.
+                </p>
+              </div>
+
+              {/* Driver Bonus Points */}
+              <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-500">
+                  <span>بۆنسی کاپتنی گەیاندن (Driver Bonus)</span>
+                  <Truck className="w-5 h-5 text-blue-500" />
+                </div>
+                <h3 className="text-2xl font-black text-blue-600 font-latin">
+                  +{agreement.driverBonusPoints} <span className="text-xs font-sans text-slate-500">پۆینت بۆ هەر گەیاندنێک</span>
+                </h3>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  پۆینتی هاندەر بۆ شۆفێرانی گەیاندن تا داواکارییەکانی فرۆشگاکەت خێراتر بگەیەنن.
+                </p>
+              </div>
+
+            </div>
+
+            {/* Merchant Wallet & Points Redemption */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h3 className="text-base font-black text-slate-900">پۆینتە کۆکراوەکانی خاوەن کار</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">پۆینتەکان بەپێی ڕێککەوتنی شاخ لەسەر هەر فرۆشێک زیاد دەبن</p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-slate-500 font-bold">کۆی پۆینتی بەردەست:</span>
+                  <span className="text-2xl font-black text-amber-600 font-latin bg-amber-50 px-4 py-1.5 rounded-2xl border border-amber-200">
+                    {merchantWallet.totalPoints.toLocaleString()} پۆینت
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-slate-900">داشکاندنی ٠.٥٪ لە کۆمسیۆنی شاخ</span>
+                    <span className="text-xs font-bold text-amber-600 font-latin">500 پۆینت</span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    بەکارهێنانی ٥٠٠ پۆینتی خاوەن کار بۆ کەمکردنەوەی ڕێژەی کۆمسیۆنی شاخ بە ڕێژەی ٠.٥٪ لەسەر ٢٠ داواکاری دواتر.
+                  </p>
+                  <button
+                    onClick={() => {
+                      const res = redeemPoints(sellerId, 500, 'داشکاندنی ٠.٥٪ لە کۆمسیۆنی شاخ بۆ ۲۰ داواکاری', 'seller');
+                      alert(res.message);
+                    }}
+                    disabled={merchantWallet.totalPoints < 500}
+                    className={`w-full py-2.5 text-xs font-bold rounded-xl cursor-pointer ${
+                      merchantWallet.totalPoints >= 500
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    داواکردنی داشکاندنی کۆمسیۆن
+                  </button>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-slate-900">نیشانی "فرۆشگای تایبەت" (Featured Store)</span>
+                    <span className="text-xs font-bold text-amber-600 font-latin">1,000 پۆینت</span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    پیشاندانی فرۆشگاکەت لە سێرچ و سەرپەڕەی سەرەکی شاخ وەک فرۆشگای پێشنیارکراو بۆ ماوەی ٧ ڕۆژ.
+                  </p>
+                  <button
+                    onClick={() => {
+                      const res = redeemPoints(sellerId, 1000, 'نیشانی فرۆشگای تایبەت لە پەڕەی سەرەکی شاخ (٧ ڕۆژ)', 'seller');
+                      alert(res.message);
+                    }}
+                    disabled={merchantWallet.totalPoints < 1000}
+                    className={`w-full py-2.5 text-xs font-bold rounded-xl cursor-pointer ${
+                      merchantWallet.totalPoints >= 1000
+                        ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-xs'
+                        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    داواکردنی نیشانی فرۆشگای تایبەت
+                  </button>
+                </div>
+
+              </div>
+            </div>
+
+            {/* Agreement Notes */}
+            {agreement.agreementNotes && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-900 space-y-1">
+                <span className="font-bold block">تێبینیەکانی ڕێککەوتنی شاخ و خاوەن کار:</span>
+                <p className="text-amber-800 leading-relaxed">{agreement.agreementNotes}</p>
+              </div>
+            )}
+
+          </div>
+        );
+      })()}
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
@@ -353,49 +477,411 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
       {/* Products Tab */}
       {activeTab === 'products' && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200 space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-black text-slate-900">کاڵاکانی ئەم فرۆشگایە ({myProducts.length})</h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-black text-slate-900">کاڵاکانی ئەم فرۆشگایە ({myProducts.length})</h3>
+              <p className="text-xs text-slate-500 mt-0.5">بەڕێوەبردنی تەواوی کاڵاکان بەپێی بەش و تایبەتمەندییە داینامیکییەکان</p>
+            </div>
             <button
               onClick={openAddModal}
-              className="px-4 py-2 bg-orange-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer"
+              className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
             >
-              + کاڵای نوێ
+              <Plus className="w-4 h-4" />
+              <span>زیادکردنی کاڵای نوێ</span>
             </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {myProducts.map(prod => (
-              <div key={prod.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3">
-                <div className="flex gap-3">
-                  <img src={prod.images[0]} alt="" className="w-16 h-16 rounded-xl object-cover" />
-                  <div className="flex-1">
-                    <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{prod.title}</h4>
-                    <span className="text-xs font-black text-orange-600 font-latin">
-                      {prod.price.toLocaleString()} د.ع
-                    </span>
-                    <p className="text-[10px] text-slate-400">کۆگا: {prod.stock} {prod.unit || 'دانە'}</p>
+              <div key={prod.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3 hover:border-orange-300 transition-colors">
+                <div className="space-y-2.5">
+                  <div className="flex gap-3 items-start">
+                    <img src={prod.images[0]} alt="" className="w-16 h-16 rounded-xl object-cover border border-slate-200 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap mb-1">
+                        <CategoryBadge category={prod.category} />
+                        {prod.subcategory && (
+                          <span className="text-[10px] bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded">
+                            {prod.subcategory}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{prod.title}</h4>
+                      <div className="flex items-baseline gap-2 mt-0.5">
+                        <span className="text-xs font-black text-orange-600 font-latin">
+                          {(prod.discountPrice || prod.price).toLocaleString()} د.ع
+                        </span>
+                        {prod.discountPrice && (
+                          <span className="text-[10px] text-slate-400 line-through font-latin">
+                            {prod.price.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-0.5">کۆگا: {prod.stock} {prod.unit || 'دانە'}</p>
+                    </div>
+                  </div>
+
+                  {/* Dynamic Category Specific Meta Badges */}
+                  <div className="pt-2 border-t border-slate-200/80 flex flex-wrap gap-1 text-[10px]">
+                    {prod.category === 'clothes' && (
+                      <>
+                        {prod.sizes && prod.sizes.length > 0 && (
+                          <span className="bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded">
+                            قەبارە: {prod.sizes.join(', ')}
+                          </span>
+                        )}
+                        {prod.colors && prod.colors.length > 0 && (
+                          <span className="bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded">
+                            {prod.colors.length} ڕەنگ
+                          </span>
+                        )}
+                        {prod.brand && (
+                          <span className="bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded font-latin">
+                            {prod.brand}
+                          </span>
+                        )}
+                      </>
+                    )}
+
+                    {prod.category === 'electronics' && (
+                      <>
+                        {prod.brand && (
+                          <span className="bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded font-latin">
+                            {prod.brand}
+                          </span>
+                        )}
+                        {prod.model && (
+                          <span className="bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded font-latin">
+                            {prod.model}
+                          </span>
+                        )}
+                        {prod.warrantyMonths && (
+                          <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
+                            گارانتی {prod.warrantyMonths} مانگ
+                          </span>
+                        )}
+                      </>
+                    )}
+
+                    {prod.category === 'cars' && (
+                      <>
+                        {prod.year && (
+                          <span className="bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded font-latin">
+                            مۆدێل {prod.year}
+                          </span>
+                        )}
+                        {prod.mileageKm !== undefined && (
+                          <span className="bg-amber-50 text-amber-800 font-bold px-2 py-0.5 rounded font-latin">
+                            {prod.mileageKm.toLocaleString()} کم
+                          </span>
+                        )}
+                        {prod.transmission && (
+                          <span className="bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded">
+                            {prod.transmission === 'automatic' ? 'ئۆتۆماتیک' : 'عادی'}
+                          </span>
+                        )}
+                      </>
+                    )}
+
+                    {prod.category === 'food' && (
+                      <>
+                        {prod.prepTimeMinutes && (
+                          <span className="bg-orange-100 text-orange-800 font-bold px-2 py-0.5 rounded font-latin">
+                            ⏱ {prod.prepTimeMinutes} خولەک
+                          </span>
+                        )}
+                        {prod.isSpicy && (
+                          <span className="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded">
+                            🔥 تیژ
+                          </span>
+                        )}
+                        {prod.isVegetarian && (
+                          <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
+                            🥗 گیاخۆری
+                          </span>
+                        )}
+                      </>
+                    )}
+
+                    {prod.category === 'fresh_meat' && (
+                      <>
+                        {prod.cutType && (
+                          <span className="bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded">
+                            {prod.cutType}
+                          </span>
+                        )}
+                        {prod.meatType && (
+                          <span className="bg-rose-50 text-rose-700 font-bold px-2 py-0.5 rounded">
+                            {prod.meatType}
+                          </span>
+                        )}
+                      </>
+                    )}
+
+                    {prod.category === 'fruits_vegetables' && (
+                      <>
+                        {prod.isOrganic && (
+                          <span className="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">
+                            🌿 ئۆرگانیک
+                          </span>
+                        )}
+                        {prod.origin && (
+                          <span className="bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded">
+                            {prod.origin}
+                          </span>
+                        )}
+                      </>
+                    )}
+
+                    {prod.category === 'dairy' && (
+                      <>
+                        {prod.expiryInfo && (
+                          <span className="bg-cyan-100 text-cyan-800 font-bold px-2 py-0.5 rounded">
+                            بەسەرچوون: {prod.expiryInfo}
+                          </span>
+                        )}
+                      </>
+                    )}
+
+                    {prod.category === 'beauty' && (
+                      <>
+                        {prod.brand && (
+                          <span className="bg-pink-100 text-pink-800 font-bold px-2 py-0.5 rounded font-latin">
+                            {prod.brand}
+                          </span>
+                        )}
+                        {prod.volume && (
+                          <span className="bg-slate-200 text-slate-700 font-bold px-2 py-0.5 rounded font-latin">
+                            {prod.volume}
+                          </span>
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200">
-                  <button
-                    onClick={() => openEditModal(prod)}
-                    className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => deleteProduct(prod.id)}
-                    className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                    prod.stock > 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                  }`}>
+                    {prod.stock > 0 ? 'بەردەستە' : 'تەواو بووە'}
+                  </span>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEditModal(prod)}
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+                      title="دەستکاری کاڵا"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`ئایا دڵنیایت لە سڕینەوەی کاڵای "${prod.title}"؟`)) {
+                          deleteProduct(prod.id);
+                        }
+                      }}
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg cursor-pointer transition-colors"
+                      title="سڕینەوە"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      {/* Customer Reviews & Ratings Tab */}
+      {activeTab === 'reviews' && (() => {
+        const sellerReviews = getSellerReviews(sellerId);
+        const totalReviews = sellerReviews.length;
+        const avgRating = totalReviews > 0
+          ? Number((sellerReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews).toFixed(1))
+          : (sellerProfile?.rating || 4.9);
+
+        const handleSendSellerReply = async (reviewId: string) => {
+          if (!replyText.trim()) return;
+          await replyToReview(reviewId, replyText.trim(), 'seller');
+          setReplyingReviewId(null);
+          setReplyText('');
+        };
+
+        return (
+          <div className="space-y-6">
+            {/* Reviews Score Card */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div className="md:col-span-4 text-center md:border-l md:border-slate-100 md:pl-6 space-y-2">
+                <span className="text-xs font-bold text-slate-400">تێکڕای هەڵسەنگاندنی فرۆشگاکەت</span>
+                <div className="flex items-center justify-center gap-2">
+                  <span className="text-5xl font-black font-latin text-slate-900">{avgRating}</span>
+                  <div className="text-right">
+                    <div className="flex text-amber-400">
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <Star key={s} className="w-4 h-4 fill-amber-400" />
+                      ))}
+                    </div>
+                    <span className="text-xs text-slate-400 font-latin">{totalReviews} هەڵسەنگاندنی ڕاستەقینە</span>
+                  </div>
+                </div>
+                <p className="text-xs text-emerald-600 font-bold bg-emerald-50 py-1 px-3 rounded-full inline-block">
+                  ڕەزامەندی باڵای کڕیاران لە کوالیتی بەرهەمەکانت ⭐
+                </p>
+              </div>
+
+              {/* Stars Breakdown */}
+              <div className="md:col-span-8 space-y-2">
+                {[5, 4, 3, 2, 1].map(starsCount => {
+                  const count = sellerReviews.filter(r => r.rating === starsCount).length;
+                  const percent = totalReviews > 0 ? (count / totalReviews) * 100 : starsCount === 5 ? 100 : 0;
+                  return (
+                    <div key={starsCount} className="flex items-center gap-3 text-xs">
+                      <span className="w-12 text-slate-500 font-latin font-bold flex items-center gap-1">
+                        <span>{starsCount}</span>
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      </span>
+                      <div className="flex-1 bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                        <div
+                          className="bg-amber-400 h-full rounded-full transition-all"
+                          style={{ width: `${percent}%` }}
+                        ></div>
+                      </div>
+                      <span className="w-8 text-slate-400 font-latin text-left">{count}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Reviews List */}
+            <div className="space-y-4">
+              <h3 className="text-base font-black text-slate-900">
+                ڕا و سەرنجی کڕیارانی فرۆشگاکەت ({totalReviews})
+              </h3>
+
+              {totalReviews === 0 ? (
+                <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-2">
+                  <Star className="w-10 h-10 text-slate-300 mx-auto" />
+                  <h4 className="text-sm font-bold text-slate-700">هێشتا هیچ هەڵسەنگاندنێک تۆمار نەکراوە</h4>
+                  <p className="text-xs text-slate-400">دوای تەواوبوونی داواکارییەکان، کڕیاران هەڵسەنگاندن بۆ فرۆشگاکەت دەنوسن.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4">
+                  {sellerReviews.map(rev => (
+                    <div
+                      key={rev.id}
+                      className="bg-white p-5 rounded-3xl border border-slate-200 space-y-4 hover:border-orange-300 transition-colors shadow-2xs"
+                    >
+                      {/* Header */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={rev.userAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150'}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                          />
+                          <div>
+                            <h4 className="text-xs sm:text-sm font-black text-slate-900">{rev.userName}</h4>
+                            <p className="text-[11px] text-slate-400">
+                              {rev.orderNumber && <span className="font-latin font-bold text-orange-600 ml-2">داواکاری: {rev.orderNumber}</span>}
+                              <span>{new Date(rev.createdAt).toLocaleDateString()}</span>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Stars */}
+                        <div className="flex items-center gap-1 bg-amber-50 px-3 py-1 rounded-xl border border-amber-200">
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <Star
+                              key={s}
+                              className={`w-3.5 h-3.5 ${s <= rev.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`}
+                            />
+                          ))}
+                          <span className="text-xs font-black font-latin text-amber-900 mr-1">{rev.rating}.0</span>
+                        </div>
+                      </div>
+
+                      {/* Tags */}
+                      {rev.tags && rev.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {rev.tags.map((tag, i) => (
+                            <span
+                              key={i}
+                              className="px-2.5 py-0.5 rounded-lg bg-orange-50 text-orange-800 text-[11px] font-bold border border-orange-100"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Comment Body */}
+                      <p className="text-xs text-slate-700 leading-relaxed bg-slate-50/70 p-3 rounded-2xl border border-slate-100">
+                        "{rev.comment}"
+                      </p>
+
+                      {/* Seller Reply Section */}
+                      {rev.sellerReply ? (
+                        <div className="p-3 bg-orange-50/90 border border-orange-200 rounded-2xl space-y-1 mr-4">
+                          <div className="flex items-center justify-between text-[11px] font-black text-orange-900">
+                            <span>وەڵامی فرۆشگا ({sellerProfile?.storeName || 'خاوەن کار'}):</span>
+                            <span className="text-[10px] text-orange-600 font-normal">
+                              {new Date(rev.sellerReply.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <p className="text-xs text-orange-800">{rev.sellerReply.comment}</p>
+                        </div>
+                      ) : (
+                        <div>
+                          {replyingReviewId === rev.id ? (
+                            <div className="space-y-2 pt-2 border-t border-slate-100">
+                              <textarea
+                                value={replyText}
+                                onChange={(e) => setReplyText(e.target.value)}
+                                placeholder="وەڵامی کڕیار بدەرەوە و سوپاسی بکە..."
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:outline-hidden"
+                                rows={2}
+                              />
+                              <div className="flex justify-end gap-2">
+                                <button
+                                  onClick={() => setReplyingReviewId(null)}
+                                  className="px-3 py-1.5 text-xs text-slate-500 font-bold"
+                                >
+                                  پاشگەزبوونەوە
+                                </button>
+                                <button
+                                  onClick={() => handleSendSellerReply(rev.id)}
+                                  className="px-4 py-1.5 bg-orange-500 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5"
+                                >
+                                  <Send className="w-3.5 h-3.5" />
+                                  <span>ناردنی وەڵام</span>
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setReplyingReviewId(rev.id);
+                                setReplyText('');
+                              }}
+                              className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-1.5 cursor-pointer pt-1"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                              <span>وەڵامدانەوە بە کڕیار</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Wallet Tab */}
       {activeTab === 'wallet' && (
@@ -928,112 +1414,28 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
         </div>
       )}
 
-      {/* Add / Edit Product Modal */}
+      {/* Add / Edit Product Modal with Dynamic Category Fields */}
       <Modal
         isOpen={isProductModalOpen}
-        onClose={() => setIsProductModalOpen(false)}
-        title={editingProduct ? 'دەستکاری کاڵا' : 'زیادکردنی کاڵای نوێ'}
-        maxWidth="lg"
+        onClose={() => {
+          setIsProductModalOpen(false);
+          setEditingProduct(null);
+        }}
+        title={editingProduct ? 'دەستکاری کاڵا (سیستەمی داینامیک)' : 'زیادکردنی کاڵای نوێ (سیستەمی داینامیک)'}
+        maxWidth="2xl"
       >
-        <form onSubmit={handleSaveProduct} className="space-y-4 text-right">
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">ناوی کاڵا *</label>
-            <input
-              type="text"
-              value={pTitle}
-              onChange={(e) => setPTitle(e.target.value)}
-              required
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:bg-white"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">نرخ بە دینار (IQD) *</label>
-              <input
-                type="number"
-                value={pPrice}
-                onChange={(e) => setPPrice(Number(e.target.value))}
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">نرخی داشکاندن (ئارەزوومەندانە)</label>
-              <input
-                type="number"
-                value={pDiscountPrice || ''}
-                onChange={(e) => setPDiscountPrice(e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">بەش *</label>
-              <select
-                value={pCategory}
-                onChange={(e) => setPCategory(e.target.value as any)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs"
-              >
-                <option value="food">خواردن</option>
-                <option value="market">مارکێت</option>
-                <option value="clothes">جلوبەرگ</option>
-                <option value="fruits_vegetables">سەوزە و میوە</option>
-                <option value="fresh_meat">گۆشت</option>
-                <option value="dairy">شیرەمەنی</option>
-                <option value="electronics">ئەلیکترۆنیات</option>
-                <option value="beauty">جوانی</option>
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">پۆلی لاوەکی (Subcategory)</label>
-              <input
-                type="text"
-                value={pSubcategory}
-                onChange={(e) => setPSubcategory(e.target.value)}
-                placeholder="وەک: پیتزا، کەباب، شەربەت..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">ڕوونکردنەوە</label>
-            <textarea
-              value={pDescription}
-              onChange={(e) => setPDescription(e.target.value)}
-              rows={2}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs"
-            />
-          </div>
-
-          <ImageUpload
-            images={pImages}
-            onChange={setPImages}
-            maxImages={4}
-            label="وێنەی کاڵا باربکە:"
-          />
-
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => setIsProductModalOpen(false)}
-              className="px-4 py-2 text-xs font-bold text-slate-600"
-            >
-              پاشگەزبوونەوە
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold shadow"
-            >
-              پاشەکەوتکردن
-            </button>
-          </div>
-        </form>
+        <DynamicProductForm
+          initialData={editingProduct}
+          allowedCategory={sellerProfile?.category || currentUser?.category}
+          isSuperAdmin={currentUser?.role === 'admin'}
+          sellerName={sellerProfile?.storeName || 'فرۆشگای من'}
+          sellerId={sellerId}
+          onSave={handleSaveProduct}
+          onCancel={() => {
+            setIsProductModalOpen(false);
+            setEditingProduct(null);
+          }}
+        />
       </Modal>
 
     </div>

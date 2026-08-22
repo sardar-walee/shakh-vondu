@@ -12,7 +12,7 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   ku: {
     // Brand & General
-    'app.name': 'شاخی',
+    'app.name': 'شاخ',
     'app.tagline': 'پلاتفۆرمی بازاڕ و گەیاندنی کوردستان و عێراق',
     'app.domain': 'daim-post.online',
     'currency': 'د.ع',
@@ -96,7 +96,7 @@ const translations: Record<Language, Record<string, string>> = {
     'car.price_usd': 'نرخ بە دۆلار',
 
     // Financial & Commission
-    'commission.shakh': 'ڕێژەی کۆمسیۆنی شاخی',
+    'commission.shakh': 'ڕێژەی کۆمسیۆنی شاخ',
     'wallet.balance': 'باڵانسی بەردەست',
     'wallet.total_sales': 'کۆی گشتی فرۆش',
     'wallet.net_earnings': 'قازانجی پاکی فرۆشیار',
@@ -189,7 +189,7 @@ const translations: Record<Language, Record<string, string>> = {
     'wallet.pending': 'Pending Earnings'
   },
   ar: {
-    'app.name': 'شاخي',
+    'app.name': 'شاخ',
     'app.tagline': 'منصة التسوق والتوصيل السريع في كردستان والعراق',
     'app.domain': 'daim-post.online',
     'currency': 'د.ع',
@@ -268,7 +268,7 @@ const translations: Record<Language, Record<string, string>> = {
     'car.price_iqd': 'السعر بالدينار',
     'car.price_usd': 'السعر بالدولار',
 
-    'commission.shakh': 'نسبة عمولة شاخي',
+    'commission.shakh': 'نسبة عمولة شاخ',
     'wallet.balance': 'الرصيد المتاح',
     'wallet.total_sales': 'إجمالي المبيعات',
     'wallet.net_earnings': 'صافي أرباح البائع',

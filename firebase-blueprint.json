@@ -1,470 +1,173 @@
 {
   "entities": {
-    "Store": {
-      "title": "Store",
-      "description": "Represents a mobile store tenant in the SaaS platform.",
+    "User": {
+      "title": "User Profile",
+      "description": "User accounts with role-based access for customers, sellers, admins, and delivery drivers",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
-        "ownerId": { "type": "string", "pattern": "^[a-zA-Z0-9_\\-]+$" },
-        "logo": { "type": "string" },
-        "phone": { "type": "string" },
-        "address": { "type": "string" },
-        "currency": { "type": "string", "enum": ["IQD", "USD", "EUR", "TRY", "IRR"] },
-        "language": { "type": "string", "enum": ["ku", "ar", "en", "tr", "fa"] },
-        "subscriptionStatus": { "type": "string", "enum": ["trial", "active", "expiring_soon", "expired", "suspended", "cancelled"] },
-        "trialEndDate": { "type": "string", "format": "date-time" },
-        "subscriptionEndDate": { "type": "string", "format": "date-time" },
-        "planId": { "type": "string" },
+        "id": { "type": "string", "description": "Unique user ID" },
+        "fullName": { "type": "string", "description": "Full name in Kurdish/English" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "phone": { "type": "string", "description": "Phone number" },
+        "role": { "type": "string", "enum": ["customer", "seller", "admin", "delivery"], "description": "User role" },
+        "city": { "type": "string", "description": "City in Kurdistan" },
+        "area": { "type": "string", "description": "Neighborhood/Area" },
+        "address": { "type": "string", "description": "Street address" },
+        "avatarUrl": { "type": "string", "format": "uri", "description": "Profile picture URL" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "ownerId", "subscriptionStatus"]
+      "required": ["id", "fullName", "role"]
     },
-    "BackupConfig": {
-      "title": "BackupConfig",
-      "description": "Automated snapshot schedule and retention configuration for a store.",
+    "Seller": {
+      "title": "Seller Store",
+      "description": "Store profile for merchants with delivery radius and zone settings",
       "type": "object",
       "properties": {
-        "isAutoBackupEnabled": { "type": "boolean" },
-        "frequency": { "type": "string", "enum": ["daily", "weekly", "monthly", "manual"] },
-        "retentionDays": { "type": "number" },
-        "includeSales": { "type": "boolean" },
-        "includeProducts": { "type": "boolean" },
-        "includeCustomers": { "type": "boolean" },
-        "includeSuppliers": { "type": "boolean" },
-        "includeSupplierReturns": { "type": "boolean" },
-        "lastAutoBackupAt": { "type": "string", "format": "date-time" },
-        "nextScheduledBackupAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["isAutoBackupEnabled", "frequency"]
-    },
-    "BackupSnapshot": {
-      "title": "BackupSnapshot",
-      "description": "Metadata snapshot and audit record of a store database backup.",
-      "type": "object",
-      "properties": {
-        "snapshotNumber": { "type": "string" },
-        "triggerType": { "type": "string", "enum": ["automatic_schedule", "manual_full", "manual_collection"] },
-        "status": { "type": "string", "enum": ["completed", "in_progress", "failed"] },
-        "counts": { "type": "object" },
-        "totalRecords": { "type": "number" },
-        "fileSizeBytes": { "type": "number" },
-        "format": { "type": "string", "enum": ["json", "csv_bundle", "csv_single"] },
-        "includedCollections": { "type": "array" },
-        "checksum": { "type": "string" },
-        "createdBy": { "type": "string" },
-        "createdByName": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["snapshotNumber", "triggerType", "status", "totalRecords", "createdAt"]
-    },
-    "RolePermissions": {
-      "title": "RolePermissions",
-      "description": "Custom permissions matrix mapping roles and specific capability keys for a store.",
-      "type": "object",
-      "properties": {
-        "role": { "type": "string", "enum": ["owner", "manager", "cashier", "technician", "inventory_clerk"] },
-        "permissions": { "type": "array" },
-        "maxDiscountPercent": { "type": "number" },
-        "canViewCostPrices": { "type": "boolean" },
-        "canVoidSales": { "type": "boolean" },
-        "canProcessReturns": { "type": "boolean" },
-        "canExportReports": { "type": "boolean" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "updatedBy": { "type": "string" }
-      },
-      "required": ["role", "permissions"]
-    },
-    "StaffMember": {
-      "title": "StaffMember",
-      "description": "Staff employee profile assigned to a store branch with specific role and custom permission overrides.",
-      "type": "object",
-      "properties": {
+        "id": { "type": "string" },
         "userId": { "type": "string" },
-        "displayName": { "type": "string" },
-        "email": { "type": "string" },
+        "storeName": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "logoUrl": { "type": "string", "format": "uri" },
+        "coverUrl": { "type": "string", "format": "uri" },
+        "city": { "type": "string" },
+        "address": { "type": "string" },
         "phone": { "type": "string" },
-        "role": { "type": "string", "enum": ["owner", "manager", "cashier", "technician", "inventory_clerk"] },
-        "branchId": { "type": "string" },
-        "branchName": { "type": "string" },
-        "isActive": { "type": "boolean" },
-        "customPermissions": { "type": "array" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "lastLoginAt": { "type": "string", "format": "date-time" }
+        "commissionRate": { "type": "number" },
+        "rating": { "type": "number" },
+        "totalReviews": { "type": "number" },
+        "totalSales": { "type": "number" },
+        "isVerified": { "type": "boolean" },
+        "deliveryZone": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["displayName", "email", "role"]
+      "required": ["id", "storeName", "category"]
     },
     "Product": {
       "title": "Product",
-      "description": "A product (mobile, accessory) in a store.",
+      "description": "Products offered across food, market, meat, vegetables, clothes, electronics, cars, beauty, dairy, etc.",
       "type": "object",
       "properties": {
-        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "id": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "subcategory": { "type": "string" },
+        "price": { "type": "number" },
+        "discountPrice": { "type": "number" },
+        "stock": { "type": "number" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "rating": { "type": "number" },
+        "isFeatured": { "type": "boolean" },
+        "isAvailable": { "type": "boolean" },
+        "sizes": { "type": "array", "items": { "type": "string" } },
+        "colors": { "type": "array", "items": { "type": "string" } },
         "brand": { "type": "string" },
         "model": { "type": "string" },
-        "category": { "type": "string" },
-        "sku": { "type": "string" },
-        "barcode": { "type": "string" },
-        "purchasePrice": { "type": "number" },
-        "sellingPrice": { "type": "number" },
-        "wholesalePrice": { "type": "number" },
-        "stock": { "type": "number" },
-        "minStock": { "type": "number" },
-        "hasImei": { "type": "boolean" },
-        "description": { "type": "string" },
+        "gender": { "type": "string" },
+        "material": { "type": "string" },
         "warrantyMonths": { "type": "number" },
-        "images": { "type": "array" }
-      },
-      "required": ["name", "sellingPrice"]
-    },
-    "IMEI": {
-      "title": "IMEI",
-      "description": "Tracking individual IMEIs for phones.",
-      "type": "object",
-      "properties": {
-        "imei": { "type": "string", "pattern": "^[0-9]+$" },
-        "status": { "type": "string", "enum": ["available", "reserved", "sold", "returned", "warranty", "lost"] },
-        "saleId": { "type": "string" },
-        "purchaseId": { "type": "string" },
-        "warrantyExpiry": { "type": "string", "format": "date-time" }
-      },
-      "required": ["imei", "status"]
-    },
-    "Sale": {
-      "title": "Sale",
-      "description": "A sales transaction.",
-      "type": "object",
-      "properties": {
-        "customerId": { "type": "string" },
-        "customerName": { "type": "string" },
-        "customerPhone": { "type": "string" },
-        "items": { "type": "array" },
-        "subtotal": { "type": "number" },
-        "discount": { "type": "number" },
-        "total": { "type": "number" },
-        "cost": { "type": "number" },
-        "profit": { "type": "number" },
-        "paid": { "type": "number" },
-        "remaining": { "type": "number" },
-        "paymentMethod": { "type": "string" },
-        "employeeId": { "type": "string" },
-        "employeeName": { "type": "string" },
-        "branchId": { "type": "string" },
-        "branchName": { "type": "string" },
-        "loyaltyPointsEarned": { "type": "number" },
-        "loyaltyPointsRedeemed": { "type": "number" },
-        "smsSent": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["total", "paid", "createdAt"]
-    },
-    "Customer": {
-      "title": "Customer",
-      "description": "Customer information including loyalty metrics.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "phone": { "type": "string" },
-        "address": { "type": "string" },
-        "debt": { "type": "number" },
-        "loyaltyPoints": { "type": "number" },
-        "totalSpent": { "type": "number" },
-        "tier": { "type": "string", "enum": ["bronze", "silver", "gold", "platinum"] },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["name", "phone"]
-    },
-    "LoyaltyReward": {
-      "title": "LoyaltyReward",
-      "description": "Redeemable rewards for store loyalty program.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "pointsRequired": { "type": "number" },
-        "type": { "type": "string", "enum": ["discount", "free_item", "service", "voucher"] },
-        "discountAmount": { "type": "number" },
-        "itemCategory": { "type": "string" },
-        "description": { "type": "string" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["name", "pointsRequired", "type"]
-    },
-    "LoyaltyHistory": {
-      "title": "LoyaltyHistory",
-      "description": "Points earned or redeemed transaction log.",
-      "type": "object",
-      "properties": {
-        "customerId": { "type": "string" },
-        "customerName": { "type": "string" },
-        "saleId": { "type": "string" },
-        "points": { "type": "number" },
-        "action": { "type": "string", "enum": ["earned", "redeemed", "adjusted", "bonus"] },
-        "reason": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["customerId", "points", "action", "createdAt"]
-    },
-    "SMSConfig": {
-      "title": "SMSConfig",
-      "description": "Third-party SMS gateway configuration.",
-      "type": "object",
-      "properties": {
-        "provider": { "type": "string", "enum": ["twilio", "fastsms", "asiacell", "korek", "zain", "custom_webhook"] },
-        "apiKey": { "type": "string" },
-        "accountSid": { "type": "string" },
-        "senderId": { "type": "string" },
-        "webhookUrl": { "type": "string" },
-        "testPhone": { "type": "string" },
-        "isEnabled": { "type": "boolean" },
-        "autoLowStockAlert": { "type": "boolean" },
-        "autoSubscriptionAlert": { "type": "boolean" },
-        "autoWarrantyAlert": { "type": "boolean" },
-        "autoInstallmentAlert": { "type": "boolean" }
-      },
-      "required": ["provider", "senderId"]
-    },
-    "SMSTemplate": {
-      "title": "SMSTemplate",
-      "description": "Configurable SMS alert templates.",
-      "type": "object",
-      "properties": {
-        "eventType": { "type": "string", "enum": ["low_stock", "expiring_subscription", "expiring_warranty", "upcoming_installment", "sale_receipt", "custom"] },
-        "title": { "type": "string" },
-        "body": { "type": "string" },
-        "language": { "type": "string" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["eventType", "body"]
-    },
-    "SMSLog": {
-      "title": "SMSLog",
-      "description": "Delivery log for all sent SMS messages.",
-      "type": "object",
-      "properties": {
-        "recipientPhone": { "type": "string" },
-        "recipientName": { "type": "string" },
-        "eventType": { "type": "string" },
-        "message": { "type": "string" },
-        "status": { "type": "string", "enum": ["delivered", "sent", "failed", "pending"] },
-        "gatewayResponse": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["recipientPhone", "message", "status", "createdAt"]
-    },
-    "InstallmentSchedule": {
-      "title": "InstallmentSchedule",
-      "description": "Installment or customer debt schedule.",
-      "type": "object",
-      "properties": {
-        "customerId": { "type": "string" },
-        "customerName": { "type": "string" },
-        "customerPhone": { "type": "string" },
-        "saleId": { "type": "string" },
-        "totalDebt": { "type": "number" },
-        "installmentAmount": { "type": "number" },
-        "dueDate": { "type": "string", "format": "date-time" },
-        "status": { "type": "string", "enum": ["pending", "paid", "overdue"] },
-        "remindedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["customerId", "installmentAmount", "dueDate", "status"]
-    },
-    "Invoice": {
-      "title": "Invoice",
-      "description": "Subscription billing invoices and receipts for store tenants.",
-      "type": "object",
-      "properties": {
-        "invoiceNumber": { "type": "string" },
-        "planId": { "type": "string" },
-        "planName": { "type": "string" },
-        "amount": { "type": "number" },
-        "currency": { "type": "string" },
-        "billingCycle": { "type": "string", "enum": ["monthly", "yearly"] },
-        "status": { "type": "string", "enum": ["paid", "pending", "failed", "refunded"] },
-        "paymentMethod": { "type": "string" },
-        "cardLast4": { "type": "string" },
-        "receiptUrl": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["invoiceNumber", "amount", "status", "createdAt"]
-    },
-    "Supplier": {
-      "title": "Supplier",
-      "description": "Wholesale supplier and vendor directory for a store.",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
-        "contactPerson": { "type": "string" },
-        "phone": { "type": "string" },
-        "email": { "type": "string" },
-        "address": { "type": "string" },
-        "companyName": { "type": "string" },
-        "creditBalance": { "type": "number" },
-        "totalReturnsCount": { "type": "number" },
-        "notes": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["name", "phone"]
-    },
-    "SupplierReturn": {
-      "title": "SupplierReturn",
-      "description": "Return merchandise authorization (RMA) record to return damaged or excess stock to vendors.",
-      "type": "object",
-      "properties": {
-        "returnNumber": { "type": "string" },
-        "supplierId": { "type": "string" },
-        "supplierName": { "type": "string" },
-        "supplierPhone": { "type": "string" },
-        "reason": { "type": "string", "enum": ["damaged_on_arrival", "screen_hardware_fault", "excess_stock", "wrong_item_shipped", "recall_manufacturer", "customer_return_to_vendor"] },
-        "reasonDetails": { "type": "string" },
-        "items": { "type": "array" },
-        "totalCost": { "type": "number" },
-        "settlementType": { "type": "string", "enum": ["supplier_credit", "cash_refund", "replacement_stock", "pending_inspection"] },
-        "status": { "type": "string", "enum": ["draft", "pending_approval", "shipped_to_supplier", "received_by_supplier", "resolved_credit", "resolved_refund", "resolved_replacement", "rejected"] },
-        "trackingNumber": { "type": "string" },
-        "courierName": { "type": "string" },
-        "autoInventoryDeducted": { "type": "boolean" },
-        "notes": { "type": "string" },
-        "createdBy": { "type": "string" },
-        "createdByName": { "type": "string" },
-        "branchId": { "type": "string" },
-        "branchName": { "type": "string" },
-        "settlementAmount": { "type": "number" },
-        "settledAt": { "type": "string", "format": "date-time" },
+        "specs": { "type": "object" },
+        "year": { "type": "number" },
+        "mileageKm": { "type": "number" },
+        "fuelType": { "type": "string" },
+        "transmission": { "type": "string" },
+        "prepTimeMinutes": { "type": "number" },
+        "ingredients": { "type": "array", "items": { "type": "string" } },
+        "isSpicy": { "type": "boolean" },
+        "isVegetarian": { "type": "boolean" },
+        "meatType": { "type": "string" },
+        "cutType": { "type": "string" },
+        "isOrganic": { "type": "boolean" },
+        "fatPercentage": { "type": "string" },
+        "origin": { "type": "string" },
+        "skinType": { "type": "string" },
+        "volume": { "type": "string" },
+        "weight": { "type": "string" },
+        "expiryInfo": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["returnNumber", "supplierId", "supplierName", "reason", "status", "totalCost", "createdAt"]
+      "required": ["id", "title", "price", "category", "sellerId"]
     },
-    "AuditLog": {
-      "title": "AuditLog",
-      "description": "System audit trail tracking inventory, RMA, sales, and role actions.",
+    "Order": {
+      "title": "Customer Order",
+      "description": "Multi-vendor orders with delivery zone distance calculation and real-time statuses",
       "type": "object",
       "properties": {
-        "entityType": { "type": "string" },
-        "entityId": { "type": "string" },
-        "action": { "type": "string" },
-        "title": { "type": "string" },
-        "details": { "type": "string" },
-        "performedBy": { "type": "string" },
-        "performedByName": { "type": "string" },
-        "role": { "type": "string" },
-        "changes": { "type": "object" },
+        "id": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "items": { "type": "array" },
+        "subtotal": { "type": "number" },
+        "deliveryFee": { "type": "number" },
+        "deliveryDistanceKm": { "type": "number" },
+        "deliveryZoneStatus": { "type": "string" },
+        "total": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "preparing", "ready_for_pickup", "picked_up", "out_for_delivery", "delivered", "cancelled"] },
+        "paymentMethod": { "type": "string" },
+        "deliveryAddress": { "type": "string" },
+        "deliveryCity": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["entityType", "action", "title", "createdAt"]
+      "required": ["id", "total", "status", "paymentMethod", "deliveryAddress"]
     },
-    "UserProfile": {
-      "title": "User Profile",
-      "description": "Extended user information.",
+    "Car": {
+      "title": "Car Marketplace Listing",
+      "description": "Car ads for Kurdish automotive marketplace",
       "type": "object",
       "properties": {
-        "email": { "type": "string" },
-        "role": { "type": "string", "enum": ["superadmin", "owner", "manager", "cashier", "technician", "inventory_clerk"] },
-        "storeId": { "type": "string" },
-        "branchId": { "type": "string" },
-        "customPermissions": { "type": "array" }
+        "id": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "sellerName": { "type": "string" },
+        "sellerPhone": { "type": "string" },
+        "title": { "type": "string" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "year": { "type": "number" },
+        "priceUSD": { "type": "number" },
+        "mileage": { "type": "number" },
+        "city": { "type": "string" },
+        "images": { "type": "array", "items": { "type": "string" } },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["email", "role"]
+      "required": ["id", "make", "model", "year", "priceUSD"]
     },
-    "Notification": {
-      "title": "Notification",
-      "description": "Real-time alert or system update for store managers and staff.",
+    "Review": {
+      "title": "Review & Rating",
+      "description": "Customer reviews and star ratings for sellers, delivery captains, and products",
       "type": "object",
       "properties": {
-        "title": { "type": "string", "minLength": 1, "maxLength": 150 },
-        "message": { "type": "string", "minLength": 1, "maxLength": 500 },
-        "type": { "type": "string", "enum": ["low_inventory", "subscription_renewal", "system_update", "sale", "general"] },
-        "severity": { "type": "string", "enum": ["info", "warning", "urgent", "success"] },
-        "read": { "type": "boolean" },
-        "link": { "type": "string" },
-        "metadata": { "type": "object" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "createdBy": { "type": "string" }
+        "id": { "type": "string" },
+        "orderId": { "type": "string" },
+        "orderNumber": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatar": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["seller", "driver", "product"] },
+        "targetId": { "type": "string" },
+        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
+        "comment": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "sellerReply": { "type": "object" },
+        "driverReply": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "message", "type", "severity", "read", "createdAt"]
+      "required": ["id", "orderId", "userId", "targetType", "targetId", "rating", "comment"]
     }
   },
   "firestore": {
-    "/stores/{storeId}/notifications/{notificationId}": {
-      "schema": "Notification",
-      "description": "Real-time notifications, low inventory alerts, subscription renewals, and system updates"
-    },
-    "/stores/{storeId}": {
-      "schema": "Store",
-      "description": "Store tenant data"
-    },
-    "/stores/{storeId}/backup_config/current": {
-      "schema": "BackupConfig",
-      "description": "Store automated snapshot and retention configuration"
-    },
-    "/stores/{storeId}/backup_snapshots/{snapshotId}": {
-      "schema": "BackupSnapshot",
-      "description": "Database backup snapshots, record counts, and history"
-    },
-    "/stores/{storeId}/permissions/{roleId}": {
-      "schema": "RolePermissions",
-      "description": "Store-specific role permission configurations"
-    },
-    "/stores/{storeId}/staff/{staffId}": {
-      "schema": "StaffMember",
-      "description": "Staff roster, roles, and branch assignments"
-    },
-    "/stores/{storeId}/products/{productId}": {
-      "schema": "Product",
-      "description": "Products in a store"
-    },
-    "/stores/{storeId}/products/{productId}/imeis/{imeiId}": {
-      "schema": "IMEI",
-      "description": "IMEIs for a specific product"
-    },
-    "/stores/{storeId}/sales/{saleId}": {
-      "schema": "Sale",
-      "description": "Sales records"
-    },
-    "/stores/{storeId}/customers/{customerId}": {
-      "schema": "Customer",
-      "description": "Customers in a store"
-    },
-    "/stores/{storeId}/loyalty_rewards/{rewardId}": {
-      "schema": "LoyaltyReward",
-      "description": "Store loyalty rewards catalog"
-    },
-    "/stores/{storeId}/loyalty_history/{historyId}": {
-      "schema": "LoyaltyHistory",
-      "description": "Customer loyalty point movements"
-    },
-    "/stores/{storeId}/sms_logs/{logId}": {
-      "schema": "SMSLog",
-      "description": "SMS delivery logs"
-    },
-    "/stores/{storeId}/sms_templates/{templateId}": {
-      "schema": "SMSTemplate",
-      "description": "SMS message templates"
-    },
-    "/stores/{storeId}/installments/{installmentId}": {
-      "schema": "InstallmentSchedule",
-      "description": "Upcoming debt & installment schedules"
-    },
-    "/stores/{storeId}/invoices/{invoiceId}": {
-      "schema": "Invoice",
-      "description": "Subscription invoices and billing receipts"
-    },
-    "/stores/{storeId}/suppliers/{supplierId}": {
-      "schema": "Supplier",
-      "description": "Supplier & vendor profiles"
-    },
-    "/stores/{storeId}/supplier_returns/{returnId}": {
-      "schema": "SupplierReturn",
-      "description": "Supplier returns, RMAs, and debit notes"
-    },
-    "/stores/{storeId}/audit_logs/{logId}": {
-      "schema": "AuditLog",
-      "description": "Store audit logs and activity history"
-    },
-    "/users/{userId}": {
-      "schema": "UserProfile",
-      "description": "User roles and store mapping"
-    }
+    "/users/{userId}": { "schema": "User", "description": "User documents" },
+    "/sellers/{sellerId}": { "schema": "Seller", "description": "Seller store documents" },
+    "/products/{productId}": { "schema": "Product", "description": "Product catalog" },
+    "/orders/{orderId}": { "schema": "Order", "description": "Orders collection" },
+    "/cars/{carId}": { "schema": "Car", "description": "Cars marketplace collection" },
+    "/reviews/{reviewId}": { "schema": "Review", "description": "Customer ratings and reviews" }
   }
 }

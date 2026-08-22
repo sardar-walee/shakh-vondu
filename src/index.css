@@ -1,1 +1,126 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-kurdish: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', sans-serif;
+    --font-latin: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    --color-primary-orange: #FF5500;
+    --color-orange-glow: #FF6B00;
+    --color-primary-blue: #2563EB;
+  }
+
+  body {
+    font-family: var(--font-kurdish);
+    background-color: #f8fafc;
+    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Dark mode root styles */
+  html.dark body {
+    background-color: #0b0f19;
+    color: #f8fafc;
+  }
+
+  /* Smooth minimal scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  html.dark ::-webkit-scrollbar-track {
+    background: #0f172a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+  }
+  html.dark ::-webkit-scrollbar-thumb {
+    background: #334155;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #ff5500;
+  }
+}
+
+.font-latin {
+  font-family: var(--font-latin);
+}
+
+/* Vibrant Glowing Orange & Blue Gradients */
+.shakh-gradient {
+  background: linear-gradient(135deg, #FF5500 0%, #FF7700 50%, #FF3300 100%);
+}
+
+.shakh-gradient-glowing {
+  background: linear-gradient(135deg, #FF5500 0%, #FF8800 50%, #FF3300 100%);
+  box-shadow: 0 0 20px rgba(255, 85, 0, 0.45);
+}
+
+.shakh-blue-gradient {
+  background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%);
+}
+
+.shakh-badge-shadow {
+  box-shadow: 0 4px 14px 0 rgba(255, 85, 0, 0.35);
+}
+
+.shakh-blue-shadow {
+  box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.28);
+}
+
+.shakh-neon-glow {
+  filter: drop-shadow(0 0 10px rgba(255, 85, 0, 0.6));
+}
+
+/* Custom Mountain Animations */
+@keyframes mountainPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 8px rgba(255, 85, 0, 0.5));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 16px rgba(255, 85, 0, 0.85));
+  }
+}
+
+@keyframes beaconGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7);
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.9;
+    box-shadow: 0 0 0 8px rgba(37, 99, 235, 0);
+  }
+}
+
+@keyframes shimmerPass {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.animate-mountain-pulse {
+  animation: mountainPulse 3s infinite ease-in-out;
+}
+
+.animate-beacon-glow {
+  animation: beaconGlow 2s infinite ease-in-out;
+}
+
+.animate-shimmer-pass {
+  animation: shimmerPass 2.5s infinite linear;
+}
+
+
+

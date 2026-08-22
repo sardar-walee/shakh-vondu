@@ -36,16 +36,24 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [acceptedShakhRules, setAcceptedShakhRules] = useState(true);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (mode === 'register' && role === 'delivery_agent' && !acceptedShakhRules) {
+      setError('پێویستە یاسا و ڕێنماییەکانی کاپتنی شاخ پەسەند بکەیت.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (mode === 'login') {
         const res = await login(email, password);
         if (res.success) {
-          onNavigate('home');
+          onNavigate('user-profile');
         } else {
           setError(res.error || 'هەڵەیەک ڕوویدا لە کاتی چوونەژوورەوە');
         }
@@ -58,10 +66,12 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
           role,
           category: role.includes('seller') || role === 'restaurant_owner' || role === 'market_owner' ? category : undefined,
           storeName: storeName || fullName,
-          city
+          city,
+          area: 'Center',
+          address: 'شارستانی ' + city
         });
         if (res.success) {
-          onNavigate('home');
+          onNavigate('user-profile');
         } else {
           setError(res.error || 'هەڵەیەک ڕوویدا لە دروستکردنی هەژمار');
         }
@@ -253,6 +263,44 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
             />
           </div>
 
+          {mode === 'register' && role === 'delivery_agent' && (
+            <div className="p-4 bg-teal-50 border border-teal-200 rounded-2xl space-y-3 text-xs text-teal-900 my-2">
+              <div className="flex items-center gap-2 font-black text-teal-800 border-b border-teal-200 pb-2">
+                <ShieldCheck className="w-5 h-5 text-teal-600 flex-shrink-0" />
+                <span>یاسا و ڕێنماییەکانی کاپتنی شاخ (یاسای شاخ)</span>
+              </div>
+
+              <ul className="space-y-2 text-[11px] leading-relaxed text-teal-900 font-medium">
+                <li className="flex items-start gap-1.5">
+                  <span className="font-bold text-teal-700">١.</span>
+                  <span><strong>یاسای ٢٠٪ی شاخ:</strong> لە سەدا بیستی (۲۰٪) کرێی گەیاندن دەچێت بۆ سیستەمی شاخ و ٨٠٪ی تەواوی کرێی گەیاندنەکە بە نێت دەبێتە قازانجی کاپتن.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="font-bold text-teal-700">٢.</span>
+                  <span><strong>کۆکردنەوەی پۆینت:</strong> لە بەرامبەر هەر گەیاندنێک ۲٥ پۆینتی سەرەتایی + ۱ پۆینت بۆ هەر ۵۰۰ د.ع کرێی گەیاندن وەردەگریت.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="font-bold text-teal-700">٣.</span>
+                  <span><strong>ئامانەت و بەڕێوەبردن:</strong> کاپتن بەرپرسە لە پاراستنی باری کڕیار و گەیاندنی بە تازەیی و لە کاتی دیاریکراودا.</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span className="font-bold text-teal-700">٤.</span>
+                  <span><strong>پاکتاوی نەقد:</strong> ڕادەستکردنەوەی نەقدی (COD) فرۆشیاران بە شێوەی ڕێکخراو.</span>
+                </li>
+              </ul>
+
+              <label className="flex items-center gap-2 pt-2 border-t border-teal-200/80 cursor-pointer text-[11px] font-bold text-teal-900">
+                <input
+                  type="checkbox"
+                  checked={acceptedShakhRules}
+                  onChange={(e) => setAcceptedShakhRules(e.target.checked)}
+                  className="w-4 h-4 text-teal-600 rounded-md focus:ring-teal-500 accent-teal-600 cursor-pointer"
+                />
+                <span>یاساکانی شاخم خوێندەوە و هەموو مەرجەکان پەسەند دەکەم</span>
+              </label>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={loading}
@@ -294,8 +342,11 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
         {/* Quick Demo Switcher Prompt */}
         <div className="pt-2 text-center">
           <button
-            onClick={() => switchUserRole('admin')}
-            className="text-[11px] text-blue-600 hover:underline font-semibold"
+            onClick={() => {
+              switchUserRole('admin');
+              onNavigate('user-profile');
+            }}
+            className="text-[11px] text-blue-600 hover:underline font-semibold cursor-pointer"
           >
             چوونەژوورەوە بە هەژماری Super Admin بۆ تاقیکردنەوە
           </button>
