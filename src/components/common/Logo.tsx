@@ -84,10 +84,10 @@ export const Logo: React.FC<LogoProps> = ({
           </span>
 
           {/* English "SHAKH" in Deep Blue & White */}
-          <div dir="ltr" className={`flex items-center font-latin tracking-tight font-black ${sizeMap[size].text}`}>
+          <span dir="ltr" className={`inline-block font-latin tracking-tight font-black ${sizeMap[size].text}`}>
             <span className="text-[#FF5500] drop-shadow-[0_1px_4px_rgba(255,85,0,0.4)]">SH</span>
             <span className={isLight ? 'text-white' : 'text-[#2563EB] dark:text-blue-400'}>AKH</span>
-          </div>
+          </span>
         </div>
 
         {showTagline && (

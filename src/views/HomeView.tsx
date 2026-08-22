@@ -48,6 +48,20 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [showAppModal, setShowAppModal] = useState(false);
   const [bestSellerCategory, setBestSellerCategory] = useState<string>('all');
   const categoriesScrollRef = useRef<HTMLDivElement>(null);
+  const bestSellersScrollRef = useRef<HTMLDivElement>(null);
+  const carsScrollRef = useRef<HTMLDivElement>(null);
+  const specialOffersScrollRef = useRef<HTMLDivElement>(null);
+  const trendingScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleScrollSection = (ref: React.RefObject<HTMLDivElement | null>, direction: 'left' | 'right') => {
+    if (ref.current) {
+      const scrollDist = 300;
+      ref.current.scrollBy({
+        left: direction === 'right' ? -scrollDist : scrollDist,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   // Filter by selected city if applicable
   const filteredSellers = selectedCity
@@ -221,7 +235,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         </div>
       </section>
 
-      {/* BEST SELLERS SECTION (پرفرۆشترین کاڵاکان) */}
+      {/* BEST SELLERS SECTION (پرفرۆشترین کاڵاکان - لا سلاید) */}
       <section className="bg-gradient-to-br from-rose-50/50 via-white to-orange-50/40 dark:from-[#1e293b] dark:via-[#1e293b] dark:to-orange-950/20 rounded-3xl p-6 sm:p-8 border border-rose-100 dark:border-slate-800 shadow-xs space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -236,45 +250,71 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                ئەو کاڵایانەی زۆرترین داواکاری و بەرزترین هەڵسەنگاندنیان هەیە لە شاخ
+                ئەو کاڵایانەی زۆرترین داواکاری و بەرزترین هەڵسەنگاندنیان هەیە لە شاخ (لا سلاید)
               </p>
             </div>
           </div>
 
-          {/* Filter Chips */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-            {[
-              { id: 'all', name: 'هەموو' },
-              { id: 'food', name: 'خواردن' },
-              { id: 'market', name: 'مارکێت' },
-              { id: 'clothes', name: 'جلوبەرگ' },
-              { id: 'electronics', name: 'ئەلیکترۆنیات' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setBestSellerCategory(tab.id)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-                  bestSellerCategory === tab.id
-                    ? 'bg-rose-600 text-white shadow-sm'
-                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
-                }`}
-              >
-                {tab.name}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            {/* Filter Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              {[
+                { id: 'all', name: 'هەموو' },
+                { id: 'food', name: 'خواردن' },
+                { id: 'market', name: 'مارکێت' },
+                { id: 'clothes', name: 'جلوبەرگ' },
+                { id: 'electronics', name: 'ئەلیکترۆنیات' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setBestSellerCategory(tab.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    bestSellerCategory === tab.id
+                      ? 'bg-rose-600 text-white shadow-sm'
+                      : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  }`}
+                >
+                  {tab.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Side Slider Controls */}
+            {bestSellers.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  onClick={() => handleScrollSection(bestSellersScrollRef, 'right')}
+                  className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-90 transition-all cursor-pointer"
+                  title="ڕاست"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => handleScrollSection(bestSellersScrollRef, 'left')}
+                  className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-90 transition-all cursor-pointer"
+                  title="چەپ"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Best Sellers Grid */}
+        {/* Best Sellers Horizontal Side Slider */}
         {bestSellers.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div
+            ref={bestSellersScrollRef}
+            className="flex gap-4 overflow-x-auto pb-2 scrollbar-none snap-x scroll-smooth"
+          >
             {bestSellers.map(product => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onClick={() => onNavigate('product-detail', product.id)}
-                onSellerClick={(sId) => onNavigate('seller-store', sId)}
-              />
+              <div key={product.id} className="flex-shrink-0 w-60 sm:w-64 snap-start">
+                <ProductCard
+                  product={product}
+                  onClick={() => onNavigate('product-detail', product.id)}
+                  onSellerClick={(sId) => onNavigate('seller-store', sId)}
+                />
+              </div>
             ))}
           </div>
         ) : (
@@ -292,32 +332,56 @@ export const HomeView: React.FC<HomeViewProps> = ({
         {/* Main Column (8 cols on lg) */}
         <div className="lg:col-span-8 space-y-8">
 
-          {/* Cars Showcase with Countdown Timers */}
+          {/* Cars Showcase Side Slider */}
           <section className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 shadow-xs border border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex justify-between items-center pb-2 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-6 bg-[#2563EB] rounded-full" />
                 <div className="flex items-center gap-1.5">
                   <Car className="w-5 h-5 text-[#2563EB]" />
-                  <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100">نوێترین ئۆتۆمبێلەکان (بە دابەزینی کات)</h2>
+                  <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100">نوێترین ئۆتۆمبێلەکان (لا سلاید)</h2>
                 </div>
               </div>
-              <button
-                onClick={() => onNavigate('car-marketplace')}
-                className="text-[#2563EB] text-xs sm:text-sm font-bold hover:underline cursor-pointer"
-              >
-                بینینی هەمووی ←
-              </button>
+              <div className="flex items-center gap-3">
+                {activeCarAds.length > 0 && (
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleScrollSection(carsScrollRef, 'right')}
+                      className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
+                      title="ڕاست"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleScrollSection(carsScrollRef, 'left')}
+                      className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
+                      title="چەپ"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+                <button
+                  onClick={() => onNavigate('car-marketplace')}
+                  className="text-[#2563EB] text-xs sm:text-sm font-bold hover:underline cursor-pointer"
+                >
+                  بینینی هەمووی ←
+                </button>
+              </div>
             </div>
 
             {activeCarAds.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {activeCarAds.slice(0, 3).map(car => (
-                  <CarAdCard
-                    key={car.id}
-                    car={car}
-                    onClick={() => onNavigate('car-detail', car.id)}
-                  />
+              <div
+                ref={carsScrollRef}
+                className="flex gap-4 overflow-x-auto pb-2 scrollbar-none snap-x scroll-smooth"
+              >
+                {activeCarAds.map(car => (
+                  <div key={car.id} className="flex-shrink-0 w-72 sm:w-80 snap-start">
+                    <CarAdCard
+                      car={car}
+                      onClick={() => onNavigate('car-detail', car.id)}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
@@ -329,7 +393,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             )}
           </section>
 
-          {/* Special Offers / Discounts */}
+          {/* Special Offers / Discounts Side Slider */}
           {specialOffers.length > 0 && (
             <section className="space-y-4">
               <div className="flex items-center justify-between">
@@ -340,46 +404,90 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">داشکاندن و ئۆفەرە تایبەتەکان</h2>
                   </div>
                 </div>
-                <button
-                  onClick={() => onSelectCategory('food')}
-                  className="text-xs font-bold text-[#FF5500] hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <span>هەمووی ببینە</span>
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                </button>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => handleScrollSection(specialOffersScrollRef, 'right')}
+                      className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
+                      title="ڕاست"
+                    >
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleScrollSection(specialOffersScrollRef, 'left')}
+                      className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
+                      title="چەپ"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => onSelectCategory('food')}
+                    className="text-xs font-bold text-[#FF5500] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>هەمووی ببینە</span>
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div
+                ref={specialOffersScrollRef}
+                className="flex gap-4 overflow-x-auto pb-2 scrollbar-none snap-x scroll-smooth"
+              >
                 {specialOffers.map(p => (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    onClick={() => onNavigate('product-detail', p.id)}
-                    onSellerClick={(sId) => onNavigate('seller-store', sId)}
-                  />
+                  <div key={p.id} className="flex-shrink-0 w-60 sm:w-64 snap-start">
+                    <ProductCard
+                      product={p}
+                      onClick={() => onNavigate('product-detail', p.id)}
+                      onSellerClick={(sId) => onNavigate('seller-store', sId)}
+                    />
+                  </div>
                 ))}
               </div>
             </section>
           )}
 
-          {/* Trending Products */}
+          {/* Trending Products Side Slider */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-6 bg-[#2563EB] rounded-full" />
                 <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">کاڵا هەڵبژێردراوەکان لە هەموو بەشەکان</h2>
               </div>
+              {trendingProducts.length > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleScrollSection(trendingScrollRef, 'right')}
+                    className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
+                    title="ڕاست"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => handleScrollSection(trendingScrollRef, 'left')}
+                    className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
+                    title="چەپ"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {trendingProducts.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div
+                ref={trendingScrollRef}
+                className="flex gap-4 overflow-x-auto pb-2 scrollbar-none snap-x scroll-smooth"
+              >
                 {trendingProducts.map(product => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onClick={() => onNavigate('product-detail', product.id)}
-                    onSellerClick={(sId) => onNavigate('seller-store', sId)}
-                  />
+                  <div key={product.id} className="flex-shrink-0 w-60 sm:w-64 snap-start">
+                    <ProductCard
+                      product={product}
+                      onClick={() => onNavigate('product-detail', product.id)}
+                      onSellerClick={(sId) => onNavigate('seller-store', sId)}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (

@@ -154,25 +154,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const { addNotification } = useNotification();
 
   // State initialization - no mock seed fallbacks
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem('shakh_products');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [sellers, setSellers] = useState<SellerProfile[]>(() => {
-    const saved = localStorage.getItem('shakh_sellers');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [carAds, setCarAds] = useState<CarAd[]>(() => {
-    const saved = localStorage.getItem('shakh_car_ads');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('shakh_orders');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [products, setProducts] = useState<Product[]>([]);
+  const [sellers, setSellers] = useState<SellerProfile[]>([]);
+  const [carAds, setCarAds] = useState<CarAd[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   const [commissionTransactions, setCommissionTransactions] = useState<CommissionTransaction[]>(() => {
     const saved = localStorage.getItem('shakh_commissions');
@@ -189,10 +174,20 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    const saved = localStorage.getItem('shakh_reviews');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [reviews, setReviews] = useState<Review[]>([]);
+
+  // Clear any legacy demo data cached in local storage on startup
+  useEffect(() => {
+    try {
+      const keysToCheck = ['shakh_products', 'shakh_sellers', 'shakh_car_ads', 'shakh_orders', 'shakh_reviews'];
+      keysToCheck.forEach(key => {
+        const item = localStorage.getItem(key);
+        if (item && (item.includes('prod-food-1') || item.includes('store-rest-1') || item.includes('car-ad-1') || item.includes('ORD-8821'))) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch (e) {}
+  }, []);
 
   const [favoriteProductIds, setFavoriteProductIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('shakh_fav_products');
