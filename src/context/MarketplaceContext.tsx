@@ -168,6 +168,7 @@ interface MarketplaceContextType {
     totalProductsCount: number;
     totalCarAdsCount: number;
   };
+  purgeAllDemoData: () => Promise<{ success: boolean; message: string }>;
 }
 
 const MarketplaceContext = createContext<MarketplaceContextType | undefined>(undefined);
@@ -1706,6 +1707,52 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } catch (e) {}
   };
 
+  const purgeAllDemoData = async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      // 1. Reset react state
+      setProducts([]);
+      setSellers([]);
+      setCarAds([]);
+      setOrders([]);
+      setReviews([]);
+
+      // 2. Clear LocalStorage cache
+      const keysToRemove = [
+        'shakh_products', 'shakh_sellers', 'shakh_car_ads', 'shakh_orders',
+        'shakh_reviews', 'shakh_commissions', 'shakh_wallets', 'shakh_car_payments',
+        'shakh_fav_products', 'shakh_fav_sellers', 'shakh_driver_stats'
+      ];
+      keysToRemove.forEach(k => {
+        try { localStorage.removeItem(k); } catch (e) {}
+      });
+
+      // 3. Delete documents from Firestore
+      const collectionsToPurge = ['products', 'sellers', 'cars', 'orders', 'reviews'];
+      for (const colName of collectionsToPurge) {
+        try {
+          const colRef = collection(db, colName);
+          const snapshot = await getDocs(colRef);
+          const deletePromises = snapshot.docs.map(d => deleteDoc(doc(db, colName, d.id)));
+          await Promise.all(deletePromises);
+        } catch (e) {
+          console.warn(`Error purging collection ${colName}:`, e);
+        }
+      }
+
+      // 4. If Supabase configured, attempt cleanup as well
+      if (supabase && isSupabaseConfigured) {
+        try {
+          await supabase.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+          await supabase.from('sellers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        } catch (e) {}
+      }
+
+      return { success: true, message: 'تەواوی کاڵا و دیمۆ کۆنەکان لە فایەربەیس و میمۆری بە سەرکەوتوویی سڕانەوە.' };
+    } catch (e: any) {
+      return { success: false, message: e.message || 'هەڵەیەک ڕوویدا لە کاتی پاککردنەوەدا' };
+    }
+  };
+
   // Super Admin Platform Statistics
   const totalGrossMerchandiseValue = orders.reduce((sum, o) => sum + (o.subtotal || 0), 0);
   const totalShakhCommission = commissionTransactions.reduce((sum, c) => sum + (c.commissionAmount || 0), 0);
@@ -1787,7 +1834,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         getSellerWallet,
         driverStatsMap,
         getDriverStats,
-        platformStats
+        platformStats,
+        purgeAllDemoData
       }}
     >
       {children}

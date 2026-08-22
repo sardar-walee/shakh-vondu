@@ -64,11 +64,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     updateFeedbackStatus,
     addProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    purgeAllDemoData
   } = useMarketplace();
   const { currentUser, isSuperAdmin } = useAuth();
 
   const [tab, setTab] = useState<'overview' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances'>('overview');
+
+  // Purge database state
+  const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
+  const [isPurging, setIsPurging] = useState(false);
+  const [purgeResultMsg, setPurgeResultMsg] = useState<string | null>(null);
+
+  const handlePurgeDatabase = async () => {
+    setIsPurging(true);
+    setPurgeResultMsg(null);
+    const res = await purgeAllDemoData();
+    setIsPurging(false);
+    setPurgeResultMsg(res.message);
+    if (res.success) {
+      setTimeout(() => {
+        setIsPurgeModalOpen(false);
+        setPurgeResultMsg(null);
+      }, 2500);
+    }
+  };
 
   // Product Admin Management State
   const [productSearch, setProductSearch] = useState('');
@@ -164,6 +184,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             </p>
           </div>
         </div>
+
+        {/* Purge Database Button */}
+        <button
+          type="button"
+          onClick={() => setIsPurgeModalOpen(true)}
+          className="px-4 py-2.5 bg-red-600/30 hover:bg-red-600 text-red-200 hover:text-white border border-red-500/40 font-bold rounded-2xl text-xs flex items-center gap-2 transition-all cursor-pointer shrink-0 shadow-md"
+        >
+          <Trash2 className="w-4 h-4 text-red-400" />
+          <span>پاککردنەوەی تەواوی داتابەیس و دیمۆکان (Purge Database)</span>
+        </button>
       </div>
 
       {/* Tabs */}
@@ -966,6 +996,66 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             setEditingProduct(null);
           }}
         />
+      </Modal>
+
+      {/* Purge Database Confirmation Modal */}
+      <Modal
+        isOpen={isPurgeModalOpen}
+        onClose={() => {
+          if (!isPurging) setIsPurgeModalOpen(false);
+        }}
+        title="⚠️ پاککردنەوەی تەواوی داتابەیس و دیمۆ کۆنەکان"
+        maxWidth="md"
+      >
+        <div className="space-y-4 py-2">
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-bold">
+            ئایا دڵنیایت لە سڕینەوەی تەواوی داتای دیمۆ و کاڵاکانی پێشوو لە پرۆژەکە؟
+          </p>
+          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 rounded-2xl text-[11px] space-y-1">
+            <span className="font-bold block">ئەم کردارە چی دەکات؟</span>
+            <ul className="list-disc list-inside space-y-0.5">
+              <li>تەواوی دۆکیومێنتەکانی (Products, Sellers, Cars, Orders, Reviews) لە فایەربەیس ڕاستەوخۆ دەسڕێتەوە.</li>
+              <li>کاش و LocalStorage ی هەموو بەکارهێنەران لە دیمۆ کۆنەکان پاک دەکاتەوە.</li>
+              <li>پرۆژەی سەر دۆمەینی <span className="font-latin font-bold">daim-post.online</span> تەواو خاوێن دەبێتەوە بۆ کاتاڵۆگی داینامیکی نوێ.</li>
+            </ul>
+          </div>
+
+          {purgeResultMsg && (
+            <div className="p-3 bg-emerald-500/15 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-bold flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span>{purgeResultMsg}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              disabled={isPurging}
+              onClick={() => setIsPurgeModalOpen(false)}
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 cursor-pointer"
+            >
+              پاشگەزبوونەوە
+            </button>
+            <button
+              type="button"
+              disabled={isPurging}
+              onClick={handlePurgeDatabase}
+              className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-2"
+            >
+              {isPurging ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span>سڕینەوەی بەکۆمەڵ...</span>
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4" />
+                  <span>بەڵێ، هەموی بەکۆمەڵ بسڕەوە</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </Modal>
 
     </div>
