@@ -29,7 +29,8 @@ import {
   Heart,
   Save,
   Image,
-  RefreshCw
+  RefreshCw,
+  RotateCcw
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
@@ -65,7 +66,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     addProduct,
     updateProduct,
     deleteProduct,
-    purgeAllDemoData
+    purgeAllDemoData,
+    cleanTaggedDemoOnly
   } = useMarketplace();
   const { currentUser, isSuperAdmin } = useAuth();
 
@@ -75,8 +77,20 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
   const [purgeResultMsg, setPurgeResultMsg] = useState<string | null>(null);
+  const [purgeConfirmText, setPurgeConfirmText] = useState('');
+
+  const isConfirmValid = purgeConfirmText.trim().toUpperCase() === 'RESET';
 
   const handlePurgeDatabase = async () => {
+    if (!isSuperAdmin) {
+      setPurgeResultMsg('⛔ تەنها سوپەر ئەدمین (Super Admin) دەسەڵاتی جێبەجێکردنی Factory Reset ی هەیە.');
+      return;
+    }
+    if (!isConfirmValid) {
+      setPurgeResultMsg('⚠️ تکایە دەستەواژەی "RESET" بە دروستی بنووسە بۆ پاشەکەوتکردن لە پەیوەستی هەڵە.');
+      return;
+    }
+
     setIsPurging(true);
     setPurgeResultMsg(null);
     const res = await purgeAllDemoData();
@@ -86,7 +100,32 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
       setTimeout(() => {
         setIsPurgeModalOpen(false);
         setPurgeResultMsg(null);
+        setPurgeConfirmText('');
       }, 2500);
+    }
+  };
+
+  const handleCleanTaggedDemoOnly = async () => {
+    if (!isSuperAdmin) {
+      setPurgeResultMsg('⛔ تەنها سوپەر ئەدمین (Super Admin) دەسەڵاتی جێبەجێکردنی پاککردنەوەی داتای دیمۆی هەیە.');
+      return;
+    }
+    if (!isConfirmValid) {
+      setPurgeResultMsg('⚠️ تکایە دەستەواژەی "RESET" بە دروستی بنووسە بۆ ڕێگری لە داگرتنی هەڵە.');
+      return;
+    }
+
+    setIsPurging(true);
+    setPurgeResultMsg(null);
+    const res = await cleanTaggedDemoOnly();
+    setIsPurging(false);
+    setPurgeResultMsg(res.details);
+    if (res.success) {
+      setTimeout(() => {
+        setIsPurgeModalOpen(false);
+        setPurgeResultMsg(null);
+        setPurgeConfirmText('');
+      }, 3500);
     }
   };
 
@@ -185,14 +224,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           </div>
         </div>
 
-        {/* Purge Database Button */}
+        {/* Factory Reset / Purge Database Button */}
         <button
           type="button"
           onClick={() => setIsPurgeModalOpen(true)}
-          className="px-4 py-2.5 bg-red-600/30 hover:bg-red-600 text-red-200 hover:text-white border border-red-500/40 font-bold rounded-2xl text-xs flex items-center gap-2 transition-all cursor-pointer shrink-0 shadow-md"
+          className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 transition-all cursor-pointer shrink-0 shadow-lg border border-red-400/30"
         >
-          <Trash2 className="w-4 h-4 text-red-400" />
-          <span>پاککردنەوەی تەواوی داتابەیس و دیمۆکان (Purge Database)</span>
+          <RotateCcw className="w-4 h-4 text-white" />
+          <span>ڕێکخستنەوەی کارگە (Factory Reset)</span>
         </button>
       </div>
 
@@ -998,26 +1037,97 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
         />
       </Modal>
 
-      {/* Purge Database Confirmation Modal */}
+      {/* Factory Reset & Demo Cleaner Confirmation Modal */}
       <Modal
         isOpen={isPurgeModalOpen}
         onClose={() => {
           if (!isPurging) setIsPurgeModalOpen(false);
         }}
-        title="⚠️ پاککردنەوەی تەواوی داتابەیس و دیمۆ کۆنەکان"
-        maxWidth="md"
+        title="🏭 ڕێکخستنەوەی داتابەیس و پاكکردنەوەی داتای دیمۆ و تێست"
+        maxWidth="lg"
       >
         <div className="space-y-4 py-2">
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-bold">
-            ئایا دڵنیایت لە سڕینەوەی تەواوی داتای دیمۆ و کاڵاکانی پێشوو لە پرۆژەکە؟
+            یارمەتیدەر بۆ ئامادەکردنی ژینگەی بەرکارهێنان (<span className="font-latin">Production Environment</span>). هەڵبژێرە بەپێی ویستت:
           </p>
-          <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-700 dark:text-rose-300 rounded-2xl text-[11px] space-y-1">
-            <span className="font-bold block">ئەم کردارە چی دەکات؟</span>
-            <ul className="list-disc list-inside space-y-0.5">
-              <li>تەواوی دۆکیومێنتەکانی (Products, Sellers, Cars, Orders, Reviews) لە فایەربەیس ڕاستەوخۆ دەسڕێتەوە.</li>
-              <li>کاش و LocalStorage ی هەموو بەکارهێنەران لە دیمۆ کۆنەکان پاک دەکاتەوە.</li>
-              <li>پرۆژەی سەر دۆمەینی <span className="font-latin font-bold">daim-post.online</span> تەواو خاوێن دەبێتەوە بۆ کاتاڵۆگی داینامیکی نوێ.</li>
-            </ul>
+
+          {/* Confirmation Safeguard Input */}
+          <div className="p-3.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              🔒 بۆ داگیرساندنی کرداری سڕینەوە، تکایە کلمەی <span className="text-rose-600 font-latin font-black">RESET</span> بنووسە:
+            </label>
+            <input
+              type="text"
+              value={purgeConfirmText}
+              onChange={(e) => setPurgeConfirmText(e.target.value)}
+              placeholder="RESET"
+              className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold font-latin focus:ring-2 focus:ring-red-500 outline-none uppercase"
+            />
+            {!isConfirmValid && (
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold">
+                ⚠️ تا دەستەواژەی "RESET" نەنووسرێت دوگمەکانی سڕینەوە ناچالاک دەبن.
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Option 1: Clean Tagged Demo Records Only */}
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col justify-between space-y-2">
+              <div>
+                <div className="flex items-center gap-1.5 font-black text-xs text-amber-800 dark:text-amber-300 mb-1">
+                  <span>🧹 سڕینەوەی داتای نیشانەکراوی دیمۆ/تێست (Selective Cleaner)</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal">
+                  تەنها ئەو دۆکیومێنتانەی هێمای <span className="font-latin font-bold">isDemo, isTest, tag: 'demo'</span> یان ناسنامەی دیمۆیان هەیە دەسڕێتەوە. <strong className="text-emerald-600 dark:text-emerald-400">بەکارهێنەران و داواکارییە ڕاستەقینەکان دەپارێزێت.</strong>
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={isPurging || !isConfirmValid || !isSuperAdmin}
+                onClick={handleCleanTaggedDemoOnly}
+                className={`w-full mt-2 px-3 py-2 text-xs font-black rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 ${
+                  isConfirmValid && isSuperAdmin && !isPurging
+                    ? 'bg-amber-500 hover:bg-amber-600 text-slate-950 cursor-pointer'
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                {isPurging ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                <span>سڕینەوەی داتای دیمۆ/تێست تەنها</span>
+              </button>
+            </div>
+
+            {/* Option 2: Full Factory Reset */}
+            <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex flex-col justify-between space-y-2">
+              <div>
+                <div className="flex items-center gap-1.5 font-black text-xs text-rose-800 dark:text-rose-300 mb-1">
+                  <span>🏭 ڕێکخستنەوەی تەکامولی کارگە (Full Factory Reset)</span>
+                </div>
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-normal">
+                  تەواوی داتای دیمۆی سەر بەرهەم و فرۆشیار و داواکارییەکان لە داتابەیس بەکۆمەڵ دەسڕێتەوە بۆ دەستپێکردنی کار بە بەرهەمی نوێ.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={isPurging || !isConfirmValid || !isSuperAdmin}
+                onClick={handlePurgeDatabase}
+                className={`w-full mt-2 px-3 py-2 text-xs font-black rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 ${
+                  isConfirmValid && isSuperAdmin && !isPurging
+                    ? 'bg-rose-600 hover:bg-rose-700 text-white cursor-pointer'
+                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                {isPurging ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-3.5 h-3.5" />
+                )}
+                <span>جێبەجێکردنی Factory Reset</span>
+              </button>
+            </div>
           </div>
 
           {purgeResultMsg && (
@@ -1027,32 +1137,14 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-end pt-2 border-t border-slate-100 dark:border-slate-800">
             <button
               type="button"
               disabled={isPurging}
               onClick={() => setIsPurgeModalOpen(false)}
               className="px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs rounded-xl hover:bg-slate-200 cursor-pointer"
             >
-              پاشگەزبوونەوە
-            </button>
-            <button
-              type="button"
-              disabled={isPurging}
-              onClick={handlePurgeDatabase}
-              className="px-5 py-2 bg-red-600 hover:bg-red-500 text-white font-black text-xs rounded-xl shadow-md transition-all cursor-pointer flex items-center gap-2"
-            >
-              {isPurging ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>سڕینەوەی بەکۆمەڵ...</span>
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4" />
-                  <span>بەڵێ، هەموی بەکۆمەڵ بسڕەوە</span>
-                </>
-              )}
+              داخستن
             </button>
           </div>
         </div>

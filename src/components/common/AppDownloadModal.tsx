@@ -13,6 +13,8 @@ import {
   Zap
 } from 'lucide-react';
 import { Logo } from './Logo';
+import { ShakhLogoSVG } from './ShakhLogoSVG';
+import { useNotification } from '../../context/NotificationContext';
 
 interface AppDownloadModalProps {
   isOpen: boolean;
@@ -20,6 +22,7 @@ interface AppDownloadModalProps {
 }
 
 export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ isOpen, onClose }) => {
+  const { addNotification } = useNotification();
   const [activeTab, setActiveTab] = useState<'android' | 'ios' | 'qr'>('android');
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -37,28 +40,41 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ isOpen, onCl
 
   if (!isOpen) return null;
 
+  const triggerDownloadSuccessNotification = () => {
+    addNotification({
+      userId: 'current',
+      title: 'داگرتنی سەرکەوتووانەی ئەپی شاخ 📲',
+      message: 'لەگەڵ شاخ دەگەیتە لوتکە 🏔️ | سوپاس بۆ دابەزاندنی ئەپەکە.',
+      type: 'system',
+      status: 'success'
+    });
+  };
+
   const handleInstallPwa = async () => {
     if (deferredPrompt) {
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
+        triggerDownloadSuccessNotification();
         onClose();
       }
     } else {
       // Direct APK download simulation
       setIsDownloading(true);
       setDownloadProgress(10);
+      let currentProgress = 10;
       const interval = setInterval(() => {
-        setDownloadProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setIsDownloading(false);
-            setDownloadComplete(true);
-            return 100;
-          }
-          return prev + 25;
-        });
+        currentProgress += 25;
+        if (currentProgress >= 100) {
+          clearInterval(interval);
+          setDownloadProgress(100);
+          setIsDownloading(false);
+          setDownloadComplete(true);
+          triggerDownloadSuccessNotification();
+        } else {
+          setDownloadProgress(currentProgress);
+        }
       }, 350);
     }
   };
@@ -66,17 +82,36 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ isOpen, onCl
   const handleSimulateApkDownload = () => {
     setIsDownloading(true);
     setDownloadProgress(15);
+    
+    // Trigger actual browser file download for APK
+    try {
+      const dummyApkContent = `SHAKH_APP_INSTALLER_VERSION_2.4\nPlatform: https://daim-post.online\nApp Name: شاخ | Shakh Marketplace & Delivery App\n\nلەگەڵ شاخ دەگەیتە لوتکە 🏔️`;
+      const blob = new Blob([dummyApkContent], { type: 'application/vnd.android.package-archive' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'shakh-marketplace-v2.4.apk';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.warn('File download fallback:', e);
+    }
+
+    let currentProgress = 15;
     const interval = setInterval(() => {
-      setDownloadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsDownloading(false);
-          setDownloadComplete(true);
-          return 100;
-        }
-        return prev + 20;
-      });
-    }, 300);
+      currentProgress += 25;
+      if (currentProgress >= 100) {
+        clearInterval(interval);
+        setDownloadProgress(100);
+        setIsDownloading(false);
+        setDownloadComplete(true);
+        triggerDownloadSuccessNotification();
+      } else {
+        setDownloadProgress(currentProgress);
+      }
+    }, 250);
   };
 
   return (
@@ -92,16 +127,17 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ isOpen, onCl
         </button>
 
         {/* Header with App Branding */}
-        <div className="text-center space-y-2 pt-2">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-400 p-0.5 shadow-lg shadow-orange-500/20 flex items-center justify-center">
-            <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center">
-              <span className="text-white font-black text-2xl tracking-tighter">شاخ</span>
-            </div>
+        <div className="text-center space-y-3 pt-2 flex flex-col items-center">
+          <div className="relative group cursor-pointer">
+            <ShakhLogoSVG size={120} showGlow={true} />
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-            دابەزاندنی ئەپی فەرمی شاخ
+            دابەزاندنی ئەپی فەرمی شاخ (Shakh)
           </h2>
+          <p className="text-xs font-bold text-[#F97316] font-latin">
+            daim-post.online
+          </p>
           <p className="text-xs text-slate-500 max-w-xs mx-auto">
             خێراترین ئەزموونی کڕین، فرۆشتن، داواکردنی خواردن و ئۆتۆمبێل لە کوردستان
           </p>
@@ -169,9 +205,14 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ isOpen, onCl
                 </div>
               </div>
             ) : downloadComplete ? (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-center gap-2 text-emerald-700 font-bold text-xs">
-                <CheckCircle className="w-5 h-5" />
-                <span>فایلەکە دابەزی! کرتە لە Install بکە لەسەر مۆبایلەکەت.</span>
+              <div className="p-4 bg-[#FF5500]/10 border border-[#FF5500]/30 rounded-2xl flex flex-col items-center justify-center gap-2 text-[#E64A00] font-bold text-xs text-center animate-bounceIn">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <CheckCircle className="w-5 h-5 text-emerald-600" />
+                  <span>فایلەکە بە سەرکەوتوویی دابەزی!</span>
+                </div>
+                <div className="text-sm font-black text-[#FF5500] tracking-wide pt-1">
+                  🏔️ لەگەڵ شاخ دەگەیتە لوتکە
+                </div>
               </div>
             ) : (
               <div className="space-y-2.5">

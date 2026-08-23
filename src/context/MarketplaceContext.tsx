@@ -30,6 +30,7 @@ import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { db } from '../firebase';
+import { cleanTaggedDemoRecords, DemoCleanerResult } from '../lib/firestoreDemoCleaner';
 import {
   collection,
   doc,
@@ -169,6 +170,7 @@ interface MarketplaceContextType {
     totalCarAdsCount: number;
   };
   purgeAllDemoData: () => Promise<{ success: boolean; message: string }>;
+  cleanTaggedDemoOnly: (options?: { dryRun?: boolean }) => Promise<DemoCleanerResult>;
 }
 
 const MarketplaceContext = createContext<MarketplaceContextType | undefined>(undefined);
@@ -1715,19 +1717,32 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       setCarAds([]);
       setOrders([]);
       setReviews([]);
+      setUserFeedbacks([]);
 
       // 2. Clear LocalStorage cache
       const keysToRemove = [
         'shakh_products', 'shakh_sellers', 'shakh_car_ads', 'shakh_orders',
         'shakh_reviews', 'shakh_commissions', 'shakh_wallets', 'shakh_car_payments',
-        'shakh_fav_products', 'shakh_fav_sellers', 'shakh_driver_stats'
+        'shakh_fav_products', 'shakh_fav_sellers', 'shakh_driver_stats', 'shakh_user_feedbacks'
       ];
       keysToRemove.forEach(k => {
         try { localStorage.removeItem(k); } catch (e) {}
       });
 
-      // 3. Delete documents from Firestore
-      const collectionsToPurge = ['products', 'sellers', 'cars', 'orders', 'reviews'];
+      // 3. Delete non-essential demo documents from Firestore
+      // Keeping essential system configurations (settings) and registered users (users) intact
+      const collectionsToPurge = [
+        'products',
+        'sellers',
+        'cars',
+        'orders',
+        'reviews',
+        'feedbacks',
+        'notifications',
+        'favorites',
+        'wallets',
+        'agreements'
+      ];
       for (const colName of collectionsToPurge) {
         try {
           const colRef = collection(db, colName);
@@ -1747,10 +1762,14 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         } catch (e) {}
       }
 
-      return { success: true, message: 'تەواوی کاڵا و دیمۆ کۆنەکان لە فایەربەیس و میمۆری بە سەرکەوتوویی سڕانەوە.' };
+      return { success: true, message: 'ڕێکخستنەوەی کارگە (Factory Reset) بە سەرکەوتوویی جێبەجێکرا. تەواوی داتای دیمۆکان سڕانەوە و سیستەم خاوێنکرایەوە.' };
     } catch (e: any) {
       return { success: false, message: e.message || 'هەڵەیەک ڕوویدا لە کاتی پاککردنەوەدا' };
     }
+  };
+
+  const cleanTaggedDemoOnly = async (options?: { dryRun?: boolean }): Promise<DemoCleanerResult> => {
+    return await cleanTaggedDemoRecords(db, options);
   };
 
   // Super Admin Platform Statistics
@@ -1835,7 +1854,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         driverStatsMap,
         getDriverStats,
         platformStats,
-        purgeAllDemoData
+        purgeAllDemoData,
+        cleanTaggedDemoOnly
       }}
     >
       {children}
