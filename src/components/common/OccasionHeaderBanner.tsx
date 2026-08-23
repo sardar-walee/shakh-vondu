@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useMarketplace } from '../../context/MarketplaceContext';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { OccasionThemeStyle } from '../../types';
 import { OccasionBannerAdminPanel } from './OccasionBannerAdminPanel';
 
@@ -24,6 +25,7 @@ interface OccasionHeaderBannerProps {
 export const OccasionHeaderBanner: React.FC<OccasionHeaderBannerProps> = ({ onOpenAdminManager }) => {
   const { occasionBanner, incrementSalawatCount } = useMarketplace();
   const { isSuperAdmin } = useAuth();
+  const { t } = useLanguage();
 
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
@@ -149,24 +151,24 @@ export const OccasionHeaderBanner: React.FC<OccasionHeaderBannerProps> = ({ onOp
                       className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
                     >
                       <Edit3 className="w-3 h-3 text-amber-300" />
-                      <span>دەستکاری (سوپەر ئەدمین)</span>
+                      <span>{t('دەستکاری (سوپەر ئەدمین)')}</span>
                     </button>
 
                     {!occasionBanner.isActive && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/80 text-white">
-                        🔴 ناچالاکە
+                        {t('🔴 ناچالاکە')}
                       </span>
                     )}
 
                     {isScheduledInFuture && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/80 text-slate-950">
-                        ⏳ چاوەڕوانی کاتە ({new Date(occasionBanner.startDate!).toLocaleString('ku-IQ', { dateStyle: 'short', timeStyle: 'short' })})
+                        {t('⏳ چاوەڕوانی کاتە')} ({new Date(occasionBanner.startDate!).toLocaleString('ku-IQ', { dateStyle: 'short', timeStyle: 'short' })})
                       </span>
                     )}
 
                     {isScheduledExpired && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-700 text-slate-200">
-                        ⌛ کاتی بەسەرچوو ({new Date(occasionBanner.endDate!).toLocaleString('ku-IQ', { dateStyle: 'short', timeStyle: 'short' })})
+                        {t('⌛ کاتی بەسەرچوو')} ({new Date(occasionBanner.endDate!).toLocaleString('ku-IQ', { dateStyle: 'short', timeStyle: 'short' })})
                       </span>
                     )}
                   </>
@@ -195,7 +197,7 @@ export const OccasionHeaderBanner: React.FC<OccasionHeaderBannerProps> = ({ onOp
                 }`}
               >
                 <Heart className={`w-4 h-4 fill-current ${salawatAnimated ? 'animate-ping' : ''}`} />
-                <span>ناردنی درود و سڵاو</span>
+                <span>{t('ناردنی درود و سڵاو')}</span>
                 <span className="bg-slate-950/20 px-2 py-0.5 rounded-lg text-[11px] font-latin font-black">
                   {(occasionBanner.salawatCount || 0).toLocaleString()}
                 </span>
@@ -215,7 +217,7 @@ export const OccasionHeaderBanner: React.FC<OccasionHeaderBannerProps> = ({ onOp
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="px-3 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-colors cursor-pointer"
               >
-                <span>مەدح و شیعری مەولود</span>
+                <span>{t('مەدح و شیعری مەولود')}</span>
                 {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
             )}
@@ -225,7 +227,7 @@ export const OccasionHeaderBanner: React.FC<OccasionHeaderBannerProps> = ({ onOp
               type="button"
               onClick={() => setIsDismissed(true)}
               className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-xl transition-colors cursor-pointer"
-              title="داخستنی بۆنە"
+              title={t('داخستنی بۆنە')}
             >
               <X className="w-4 h-4" />
             </button>
@@ -245,7 +247,7 @@ export const OccasionHeaderBanner: React.FC<OccasionHeaderBannerProps> = ({ onOp
               <div className="bg-black/30 border border-amber-400/20 p-5 rounded-2xl text-center space-y-3 relative overflow-hidden">
                 <div className="text-amber-300 text-xs font-bold flex items-center justify-center gap-2">
                   <Sparkles className="w-4 h-4" />
-                  <span>مەدح و دێڕە شێعری پیرۆز</span>
+                  <span>{t('مەدح و دێڕە شێعری پیرۆز')}</span>
                   <Sparkles className="w-4 h-4" />
                 </div>
 
@@ -260,7 +262,7 @@ export const OccasionHeaderBanner: React.FC<OccasionHeaderBannerProps> = ({ onOp
                     className="px-4 py-2 bg-amber-400/20 hover:bg-amber-400/30 text-amber-200 border border-amber-400/40 rounded-xl font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
-                    <span>{copied ? 'کۆپی کرا!' : 'کۆپیکردنی مەدح و پیرۆزبایی'}</span>
+                    <span>{copied ? t('کۆپی کرا!') : t('کۆپیکردنی مەدح و پیرۆزبایی')}</span>
                   </button>
                 </div>
               </div>

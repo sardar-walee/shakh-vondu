@@ -19,7 +19,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout }) => {
     grandTotal,
     primarySellerName
   } = useCart();
-  const { dir } = useLanguage();
+  const { dir, t } = useLanguage();
 
   if (!isOpen) return null;
 
@@ -38,7 +38,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout }) => {
           <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <ShoppingBag className="w-5 h-5 text-orange-400" />
-              <h3 className="font-bold text-base">سەبەتەی کڕین ({items.length})</h3>
+              <h3 className="font-bold text-base">{t('سەبەتەی کڕین')} ({items.length})</h3>
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -52,7 +52,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout }) => {
           {items.length > 0 && primarySellerName && (
             <div className="px-6 py-2.5 bg-orange-50 border-b border-orange-100 flex items-center gap-2 text-xs font-bold text-orange-800">
               <Store className="w-4 h-4 text-orange-600 flex-shrink-0" />
-              <span>داواکردن لە: {primarySellerName}</span>
+              <span>{t('داواکردن لە')}: {primarySellerName}</span>
             </div>
           )}
 
@@ -61,15 +61,15 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout }) => {
             {items.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center text-slate-400">
                 <ShoppingBag className="w-16 h-16 text-slate-300 mb-3 stroke-[1.5]" />
-                <h4 className="text-base font-bold text-slate-700">سەبەتەکەت بەتاڵە</h4>
+                <h4 className="text-base font-bold text-slate-700">{t('سەبەتەکەت بەتاڵە')}</h4>
                 <p className="text-xs text-slate-400 mt-1 max-w-xs">
-                  سەیری چێشتخانەکان، مارکێت و بەشە جیاوازەکان بکە و کاڵا دڵخوازەکانت هەڵبژێرە.
+                  {t('سەیری چێشتخانەکان، مارکێت و بەشە جیاوازەکان بکە و کاڵا دڵخوازەکانت هەڵبژێرە.')}
                 </p>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="mt-4 px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-orange-500/20"
                 >
-                  گەڕان لە بەشەکان
+                  {t('گەڕان لە بەشەکان')}
                 </button>
               </div>
             ) : (
@@ -102,13 +102,13 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout }) => {
                         {/* Variant details if selected */}
                         {(item.selectedSize || item.selectedColor) && (
                           <div className="flex gap-2 text-[10px] text-slate-500 mt-0.5">
-                            {item.selectedSize && <span>قەبارە: {item.selectedSize}</span>}
-                            {item.selectedColor && <span>ڕەنگ: {item.selectedColor}</span>}
+                            {item.selectedSize && <span>{t('قەبارە')}: {item.selectedSize}</span>}
+                            {item.selectedColor && <span>{t('ڕەنگ')}: {item.selectedColor}</span>}
                           </div>
                         )}
 
                         <div className="text-xs font-black text-orange-600 font-latin mt-1">
-                          {unitPrice.toLocaleString()} د.ع
+                          {unitPrice.toLocaleString()} {t('د.ع')}
                         </div>
                       </div>
 
@@ -133,7 +133,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout }) => {
                         </div>
 
                         <span className="text-xs font-bold text-slate-900 font-latin">
-                          {(unitPrice * item.quantity).toLocaleString()} د.ع
+                          {(unitPrice * item.quantity).toLocaleString()} {t('د.ع')}
                         </span>
                       </div>
                     </div>
@@ -148,16 +148,16 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout }) => {
             <div className="p-6 border-t border-slate-100 bg-slate-50 space-y-3">
               <div className="space-y-1.5 text-xs text-slate-600">
                 <div className="flex justify-between">
-                  <span>کۆی کاڵاکان:</span>
-                  <span className="font-bold text-slate-900 font-latin">{subtotal.toLocaleString()} د.ع</span>
+                  <span>{t('کۆی کاڵاکان')}:</span>
+                  <span className="font-bold text-slate-900 font-latin">{subtotal.toLocaleString()} {t('د.ع')}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>کرێی گەیاندن:</span>
-                  <span className="font-bold text-slate-900 font-latin">{deliveryFee.toLocaleString()} د.ع</span>
+                  <span>{t('کرێی گەیاندن')}:</span>
+                  <span className="font-bold text-slate-900 font-latin">{deliveryFee.toLocaleString()} {t('د.ع')}</span>
                 </div>
                 <div className="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
-                  <span>کۆی گشتی:</span>
-                  <span className="text-orange-600 font-latin text-base">{grandTotal.toLocaleString()} د.ع</span>
+                  <span>{t('کۆی گشتی')}:</span>
+                  <span className="text-orange-600 font-latin text-base">{grandTotal.toLocaleString()} {t('د.ع')}</span>
                 </div>
               </div>
 
@@ -168,7 +168,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({ onCheckout }) => {
                 }}
                 className="w-full py-3.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/30 flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
               >
-                <span>تەواوکردنی کڕین و داواکاری</span>
+                <span>{t('تەواوکردنی کڕین و داواکاری')}</span>
                 {dir === 'rtl' ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
               </button>
             </div>

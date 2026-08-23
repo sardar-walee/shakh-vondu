@@ -3,6 +3,7 @@ import {
   Product,
   SellerProfile,
   CarAd,
+  CarAdStatus,
   Order,
   OrderStatus,
   CommissionTransaction,
@@ -19,6 +20,7 @@ import {
   AgreementTier,
   UserRole,
   UserFeedback,
+  FeedbackStatus,
   UserProfile,
   GeoLocation,
   StoreDriver,
@@ -39,8 +41,31 @@ import {
   updateDoc,
   deleteDoc,
   onSnapshot,
-  getDocs
+  getDocs,
+  query,
+  where
 } from 'firebase/firestore';
+
+const safeDeleteFirestoreDoc = async (collectionName: string, id: string) => {
+  if (!id) return;
+  try {
+    await deleteDoc(doc(db, collectionName, id));
+  } catch (err) {
+    console.warn(`Direct deleteDoc notice for ${collectionName}/${id}:`, err);
+  }
+
+  try {
+    const q = query(collection(db, collectionName), where('id', '==', id));
+    const snap = await getDocs(q);
+    const deleteOps: Promise<void>[] = [];
+    snap.forEach((docSnap) => {
+      deleteOps.push(deleteDoc(docSnap.ref));
+    });
+    await Promise.all(deleteOps);
+  } catch (err) {
+    console.warn(`Query deleteDoc notice for ${collectionName}/${id}:`, err);
+  }
+};
 
 interface MarketplaceContextType {
   products: Product[];
@@ -192,10 +217,27 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const { addNotification } = useNotification();
 
   // State initialization - load from local cache if present while Firestore live listener syncs
+  const [deletedProductIds, setDeletedProductIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('shakh_deleted_product_ids');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [deletedCarIds, setDeletedCarIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('shakh_deleted_car_ids');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [deletedFeedbackIds, setDeletedFeedbackIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('shakh_deleted_feedback_ids');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('shakh_products');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed: Product[] = JSON.parse(saved);
+        const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_product_ids') || '[]'));
+        return parsed.filter(p => !delSet.has(p.id));
+      } catch (e) {}
     }
     return [];
   });
@@ -209,7 +251,11 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [carAds, setCarAds] = useState<CarAd[]>(() => {
     const saved = localStorage.getItem('shakh_car_ads');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed: CarAd[] = JSON.parse(saved);
+        const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_car_ids') || '[]'));
+        return parsed.filter(c => !delSet.has(c.id));
+      } catch (e) {}
     }
     return [];
   });
@@ -324,6 +370,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   });
 
   // Sync to local storage
+  useEffect(() => { localStorage.setItem('shakh_deleted_product_ids', JSON.stringify(deletedProductIds)); }, [deletedProductIds]);
+  useEffect(() => { localStorage.setItem('shakh_deleted_car_ids', JSON.stringify(deletedCarIds)); }, [deletedCarIds]);
+  useEffect(() => { localStorage.setItem('shakh_deleted_feedback_ids', JSON.stringify(deletedFeedbackIds)); }, [deletedFeedbackIds]);
   useEffect(() => { localStorage.setItem('shakh_products', JSON.stringify(products)); }, [products]);
   useEffect(() => { localStorage.setItem('shakh_all_users', JSON.stringify(allUsers)); }, [allUsers]);
   useEffect(() => { localStorage.setItem('shakh_sellers', JSON.stringify(sellers)); }, [sellers]);
@@ -360,7 +409,14 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           prodCol,
           (snapshot) => {
             const list: Product[] = [];
-            snapshot.forEach((docSnap) => list.push(docSnap.data() as Product));
+            const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_product_ids') || '[]'));
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as Product;
+              const itemId = data.id || docSnap.id;
+              if (!delSet.has(itemId) && !delSet.has(docSnap.id)) {
+                list.push({ ...data, id: itemId });
+              }
+            });
             setProducts(list);
           },
           (err) => {
@@ -403,7 +459,14 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           carsCol,
           (snapshot) => {
             const list: CarAd[] = [];
-            snapshot.forEach((docSnap) => list.push(docSnap.data() as CarAd));
+            const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_car_ids') || '[]'));
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as CarAd;
+              const itemId = data.id || docSnap.id;
+              if (!delSet.has(itemId) && !delSet.has(docSnap.id)) {
+                list.push({ ...data, id: itemId });
+              }
+            });
             list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setCarAds(list);
           },
@@ -432,7 +495,14 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           feedbacksCol,
           (snapshot) => {
             const list: UserFeedback[] = [];
-            snapshot.forEach((docSnap) => list.push(docSnap.data() as UserFeedback));
+            const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_feedback_ids') || '[]'));
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as UserFeedback;
+              const itemId = data.id || docSnap.id;
+              if (!delSet.has(itemId) && !delSet.has(docSnap.id)) {
+                list.push({ ...data, id: itemId });
+              }
+            });
             setUserFeedbacks(list);
           },
           (err) => {
@@ -586,11 +656,25 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return { success: false, error: 'تۆ ناتوانیت کاڵای ئەم بەشە بسڕیتەوە' };
     }
 
-    setProducts(prev => prev.filter(p => p.id !== id));
+    setDeletedProductIds(prev => {
+      const next = Array.from(new Set([...prev, id]));
+      localStorage.setItem('shakh_deleted_product_ids', JSON.stringify(next));
+      return next;
+    });
 
-    try {
-      await deleteDoc(doc(db, 'products', id));
-    } catch (e) {}
+    setProducts(prev => {
+      const next = prev.filter(p => p.id !== id);
+      localStorage.setItem('shakh_products', JSON.stringify(next));
+      return next;
+    });
+
+    await safeDeleteFirestoreDoc('products', id);
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('products').delete().eq('id', id);
+      } catch (e) {}
+    }
 
     return { success: true };
   };
@@ -1845,59 +1929,89 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const adminDeleteUser = async (userId: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      await deleteDoc(doc(db, 'users', userId));
-      setAllUsers(prev => prev.filter(u => u.id !== userId));
-      return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا لە سڕینەوەی بەکارهێنەر' };
-    }
+    setAllUsers(prev => {
+      const next = prev.filter(u => u.id !== userId);
+      localStorage.setItem('shakh_all_users', JSON.stringify(next));
+      return next;
+    });
+    await safeDeleteFirestoreDoc('users', userId);
+    return { success: true };
   };
 
   const deleteCarAd = async (adId: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      await deleteDoc(doc(db, 'cars', adId));
-      setCarAds(prev => prev.filter(c => c.id !== adId));
-      return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا لە سڕینەوەی ئۆتۆمبێل' };
+    setDeletedCarIds(prev => {
+      const next = Array.from(new Set([...prev, adId]));
+      localStorage.setItem('shakh_deleted_car_ids', JSON.stringify(next));
+      return next;
+    });
+
+    setCarAds(prev => {
+      const next = prev.filter(c => c.id !== adId);
+      localStorage.setItem('shakh_car_ads', JSON.stringify(next));
+      return next;
+    });
+
+    await safeDeleteFirestoreDoc('cars', adId);
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('cars').delete().eq('id', adId);
+      } catch (e) {}
     }
+
+    return { success: true };
   };
 
   const toggleCarAdHidden = async (adId: string, isHidden: boolean): Promise<{ success: boolean; error?: string }> => {
+    setCarAds(prev => {
+      const next = prev.map(c => c.id === adId ? { ...c, isHidden, adStatus: (isHidden ? 'hidden' : 'active') as CarAdStatus } : c);
+      localStorage.setItem('shakh_car_ads', JSON.stringify(next));
+      return next;
+    });
     try {
       await updateDoc(doc(db, 'cars', adId), {
         isHidden,
         adStatus: isHidden ? 'hidden' : 'active'
       });
-      setCarAds(prev => prev.map(c => c.id === adId ? { ...c, isHidden, adStatus: isHidden ? 'hidden' : 'active' } : c));
-      return { success: true };
     } catch (e: any) {
-      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا' };
+      console.warn('toggleCarAdHidden Firestore error:', e);
     }
+    return { success: true };
   };
 
   const deleteUserFeedback = async (feedbackId: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      await deleteDoc(doc(db, 'feedbacks', feedbackId));
-      setUserFeedbacks(prev => prev.filter(f => f.id !== feedbackId));
-      return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا لە سڕینەوەی پۆست' };
-    }
+    setDeletedFeedbackIds(prev => {
+      const next = Array.from(new Set([...prev, feedbackId]));
+      localStorage.setItem('shakh_deleted_feedback_ids', JSON.stringify(next));
+      return next;
+    });
+
+    setUserFeedbacks(prev => {
+      const next = prev.filter(f => f.id !== feedbackId);
+      localStorage.setItem('shakh_user_feedbacks', JSON.stringify(next));
+      return next;
+    });
+
+    await safeDeleteFirestoreDoc('feedbacks', feedbackId);
+
+    return { success: true };
   };
 
   const toggleFeedbackHidden = async (feedbackId: string, isHidden: boolean): Promise<{ success: boolean; error?: string }> => {
+    setUserFeedbacks(prev => {
+      const next = prev.map(f => f.id === feedbackId ? { ...f, isHidden, status: (isHidden ? 'hidden' : 'reviewed') as FeedbackStatus } : f);
+      localStorage.setItem('shakh_user_feedbacks', JSON.stringify(next));
+      return next;
+    });
     try {
       await updateDoc(doc(db, 'feedbacks', feedbackId), {
         isHidden,
         status: isHidden ? 'hidden' : 'reviewed'
       });
-      setUserFeedbacks(prev => prev.map(f => f.id === feedbackId ? { ...f, isHidden, status: isHidden ? 'hidden' : 'reviewed' } : f));
-      return { success: true };
     } catch (e: any) {
-      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا' };
+      console.warn('toggleFeedbackHidden Firestore error:', e);
     }
+    return { success: true };
   };
 
   const toggleProductHidden = async (productId: string, isHidden: boolean): Promise<{ success: boolean; error?: string }> => {

@@ -46,6 +46,8 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
+import { LanguageSelector } from '../common/LanguageSelector';
+import { LanguageSwitcher } from '../common/LanguageSwitcher';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -217,10 +219,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
                 className="hidden md:flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-orange-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:text-[#FF5500] text-xs font-bold transition-all cursor-pointer shadow-xs active:scale-95"
-                title="مێنیوی سەرەکی و بەشەکان"
+                title={t('مێنیوی سەرەکی و بەشەکان')}
               >
                 <Menu className="w-4 h-4 text-[#FF5500]" />
-                <span>مێنیو</span>
+                <span>{t('مێنیو')}</span>
               </button>
 
               <button
@@ -238,20 +240,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 transition-colors cursor-pointer"
               >
                 <MapPin className="w-4 h-4 text-[#2563EB]" />
-                <span className="truncate max-w-[120px]">{selectedCity || 'هەموو شارەکان'}</span>
+                <span className="truncate max-w-[120px]">{selectedCity ? t(`city.${selectedCity}`) || selectedCity : t('هەموو شارەکان')}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
 
               {isCityOpen && (
                 <div className="absolute top-full mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 right-0">
                   <div className="px-3 py-1 text-[11px] font-bold text-slate-400 border-b border-slate-100">
-                    شارەکانی کوردستان و عێراق
+                    {t('شارەکانی کوردستان و عێراق')}
                   </div>
                   <button
                     onClick={() => { onSelectCity(''); setIsCityOpen(false); }}
                     className="w-full text-right px-3 py-2 text-xs text-slate-700 hover:bg-orange-50 hover:text-orange-600 font-medium cursor-pointer"
                   >
-                    هەموو شارەکان
+                    {t('هەموو شارەکان')}
                   </button>
                   {CITIES.map(city => (
                     <button
@@ -261,7 +263,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         selectedCity === city ? 'bg-orange-50 text-orange-600 font-bold' : 'text-slate-700'
                       }`}
                     >
-                      {city}
+                      {t(`city.${city}`) || city}
                     </button>
                   ))}
                 </div>
@@ -300,7 +302,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="mb-3 pb-2.5 border-b border-slate-100 flex items-center gap-1.5 overflow-x-auto scrollbar-none px-1">
                   <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1 flex-shrink-0 ml-1">
                     <SlidersHorizontal className="w-3 h-3 text-slate-400" />
-                    فیلتەر:
+                    {t('فیلتەر:')}
                   </span>
                   <button
                     type="button"
@@ -312,7 +314,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>هەمووی</span>
+                    <span>{t('هەمووی')}</span>
                   </button>
                   <button
                     type="button"
@@ -324,7 +326,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }`}
                   >
                     <ArrowUp className="w-3.5 h-3.5" />
-                    <span>Price Low-High</span>
+                    <span>{t('نرخ: کەم بۆ زۆر')}</span>
                   </button>
                   <button
                     type="button"
@@ -336,7 +338,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }`}
                   >
                     <ArrowDown className="w-3.5 h-3.5" />
-                    <span>Price High-Low</span>
+                    <span>{t('نرخ: زۆر بۆ کەم')}</span>
                   </button>
                   <button
                     type="button"
@@ -348,7 +350,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }`}
                   >
                     <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                    <span>Top Rated</span>
+                    <span>{t('بەرزترین هەڵسەنگاندن')}</span>
                   </button>
                   <button
                     type="button"
@@ -360,7 +362,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }`}
                   >
                     <Truck className="w-3.5 h-3.5" />
-                    <span>Free Delivery</span>
+                    <span>{t('گەیاندنی بێبەرامبەر')}</span>
                   </button>
 
                   <button
@@ -373,7 +375,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     }`}
                   >
                     <Tag className="w-3.5 h-3.5" />
-                    <span>مەودای نرخ {minPrice || maxPrice ? `(${minPrice || '0'} - ${maxPrice || '∞'})` : ''}</span>
+                    <span>{t('مەودای نرخ')} {minPrice || maxPrice ? `(${minPrice || '0'} - ${maxPrice || '∞'})` : ''}</span>
                     <ChevronDown className={`w-3 h-3 transition-transform ${isPriceFilterOpen ? 'rotate-180' : ''}`} />
                   </button>
                 </div>
@@ -384,7 +386,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-bold text-slate-700 flex items-center gap-1">
                         <Tag className="w-3.5 h-3.5 text-[#F97316]" />
-                        فیلتەرکردن بەپێی نرخ (د.ع)
+                        {t('فیلتەرکردن بەپێی نرخ (د.ع)')}
                       </span>
                       {(minPrice !== '' || maxPrice !== '') && (
                         <button
@@ -397,7 +399,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           className="text-[11px] text-orange-600 hover:text-orange-700 font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <RotateCcw className="w-3 h-3" />
-                          پاککردنەوە
+                          {t('پاککردنەوە')}
                         </button>
                       )}
                     </div>
@@ -413,7 +415,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className="px-2.5 py-1 bg-white border border-slate-200 hover:border-orange-300 text-[11px] text-slate-600 font-bold rounded-lg whitespace-nowrap transition-colors cursor-pointer"
                       >
-                        کەمتر لە ۱۰,۰۰۰ د.ع
+                        {t('کەمتر لە ۱۰,۰۰۰ د.ع')}
                       </button>
                       <button
                         type="button"
@@ -424,7 +426,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className="px-2.5 py-1 bg-white border border-slate-200 hover:border-orange-300 text-[11px] text-slate-600 font-bold rounded-lg whitespace-nowrap transition-colors cursor-pointer"
                       >
-                        ۱۰,۰۰۰ - ۵۰,۰۰۰ د.ع
+                        {t('۱۰,۰۰۰ - ۵۰,۰۰۰ د.ع')}
                       </button>
                       <button
                         type="button"
@@ -435,15 +437,15 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className="px-2.5 py-1 bg-white border border-slate-200 hover:border-orange-300 text-[11px] text-slate-600 font-bold rounded-lg whitespace-nowrap transition-colors cursor-pointer"
                       >
-                        سەرتر لە ۵۰,۰۰۰ د.ع
+                        {t('سەرتر لە ۵۰,۰۰۰ د.ع')}
                       </button>
                     </div>
 
                     {/* Interactive Price Range Slider */}
                     <div className="mb-3 px-1">
                       <div className="flex justify-between text-[10px] font-bold text-slate-500 mb-1">
-                        <span>سەقفی نرخ: {priceSliderValue.toLocaleString()} د.ع</span>
-                        <span>۲۵۰,۰۰۰+ د.ع</span>
+                        <span>{t('سەقفی نرخ:')} {priceSliderValue.toLocaleString()} {t('د.ع')}</span>
+                        <span>۲۵۰,۰۰۰+ {t('د.ع')}</span>
                       </div>
                       <input
                         type="range"
@@ -463,7 +465,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {/* Min & Max Inputs */}
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <label className="text-[10px] font-bold text-slate-500 block mb-1">کەمترین نرخ (د.ع)</label>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">{t('کەمترین نرخ (د.ع)')}</label>
                         <input
                           type="number"
                           placeholder="0"
@@ -473,7 +475,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-slate-500 block mb-1">زۆرترین نرخ (د.ع)</label>
+                        <label className="text-[10px] font-bold text-slate-500 block mb-1">{t('زۆرترین نرخ (د.ع)')}</label>
                         <input
                           type="number"
                           placeholder="250000"
@@ -493,7 +495,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {searchResults.categories && searchResults.categories.length > 0 && (
                   <div className="mb-3">
-                    <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">بەشەکان</span>
+                    <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">{t('بەشەکان')}</span>
                     <div className="flex flex-wrap gap-1.5 px-1">
                       {searchResults.categories.map(cat => (
                         <button
@@ -508,7 +510,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           }}
                           className="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-[#F97316] text-xs font-bold rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
                         >
-                          <span>{cat.name}</span>
+                          <span>{t(`cat.${cat.id}`) || cat.name}</span>
                           <span className="text-[10px] text-orange-400">←</span>
                         </button>
                       ))}
@@ -518,7 +520,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {searchResults.products && searchResults.products.length > 0 && (
                   <div className="mb-3 border-t border-slate-100 pt-2">
-                    <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">کاڵاکان و خواردن</span>
+                    <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">{t('کاڵاکان و خواردن')}</span>
                     {searchResults.products.map(p => (
                       <button
                         key={p.id}
@@ -536,7 +538,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           </div>
                         </div>
                         <span className="text-xs font-black text-[#F97316] font-latin whitespace-nowrap">
-                          {(p.discountPrice || p.price).toLocaleString()} د.ع
+                          {(p.discountPrice || p.price).toLocaleString()} {t('د.ع')}
                         </span>
                       </button>
                     ))}
@@ -545,7 +547,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {searchResults.sellers && searchResults.sellers.length > 0 && (
                   <div className="mb-3 border-t border-slate-100 pt-2">
-                    <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">فرۆشگاکان و چێشتخانەکان</span>
+                    <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">{t('فرۆشگاکان و چێشتخانەکان')}</span>
                     {searchResults.sellers.map(s => (
                       <button
                         key={s.id}
@@ -558,7 +560,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <img src={s.logoUrl} alt={s.storeName} className="w-8 h-8 rounded-full object-cover" />
                         <div>
                           <p className="text-xs font-bold text-slate-800">{s.storeName}</p>
-                          <p className="text-[10px] text-slate-500">{s.city}</p>
+                          <p className="text-[10px] text-slate-500">{t(`city.${s.city}`) || s.city}</p>
                         </div>
                       </button>
                     ))}
@@ -567,7 +569,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                 {searchResults.cars && searchResults.cars.length > 0 && (
                   <div className="border-t border-slate-100 pt-2">
-                    <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">ئۆتۆمبێلەکان</span>
+                    <span className="text-[11px] font-bold text-slate-400 block mb-1.5 px-2">{t('ئۆتۆمبێلەکان')}</span>
                     {searchResults.cars.map(c => (
                       <button
                         key={c.id}
@@ -582,7 +584,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <p className="text-xs font-bold text-slate-800 line-clamp-1">{c.title}</p>
                         </div>
                         <span className="text-xs font-bold text-[#2563EB] font-latin whitespace-nowrap">
-                          {c.priceIqd.toLocaleString()} د.ع
+                          {c.priceIqd.toLocaleString()} {t('د.ع')}
                         </span>
                       </button>
                     ))}
@@ -608,7 +610,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={toggleTheme}
               className="p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 transition-all cursor-pointer shadow-xs active:scale-90"
-              title={isDarkMode ? 'گۆڕین بۆ دۆخی ڕووناک (Light Mode)' : 'گۆڕین بۆ دۆخی تاریک (Dark Mode)'}
+              title={isDarkMode ? t('دۆخی ڕووناک') : t('دۆخی تاریک')}
               aria-label="Toggle dark mode"
             >
               {isDarkMode ? (
@@ -618,37 +620,9 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </button>
 
-            {/* Language Switcher */}
-            <div className="relative hidden sm:block">
-              <div className="flex items-center bg-slate-100 p-0.5 rounded-full text-xs font-bold">
-                <button
-                  onClick={() => setLanguage('ku')}
-                  className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
-                    language === 'ku' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="کوردی سۆرانی (RTL)"
-                >
-                  کوردی
-                </button>
-                <button
-                  onClick={() => setLanguage('ar')}
-                  className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
-                    language === 'ar' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="العربية (RTL)"
-                >
-                  عربي
-                </button>
-                <button
-                  onClick={() => setLanguage('en')}
-                  className={`px-2.5 py-1 rounded-full transition-all cursor-pointer ${
-                    language === 'en' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                  title="English (LTR)"
-                >
-                  EN
-                </button>
-              </div>
+            {/* Language Selector Dropdown */}
+            <div className="relative">
+              <LanguageSelector />
             </div>
 
             {/* Notifications Bell */}
@@ -678,10 +652,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <div className="fixed sm:absolute top-[74px] sm:top-full mt-2 inset-x-3 sm:inset-x-auto left-3 right-3 sm:left-0 sm:right-auto max-w-sm sm:w-92 mx-auto sm:mx-0 bg-white rounded-3xl sm:rounded-2xl shadow-2xl sm:shadow-xl border border-slate-200 sm:border-slate-100 p-3.5 sm:p-4 z-50 animate-in fade-in slide-in-from-top-2">
                     <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-slate-900">ئاگادارییەکان</span>
+                        <span className="text-xs font-bold text-slate-900">{t('ئاگادارییەکان')}</span>
                         {unreadCount > 0 && (
                           <span className="text-[10px] font-bold bg-orange-100 text-[#F97316] px-2 py-0.5 rounded-full font-latin">
-                            {unreadCount} نوێ
+                            {unreadCount} {t('نوێ')}
                           </span>
                         )}
                       </div>
@@ -690,14 +664,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                           onClick={markAllAsRead}
                           className="text-[11px] text-[#2563EB] hover:underline font-bold cursor-pointer"
                         >
-                          هەمووی وەک خوێندراوە
+                          {t('هەمووی وەک خوێندراوە')}
                         </button>
                       )}
                     </div>
 
                     <div className="max-h-[60vh] sm:max-h-72 overflow-y-auto space-y-2 pr-0.5">
                       {notifications.length === 0 ? (
-                        <p className="text-xs text-slate-400 text-center py-6">هیچ ئاگادارییەک نییە</p>
+                        <p className="text-xs text-slate-400 text-center py-6">{t('هیچ ئاگادارییەک نییە')}</p>
                       ) : (
                         notifications.slice(0, 8).map(n => (
                           <div
@@ -736,7 +710,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         }}
                         className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-blue-50 text-[#2563EB] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                       >
-                        <span>بینینی هەموو ئاگادارییەکان لە ناوەندی ئاگاداری</span>
+                        <span>{t('بینینی هەموو ئاگادارییەکان لە ناوەندی ئاگاداری')}</span>
                         <ArrowLeft className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -818,7 +792,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-50 text-right cursor-pointer"
                           >
                             <ShieldCheck className="w-4 h-4 text-red-600" />
-                            داشبۆردی سەرپەرشتیار (Admin)
+                            {t('داشبۆردی سەرپەرشتیار (Admin)')}
                           </button>
                         )}
 
@@ -828,7 +802,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-orange-600 hover:bg-orange-50 text-right cursor-pointer"
                           >
                             <Store className="w-4 h-4 text-orange-500" />
-                            داشبۆردی فرۆشیار و قازانج
+                            {t('داشبۆردی فرۆشیار و قازانج')}
                           </button>
                         )}
 
@@ -838,7 +812,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                             className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50 text-right cursor-pointer"
                           >
                             <Truck className="w-4 h-4 text-teal-600" />
-                            داشبۆردی شۆفێری گەیاندن
+                            {t('داشبۆردی شۆفێری گەیاندن')}
                           </button>
                         )}
 
@@ -847,7 +821,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 text-right cursor-pointer"
                         >
                           <Package className="w-4 h-4 text-slate-400" />
-                          داواکارییەکانم
+                          {t('داواکارییەکانم')}
                         </button>
 
                         <button
@@ -855,7 +829,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 text-right cursor-pointer"
                         >
                           <Heart className="w-4 h-4 text-slate-400" />
-                          دڵخوازەکانم
+                          {t('دڵخوازەکانم')}
                         </button>
 
                         <button
@@ -863,7 +837,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                           className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 text-right cursor-pointer"
                         >
                           <User className="w-4 h-4 text-slate-400" />
-                          پڕۆفایل و ناونیشانەکان
+                          {t('پڕۆفایل و ناونیشانەکان')}
                         </button>
 
                         <div className="border-t border-slate-100 my-1 pt-1">
@@ -937,7 +911,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="flex items-center gap-3">
                 <Logo size="sm" showTagline={false} />
                 <span className="text-xs font-black text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-700 pr-2.5">
-                  مێنیوی سەرەکی
+                  {t('مێنیوی سەرەکی')}
                 </span>
               </div>
               <button
@@ -999,21 +973,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                       className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-100 dark:border-slate-800 hover:border-orange-200 transition-all cursor-pointer"
                     >
                       <User className="w-3.5 h-3.5 text-[#FF5500] shrink-0" />
-                      <span className="truncate">پڕۆفایلەکەم</span>
+                      <span className="truncate">{t('پڕۆفایلەکەم')}</span>
                     </button>
                     <button
                       onClick={() => { onNavigate('customer-orders'); setIsMobileMenuOpen(false); }}
                       className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-100 dark:border-slate-800 hover:border-blue-200 transition-all cursor-pointer"
                     >
                       <Package className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
-                      <span className="truncate">داواکارییەکانم</span>
+                      <span className="truncate">{t('داواکارییەکانم')}</span>
                     </button>
                     <button
                       onClick={() => { onNavigate('favorites'); setIsMobileMenuOpen(false); }}
                       className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-100 dark:border-slate-800 hover:border-rose-200 transition-all cursor-pointer"
                     >
                       <Heart className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                      <span className="truncate">دڵخوازەکان</span>
+                      <span className="truncate">{t('دڵخوازەکان')}</span>
                     </button>
                     <button
                       onClick={() => { onNavigate('notifications'); setIsMobileMenuOpen(false); }}
@@ -1021,7 +995,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <div className="flex items-center gap-2 truncate">
                         <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span className="truncate">ئاگادارییەکان</span>
+                        <span className="truncate">{t('ئاگادارییەکان')}</span>
                       </div>
                       {unreadCount > 0 && (
                         <span className="text-[9px] font-bold bg-[#FF5500] text-white px-1.5 py-0.5 rounded-full font-latin shrink-0">
@@ -1039,7 +1013,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <div className="flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 shrink-0" />
-                        <span>داشبۆردی سەرپەرشتیاری گشتی (Super Admin)</span>
+                        <span>{t('داشبۆردی سەرپەرشتیاری گشتی (Super Admin)')}</span>
                       </div>
                       <ChevronLeft className="w-4 h-4 shrink-0" />
                     </button>
@@ -1052,7 +1026,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <div className="flex items-center gap-2">
                         <Store className="w-4 h-4 shrink-0" />
-                        <span>داشبۆردی فرۆشیار و بەڕێوەبردن</span>
+                        <span>{t('داشبۆردی فرۆشیار و بەڕێوەبردن')}</span>
                       </div>
                       <ChevronLeft className="w-4 h-4 shrink-0" />
                     </button>
@@ -1065,7 +1039,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     >
                       <div className="flex items-center gap-2">
                         <Truck className="w-4 h-4 shrink-0" />
-                        <span>داشبۆردی شۆفێری گەیاندن</span>
+                        <span>{t('داشبۆردی شۆفێری گەیاندن')}</span>
                       </div>
                       <ChevronLeft className="w-4 h-4 shrink-0" />
                     </button>
@@ -1078,8 +1052,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <User className="w-6 h-6" />
                     </div>
                     <div>
-                      <p className="text-sm font-black">بەخێربێیت بۆ بازاڕی شاخی</p>
-                      <p className="text-[11px] text-orange-100 mt-0.5">خواردن، مارکێت، جلوبەرگ و ئۆتۆمبێل</p>
+                      <p className="text-sm font-black">{t('بەخێربێیت بۆ بازاڕی شاخی')}</p>
+                      <p className="text-[11px] text-orange-100 mt-0.5">{t('خواردن، مارکێت، جلوبەرگ و ئۆتۆمبێل')}</p>
                     </div>
                   </div>
                   <button
@@ -1087,7 +1061,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="w-full py-2.5 rounded-xl bg-white text-slate-900 text-xs font-black shadow-sm hover:bg-orange-50 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
                     <User className="w-4 h-4 text-[#FF5500]" />
-                    <span>چوونە ژوورەوە / دروستکردنی هەژمار</span>
+                    <span>{t('چوونە ژوورەوە / دروستکردنی هەژمار')}</span>
                   </button>
                 </div>
               )}
@@ -1103,7 +1077,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   </div>
                   <div className="text-right">
                     <p className="leading-tight">{t('car.post_ad')}</p>
-                    <p className="text-[10px] font-medium text-orange-100">ڕیکلامی ئۆتۆمبێلەکەت بڵاوبکەرەوە</p>
+                    <p className="text-[10px] font-medium text-orange-100">{t('ڕیکلامی ئۆتۆمبێلەکەت بڵاوبکەرەوە')}</p>
                   </div>
                 </div>
                 <ChevronLeft className="w-4 h-4 opacity-80 shrink-0" />
@@ -1114,10 +1088,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
                     <MapPin className="w-4 h-4 text-[#2563EB]" />
-                    <span>هەڵبژاردنی شار:</span>
+                    <span>{t('هەڵبژاردنی شار:')}</span>
                   </div>
                   <span className="text-[11px] font-bold text-[#FF5500] font-latin">
-                    {selectedCity || 'هەموو شارەکان'}
+                    {selectedCity ? t(`city.${selectedCity}`) || selectedCity : t('هەموو شارەکان')}
                   </span>
                 </div>
                 <select
@@ -1125,9 +1099,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onChange={(e) => onSelectCity(e.target.value)}
                   className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-bold focus:outline-hidden focus:ring-2 focus:ring-[#FF5500]"
                 >
-                  <option value="">هەموو شارەکانی کوردستان و عێراق</option>
+                  <option value="">{t('هەموو شارەکانی کوردستان و عێراق')}</option>
                   {CITIES.map(c => (
-                    <option key={c} value={c}>{c}</option>
+                    <option key={c} value={c}>{t(`city.${c}`) || c}</option>
                   ))}
                 </select>
               </div>
@@ -1137,26 +1111,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="flex items-center justify-between pb-1">
                   <div className="flex items-center gap-1.5">
                     <Layers className="w-4 h-4 text-[#FF5500]" />
-                    <h4 className="text-xs font-black text-slate-900 dark:text-white">بەشە سەرەکییەکانی بازاڕ</h4>
+                    <h4 className="text-xs font-black text-slate-900 dark:text-white">{t('بەشە سەرەکییەکانی بازاڕ')}</h4>
                   </div>
                   <button
                     onClick={() => { onNavigate('home'); setIsMobileMenuOpen(false); }}
                     className="text-[11px] text-[#2563EB] font-bold hover:underline cursor-pointer"
                   >
-                    پەڕەی سەرەکی
+                    {t('پەڕەی سەرەکی')}
                   </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: 'food', name: 'چێشتخانە و خواردن', icon: Utensils, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50' },
-                    { id: 'market', name: 'سوپەرمارکێت', icon: ShoppingBag, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/50' },
-                    { id: 'clothes', name: 'جلوبەرگ و مۆدە', icon: Shirt, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-900/50' },
-                    { id: 'fruits_vegetables', name: 'سەوزە و میوە', icon: Apple, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50' },
-                    { id: 'fresh_meat', name: 'گۆشتی تازەی کوردی', icon: Beef, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/50' },
-                    { id: 'dairy', name: 'شیرەمەنی و ماست', icon: Milk, color: 'text-cyan-600 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-900/50' },
-                    { id: 'electronics', name: 'ئەلیکترۆنیات', icon: Smartphone, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/50' },
-                    { id: 'beauty', name: 'جوانی و مکیاژ', icon: Sparkles, color: 'text-pink-600 bg-pink-50 dark:bg-pink-950/40 border-pink-200 dark:border-pink-900/50' },
+                    { id: 'food', name: t('cat.food') || 'چێشتخانە و خواردن', icon: Utensils, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50' },
+                    { id: 'market', name: t('cat.market') || 'سوپەرمارکێت', icon: ShoppingBag, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/50' },
+                    { id: 'clothes', name: t('cat.clothes') || 'جلوبەرگ و مۆدە', icon: Shirt, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-900/50' },
+                    { id: 'fruits_vegetables', name: t('cat.fruits_vegetables') || 'سەوزە و میوە', icon: Apple, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50' },
+                    { id: 'fresh_meat', name: t('cat.fresh_meat') || 'گۆشتی تازەی کوردی', icon: Beef, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/50' },
+                    { id: 'dairy', name: t('cat.dairy') || 'شیرەمەنی و ماست', icon: Milk, color: 'text-cyan-600 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-900/50' },
+                    { id: 'electronics', name: t('cat.electronics') || 'ئەلیکترۆنیات', icon: Smartphone, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/50' },
+                    { id: 'beauty', name: t('cat.beauty') || 'جوانی و مکیاژ', icon: Sparkles, color: 'text-pink-600 bg-pink-50 dark:bg-pink-950/40 border-pink-200 dark:border-pink-900/50' },
                   ].map(cat => {
                     const IconComp = cat.icon;
                     return (
@@ -1187,8 +1161,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <Car className="w-4 h-4" />
                       </div>
                       <div className="text-right">
-                        <p className="text-xs font-black text-slate-900 dark:text-white">بازاڕی کڕین و فرۆشتنی ئۆتۆمبێل</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">پاکێجی VIP، سیستەمی کات و هەڵبژێردراو</p>
+                        <p className="text-xs font-black text-slate-900 dark:text-white">{t('بازاڕی کڕین و فرۆشتنی ئۆتۆمبێل')}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">{t('پاکێجی VIP، سیستەمی کات و هەڵبژێردراو')}</p>
                       </div>
                     </div>
                     <ChevronLeft className="w-4 h-4 text-[#2563EB] shrink-0" />
@@ -1199,33 +1173,13 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* 5. Preferences: Language & Theme */}
               <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                 {/* Language Switcher */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
-                    <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>زمانی سیستەم:</span>
-                  </div>
-                  <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                    {(['ku', 'ar', 'en'] as const).map(l => (
-                      <button
-                        key={l}
-                        onClick={() => setLanguage(l)}
-                        className={`px-3 py-1 text-xs rounded-lg font-bold transition-all cursor-pointer ${
-                          language === l
-                            ? 'bg-[#2563EB] text-white shadow-xs'
-                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                        }`}
-                      >
-                        {l === 'ku' ? 'کوردی' : l === 'ar' ? 'عربي' : 'EN'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                <LanguageSwitcher variant="mobile" />
 
                 {/* Dark Mode Toggle */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
                     {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" /> : <Moon className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
-                    <span>دۆخی ڕووناک / تاریک:</span>
+                    <span>{t('دۆخی ڕووناک / تاریک:')}</span>
                   </div>
                   <button
                     onClick={toggleTheme}
@@ -1234,12 +1188,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     {isDarkMode ? (
                       <>
                         <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span>دۆخی ڕووناک</span>
+                        <span>{t('دۆخی ڕووناک')}</span>
                       </>
                     ) : (
                       <>
                         <Moon className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                        <span>دۆخی تاریک</span>
+                        <span>{t('دۆخی تاریک')}</span>
                       </>
                     )}
                   </button>
@@ -1263,7 +1217,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
               <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center font-latin">
-                SHAKH Multi-Marketplace Platform • وەشانی ٢.٥
+                SHAKH Multi-Marketplace Platform • {t('وەشانی')} ۲.۵
               </p>
             </div>
 

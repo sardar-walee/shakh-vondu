@@ -4,6 +4,7 @@ import { Product } from '../../types';
 import { CategoryBadge } from '../common/Badge';
 import { useCart } from '../../context/CartContext';
 import { useMarketplace } from '../../context/MarketplaceContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { ShareModal } from '../common/ShareModal';
 
 interface ProductCardProps {
@@ -19,6 +20,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 }) => {
   const { addToCart } = useCart();
   const { favoriteProductIds, toggleFavoriteProduct } = useMarketplace();
+  const { t } = useLanguage();
   const isFav = favoriteProductIds.includes(product.id);
   const [showShareModal, setShowShareModal] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
@@ -71,12 +73,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {isBestSeller && (
               <span className="inline-flex items-center gap-1 text-[10px] font-black bg-rose-500 text-white px-2 py-0.5 rounded-md shadow-xs animate-pulse">
                 <Flame className="w-3 h-3 fill-white" />
-                <span>پرفرۆشترین</span>
+                <span>{t('پرفرۆشترین')}</span>
               </span>
             )}
             {discountPercent > 0 && (
               <span className="inline-block text-[10px] font-black bg-[#F97316] text-white px-2 py-0.5 rounded-md shadow-xs font-latin">
-                {discountPercent}% داشکاندن
+                {discountPercent}% {t('داشکاندن')}
               </span>
             )}
           </div>

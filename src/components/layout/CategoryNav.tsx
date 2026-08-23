@@ -14,6 +14,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { ProductCategory } from '../../types';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface CategoryNavProps {
   activeCategory: ProductCategory | 'all';
@@ -25,18 +26,19 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
   onSelectCategory
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { t, dir } = useLanguage();
 
   const categories: { id: ProductCategory | 'all'; name: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'all', name: 'هەموو بەشەکان', icon: <Layers className="w-3.5 h-3.5" /> },
-    { id: 'food', name: 'چێشتخانە و خواردن', icon: <Utensils className="w-3.5 h-3.5" />, badge: 'خێرا' },
-    { id: 'market', name: 'سوپەرمارکێت', icon: <ShoppingBag className="w-3.5 h-3.5" /> },
-    { id: 'clothes', name: 'جلوبەرگ و مۆدە', icon: <Shirt className="w-3.5 h-3.5" /> },
-    { id: 'fruits_vegetables', name: 'سەوزە و میوە', icon: <Apple className="w-3.5 h-3.5" />, badge: 'فرێش' },
-    { id: 'fresh_meat', name: 'گۆشتی تازەی کوردی', icon: <Beef className="w-3.5 h-3.5" /> },
-    { id: 'dairy', name: 'شیرەمەنی و ماست', icon: <Milk className="w-3.5 h-3.5" /> },
-    { id: 'electronics', name: 'ئەلیکترۆنیات و مۆبایل', icon: <Smartphone className="w-3.5 h-3.5" /> },
-    { id: 'beauty', name: 'جوانی و مکیاژ', icon: <Sparkles className="w-3.5 h-3.5" /> },
-    { id: 'cars', name: 'بازاڕی ئۆتۆمبێل', icon: <Car className="w-3.5 h-3.5" />, badge: 'VIP' }
+    { id: 'all', name: t('هەموو بەشەکان'), icon: <Layers className="w-3.5 h-3.5" /> },
+    { id: 'food', name: t('category.food'), icon: <Utensils className="w-3.5 h-3.5" />, badge: t('خێرا') },
+    { id: 'market', name: t('category.market'), icon: <ShoppingBag className="w-3.5 h-3.5" /> },
+    { id: 'clothes', name: t('category.clothes'), icon: <Shirt className="w-3.5 h-3.5" /> },
+    { id: 'fruits_vegetables', name: t('category.fruits_vegetables'), icon: <Apple className="w-3.5 h-3.5" />, badge: t('فرێش') },
+    { id: 'fresh_meat', name: t('category.fresh_meat'), icon: <Beef className="w-3.5 h-3.5" /> },
+    { id: 'dairy', name: t('category.dairy'), icon: <Milk className="w-3.5 h-3.5" /> },
+    { id: 'electronics', name: t('category.electronics'), icon: <Smartphone className="w-3.5 h-3.5" /> },
+    { id: 'beauty', name: t('category.beauty'), icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { id: 'cars', name: t('category.cars'), icon: <Car className="w-3.5 h-3.5" />, badge: t('VIP') }
   ];
 
   const handleScroll = (direction: 'left' | 'right') => {
@@ -50,16 +52,16 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
   };
 
   return (
-    <nav className="w-full bg-white dark:bg-[#0f172a]/95 border-b border-slate-200/80 dark:border-slate-800 sticky top-[72px] z-30 shadow-xs backdrop-blur-md transition-colors duration-300" dir="rtl">
+    <nav className="w-full bg-white dark:bg-[#0f172a]/95 border-b border-slate-200/80 dark:border-slate-800 sticky top-[72px] z-30 shadow-xs backdrop-blur-md transition-colors duration-300" dir={dir}>
       <div className="max-w-7xl mx-auto px-2 sm:px-6 relative flex items-center">
         
-        {/* Right Scroll Arrow (RTL previous) */}
+        {/* Right Scroll Arrow */}
         <button
-          onClick={() => handleScroll('right')}
+          onClick={() => handleScroll(dir === 'rtl' ? 'right' : 'left')}
           className="hidden sm:flex z-10 w-7 h-7 rounded-full bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all -mr-2 cursor-pointer"
-          aria-label="Scroll right"
+          aria-label="Scroll start"
         >
-          <ChevronRight className="w-4 h-4" />
+          {dir === 'rtl' ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
 
         {/* Scrollable Container with Smooth Touch */}
@@ -99,13 +101,13 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
           })}
         </div>
 
-        {/* Left Scroll Arrow (RTL next) */}
+        {/* Left Scroll Arrow */}
         <button
-          onClick={() => handleScroll('left')}
+          onClick={() => handleScroll(dir === 'rtl' ? 'left' : 'right')}
           className="hidden sm:flex z-10 w-7 h-7 rounded-full bg-white dark:bg-slate-800 shadow-md border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all -ml-2 cursor-pointer"
-          aria-label="Scroll left"
+          aria-label="Scroll end"
         >
-          <ChevronLeft className="w-4 h-4" />
+          {dir === 'rtl' ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </button>
 
       </div>

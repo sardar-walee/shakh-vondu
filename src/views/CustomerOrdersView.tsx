@@ -4,6 +4,7 @@ import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge } from '../components/common/Badge';
 import { OrderRatingModal } from '../components/reviews/OrderRatingModal';
+import { EmptyState } from '../components/common/EmptyState';
 import { Order } from '../types';
 
 interface CustomerOrdersViewProps {
@@ -79,17 +80,13 @@ export const CustomerOrdersView: React.FC<CustomerOrdersViewProps> = ({ onNaviga
 
       {/* Orders List */}
       {userOrders.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-3xl border border-slate-200 p-8">
-          <Package className="w-16 h-16 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-700">هیچ داواکارییەک نییە</h3>
-          <p className="text-xs text-slate-400 mt-1">تۆ هێشتا هیچ داواکارییەکت لەم بەشەدا تۆمار نەکردووە.</p>
-          <button
-            onClick={() => onNavigate('home')}
-            className="mt-4 px-6 py-2.5 bg-orange-500 text-white text-xs font-bold rounded-xl shadow cursor-pointer"
-          >
-            دەستپێکردنی کڕین
-          </button>
-        </div>
+        <EmptyState
+          type="orders"
+          title="هیچ داواکارییەک نییە"
+          description="تۆ هێشتا هیچ داواکارییەکت لەم بەشەدا تۆمار نەکردووە."
+          actionLabel="دەستپێکردنی کڕین"
+          onAction={() => onNavigate('home')}
+        />
       ) : (
         <div className="space-y-4">
           {userOrders.map(order => {

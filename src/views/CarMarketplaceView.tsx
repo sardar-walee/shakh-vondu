@@ -11,6 +11,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { CarAdCard } from '../components/cards/CarAdCard';
+import { EmptyState } from '../components/common/EmptyState';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { CITIES } from '../data/seedData';
 import { CarAd } from '../types';
@@ -166,11 +167,20 @@ export const CarMarketplaceView: React.FC<CarMarketplaceViewProps> = ({
 
       {/* Car Grid */}
       {filtered.length === 0 ? (
-        <div className="p-16 text-center bg-white rounded-3xl border border-slate-200">
-          <Car className="w-16 h-16 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-slate-700">هیچ ئۆتۆمبێلێک نەدۆزرایەوە</h3>
-          <p className="text-xs text-slate-400 mt-1">تکایە گۆڕانکاری لە فلتەرەکاندا بکە.</p>
-        </div>
+        <EmptyState
+          type="cars"
+          title="هیچ ئۆتۆمبێلێک نەدۆزرایەوە"
+          description="تکایە گۆڕانکاری لە فلتەرەکاندا بکە یان وشەی گەڕانەکەت پاکبکەرەوە."
+          actionLabel="سڕینەوەی فلتەرەکان"
+          onAction={() => {
+            setSelectedBrand('all');
+            setSelectedCityFilter('all');
+            setSelectedTransmission('all');
+            setSearchQuery('');
+          }}
+          secondaryActionLabel="زیادکردنی ڕیکلامی نوێ"
+          onSecondaryAction={() => onNavigate('add-car-ad')}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map(car => (

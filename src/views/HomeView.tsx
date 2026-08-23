@@ -44,7 +44,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   selectedCity
 }) => {
   const { products, sellers, carAds } = useMarketplace();
-  const { dir } = useLanguage();
+  const { dir, t } = useLanguage();
   const [showAppModal, setShowAppModal] = useState(false);
   const [bestSellerCategory, setBestSellerCategory] = useState<string>('all');
   const categoriesScrollRef = useRef<HTMLDivElement>(null);
@@ -84,15 +84,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
     .slice(0, 8);
 
   const mainCategories = [
-    { id: 'food' as ProductCategory, name: 'چێشتخانە و خواردن', subtitle: 'خواردنی بەتام و خێرا', icon: <Utensils className="w-5 h-5" />, count: '١٢٠+ ڕێستۆرانت' },
-    { id: 'market' as ProductCategory, name: 'مارکێت و پێداویستی', subtitle: 'هەموو کەلوپەلی ماڵ', icon: <ShoppingBag className="w-5 h-5" />, count: '٤٥+ سوپەرمارکێت' },
-    { id: 'clothes' as ProductCategory, name: 'جلوبەرگ و مۆدە', subtitle: 'مۆدێلی پیاوان و ئافرەتان', icon: <Shirt className="w-5 h-5" />, count: '٣٠+ فرۆشگا' },
-    { id: 'fruits_vegetables' as ProductCategory, name: 'سەوزە و میوە', subtitle: 'فرێش و سروشتی', icon: <Apple className="w-5 h-5" />, count: 'ڕۆژانە فرێش' },
-    { id: 'fresh_meat' as ProductCategory, name: 'گۆشتی تازە', subtitle: 'بەرخ و مریشکی ڕۆژانە', icon: <Beef className="w-5 h-5" />, count: 'گۆشتی کوردی' },
-    { id: 'dairy' as ProductCategory, name: 'شیرەمەنی و ماست', subtitle: 'ماستی خۆماڵی و پەنیر', icon: <Milk className="w-5 h-5" />, count: 'خۆماڵی' },
-    { id: 'electronics' as ProductCategory, name: 'ئەلیکترۆنیات', subtitle: 'مۆبایل و کۆمپیوتەر', icon: <Smartphone className="w-5 h-5" />, count: '١٥+ نوێنەرایەتی' },
-    { id: 'beauty' as ProductCategory, name: 'جوانی و مکیاژ', subtitle: 'عەتر و چاودێری پێست', icon: <Sparkles className="w-5 h-5" />, count: 'براندی ئەسڵی' },
-    { id: 'cars' as ProductCategory, name: 'ئۆتۆمبێل و گواستنەوە', subtitle: 'کڕین و فرۆشتنی ئۆتۆمبێل', icon: <Car className="w-5 h-5" />, count: '٨٥+ پۆستی نوێ' }
+    { id: 'food' as ProductCategory, name: t('چێشتخانە و خواردن'), subtitle: t('خواردنی بەتام و خێرا'), icon: <Utensils className="w-5 h-5" />, count: '١٢٠+' },
+    { id: 'market' as ProductCategory, name: t('مارکێت و پێداویستی'), subtitle: t('هەموو کەلوپەلی ماڵ'), icon: <ShoppingBag className="w-5 h-5" />, count: '٤٥+' },
+    { id: 'clothes' as ProductCategory, name: t('جلوبەرگ و مۆدە'), subtitle: t('مۆدێلی پیاوان و ئافرەتان'), icon: <Shirt className="w-5 h-5" />, count: '٣٠+' },
+    { id: 'fruits_vegetables' as ProductCategory, name: t('سەوزە و میوە'), subtitle: t('فرێش و سروشتی'), icon: <Apple className="w-5 h-5" />, count: t('فرێش') },
+    { id: 'fresh_meat' as ProductCategory, name: t('گۆشتی تازە'), subtitle: t('بەرخ و مریشکی ڕۆژانە'), icon: <Beef className="w-5 h-5" />, count: t('گۆشت') },
+    { id: 'dairy' as ProductCategory, name: t('شیرەمەنی و ماست'), subtitle: t('ماستی خۆماڵی و پەنیر'), icon: <Milk className="w-5 h-5" />, count: t('شیرەمەنی') },
+    { id: 'electronics' as ProductCategory, name: t('ئەلیکترۆنیات'), subtitle: t('مۆبایل و کۆمپیوتەر'), icon: <Smartphone className="w-5 h-5" />, count: '١٥+' },
+    { id: 'beauty' as ProductCategory, name: t('جوانی و مکیاژ'), subtitle: t('عەتر و چاودێری پێست'), icon: <Sparkles className="w-5 h-5" />, count: t('جوانی') },
+    { id: 'cars' as ProductCategory, name: t('ئۆتۆمبێل و گواستنەوە'), subtitle: t('کڕین و فرۆشتنی ئۆتۆمبێل'), icon: <Car className="w-5 h-5" />, count: '٨٥+' }
   ];
 
   const handleScrollCategories = (direction: 'left' | 'right') => {
@@ -106,23 +106,23 @@ export const HomeView: React.FC<HomeViewProps> = ({
   };
 
   return (
-    <div className="space-y-10 pb-20" dir="rtl">
+    <div className="space-y-10 pb-20" dir={dir}>
       
       {/* Hero Banner Section */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-tr from-[#FF3300] via-[#FF5500] to-[#FF7700] text-white shadow-xl shadow-orange-500/25 border border-orange-400/30">
         <div className="relative max-w-7xl mx-auto px-6 sm:px-12 py-10 sm:py-14 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="z-10 max-w-2xl space-y-4 text-center md:text-right">
+          <div className="z-10 max-w-2xl space-y-4 text-center md:text-start">
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3.5 py-1 rounded-full text-xs font-bold border border-white/30">
               <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-spin-slow" />
-              <span>پلاتفۆرمی یەکەمی بازاڕکردن و ئۆتۆمبێل لە کوردستان</span>
+              <span>{t('پلاتفۆرمی یەکەمی بازاڕکردن و ئۆتۆمبێل لە کوردستان')}</span>
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-black leading-tight tracking-tight drop-shadow-md">
-              هەموو شتێک لە یەک شوێن لەگەڵ شاخ (SHAKH)
+              {t('هەموو شتێک لە یەک شوێن لەگەڵ شاخ (SHAKH)')}
             </h1>
 
             <p className="text-base sm:text-lg opacity-95 leading-relaxed max-w-xl font-medium">
-              خێراترین گەیاندن بۆ خواردن، سوپەرمارکێت، جلوبەرگ و کڕین و فرۆشتنی ئۆتۆمبێل بە بەرزترین کوالیتی.
+              {t('خێراترین گەیاندن بۆ خواردن، سوپەرمارکێت، جلوبەرگ و کڕین و فرۆشتنی ئۆتۆمبێل بە بەرزترین کوالیتی.')}
             </p>
 
             <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-3">
@@ -131,7 +131,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className="bg-white text-[#FF5500] px-7 py-3 rounded-xl font-black hover:bg-slate-50 shadow-lg shadow-black/10 transition-transform active:scale-95 flex items-center gap-2 cursor-pointer"
               >
                 <Utensils className="w-4 h-4" />
-                <span>ئێستا داوا بکە</span>
+                <span>{t('ئێستا داوا بکە')}</span>
               </button>
 
               <button
@@ -139,7 +139,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className="bg-[#2563EB] hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md transition-transform active:scale-95 flex items-center gap-2 cursor-pointer border border-blue-400/40"
               >
                 <Car className="w-4 h-4" />
-                <span>بازاڕی ئۆتۆمبێل</span>
+                <span>{t('بازاڕی ئۆتۆمبێل')}</span>
               </button>
 
               <button
@@ -147,7 +147,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 className="bg-slate-900/80 hover:bg-slate-900 text-white border border-white/20 px-5 py-3 rounded-xl font-bold text-sm backdrop-blur-xs flex items-center gap-2 cursor-pointer transition-colors"
               >
                 <Download className="w-4 h-4 text-orange-400" />
-                <span>داگرتنی ئەپ</span>
+                <span>{t('داگرتنی ئەپ')}</span>
               </button>
             </div>
           </div>
@@ -157,16 +157,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
               <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#F97316] flex items-center justify-center font-bold">
                 <Truck className="w-5 h-5" />
               </div>
-              <h4 className="text-xs font-bold pt-1">گەیاندنی خێرا</h4>
-              <p className="text-[11px] text-slate-500">لە کەمتر لە ٣٠ بۆ ٤٥ خولەک</p>
+              <h4 className="text-xs font-bold pt-1">{t('گەیاندنی خێرا')}</h4>
+              <p className="text-[11px] text-slate-500">{t('لە کەمتر لە ٣٠ بۆ ٤٥ خولەک')}</p>
             </div>
 
             <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-sm text-slate-800 space-y-1 mt-4">
               <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#2563EB] flex items-center justify-center font-bold">
                 <ShieldCheck className="w-5 h-5" />
               </div>
-              <h4 className="text-xs font-bold pt-1">کوالیتی گەرەنتی</h4>
-              <p className="text-[11px] text-slate-500">فرۆشیاری پشتڕاستکراو</p>
+              <h4 className="text-xs font-bold pt-1">{t('دڵنیایی و کواڵیتی')}</h4>
+              <p className="text-[11px] text-slate-500">{t('فرۆشیاری پشتڕاستکراو')}</p>
             </div>
           </div>
         </div>
@@ -184,22 +184,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-6 bg-[#F97316] rounded-full" />
-            <h2 className="text-lg sm:text-xl font-black text-slate-900">بەشەکانی شاخ</h2>
-            <span className="text-xs text-slate-400 font-semibold">(بۆ ڕاست و چەپ ڕایبکێشە)</span>
+            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">{t('بەشەکانی شاخ')}</h2>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleScrollCategories('right')}
-              className="w-8 h-8 rounded-full bg-white shadow-xs border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 active:scale-90 transition-all cursor-pointer"
-              title="ڕاست"
+              className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-90 transition-all cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => handleScrollCategories('left')}
-              className="w-8 h-8 rounded-full bg-white shadow-xs border border-slate-200 text-slate-700 flex items-center justify-center hover:bg-slate-50 active:scale-90 transition-all cursor-pointer"
-              title="چەپ"
+              className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-90 transition-all cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -244,14 +241,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">پرفرۆشترین کاڵاکان (Best Sellers)</h2>
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">{t('پرفرۆشترین کاڵاکان (Best Sellers)')}</h2>
                 <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider">
                   TOP HOT
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                ئەو کاڵایانەی زۆرترین داواکاری و بەرزترین هەڵسەنگاندنیان هەیە لە شاخ (لا سلاید)
-              </p>
             </div>
           </div>
 
@@ -259,11 +253,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
             {/* Filter Chips */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               {[
-                { id: 'all', name: 'هەموو' },
-                { id: 'food', name: 'خواردن' },
-                { id: 'market', name: 'مارکێت' },
-                { id: 'clothes', name: 'جلوبەرگ' },
-                { id: 'electronics', name: 'ئەلیکترۆنیات' }
+                { id: 'all', name: t('هەموو') },
+                { id: 'food', name: t('خواردن') },
+                { id: 'market', name: t('مارکێت') },
+                { id: 'clothes', name: t('جلوبەرگ') },
+                { id: 'electronics', name: t('ئەلیکترۆنیات') }
               ].map(tab => (
                 <button
                   key={tab.id}
@@ -320,8 +314,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
         ) : (
           <div className="text-center py-8 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
             <ShoppingBag className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">هیچ کاڵایەک لەم بەشەدا بەردەست نییە</p>
-            <p className="text-xs text-slate-400 mt-1">تۆ وەک فرۆشیار دەتوانیت کاڵای نوێ زیاد بکەیت</p>
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-300">{t('هیچ کاڵایەک لەم بەشەدا بەردەست نییە')}</p>
+            <p className="text-xs text-slate-400 mt-1">{t('تۆ وەک فرۆشیار دەتوانیت کاڵای نوێ زیاد بکەیت')}</p>
           </div>
         )}
       </section>
@@ -339,7 +333,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <div className="w-2.5 h-6 bg-[#2563EB] rounded-full" />
                 <div className="flex items-center gap-1.5">
                   <Car className="w-5 h-5 text-[#2563EB]" />
-                  <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100">نوێترین ئۆتۆمبێلەکان (لا سلاید)</h2>
+                  <h2 className="text-lg sm:text-xl font-black text-slate-800 dark:text-slate-100">{t('نوێترین ئۆتۆمبێلەکان (لا سلاید)')}</h2>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -348,14 +342,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <button
                       onClick={() => handleScrollSection(carsScrollRef, 'right')}
                       className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
-                      title="ڕاست"
                     >
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleScrollSection(carsScrollRef, 'left')}
                       className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
-                      title="چەپ"
                     >
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
@@ -365,7 +357,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   onClick={() => onNavigate('car-marketplace')}
                   className="text-[#2563EB] text-xs sm:text-sm font-bold hover:underline cursor-pointer"
                 >
-                  بینینی هەمووی ←
+                  {t('بینینی هەمووی ←')}
                 </button>
               </div>
             </div>
@@ -387,8 +379,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
             ) : (
               <div className="text-center py-8 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
                 <Car className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <p className="text-sm font-bold text-slate-600 dark:text-slate-300">هیچ ئۆتۆمبێلێک بڵاونەکراوەتەوە</p>
-                <p className="text-xs text-slate-400 mt-1">ئێستا دەتوانیت یەکەم ڕیکلامی ئۆتۆمبێل بڵاوبکەیتەوە</p>
+                <p className="text-sm font-bold text-slate-600 dark:text-slate-300">{t('هیچ ئۆتۆمبێلێک بڵاونەکراوەتەوە')}</p>
+                <p className="text-xs text-slate-400 mt-1">{t('ئێستا دەتوانیت یەکەم ڕیکلامی ئۆتۆمبێل بڵاوبکەیتەوە')}</p>
               </div>
             )}
           </section>
@@ -401,7 +393,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <div className="w-2.5 h-6 bg-rose-600 rounded-full" />
                   <div className="flex items-center gap-1.5">
                     <Flame className="w-5 h-5 text-rose-600" />
-                    <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">داشکاندن و ئۆفەرە تایبەتەکان</h2>
+                    <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">{t('داشکاندن و ئۆفەرە تایبەتەکان')}</h2>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -409,14 +401,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     <button
                       onClick={() => handleScrollSection(specialOffersScrollRef, 'right')}
                       className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
-                      title="ڕاست"
                     >
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => handleScrollSection(specialOffersScrollRef, 'left')}
                       className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
-                      title="چەپ"
                     >
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
@@ -425,7 +415,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     onClick={() => onSelectCategory('food')}
                     className="text-xs font-bold text-[#FF5500] hover:underline flex items-center gap-1 cursor-pointer"
                   >
-                    <span>هەمووی ببینە</span>
+                    <span>{t('هەمووی ببینە')}</span>
                     <ArrowLeft className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -453,21 +443,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-6 bg-[#2563EB] rounded-full" />
-                <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">کاڵا هەڵبژێردراوەکان لە هەموو بەشەکان</h2>
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">{t('کاڵا هەڵبژێردراوەکان لە هەموو بەشەکان')}</h2>
               </div>
               {trendingProducts.length > 0 && (
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => handleScrollSection(trendingScrollRef, 'right')}
                     className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
-                    title="ڕاست"
                   >
                     <ChevronRight className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleScrollSection(trendingScrollRef, 'left')}
                     className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center hover:bg-slate-200 active:scale-90 transition-all cursor-pointer"
-                    title="چەپ"
                   >
                     <ChevronLeft className="w-3.5 h-3.5" />
                   </button>
@@ -493,7 +481,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             ) : (
               <div className="text-center py-8 bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
                 <ShoppingBag className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                <p className="text-sm font-bold text-slate-600 dark:text-slate-300">هیچ کاڵایەک نەدۆزرایەوە</p>
+                <p className="text-sm font-bold text-slate-600 dark:text-slate-300">{t('هیچ کاڵایەک نەدۆزرایەوە')}</p>
               </div>
             )}
           </section>
@@ -507,16 +495,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
           <div className="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-3xl p-6 shadow-md space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#F97316] text-white flex items-center justify-center font-black text-xl shadow-md">
-                شاخ
+                {t('شاخ')}
               </div>
               <div>
-                <h3 className="font-bold text-base text-white">ئەپی مۆبایلی شاخ</h3>
-                <p className="text-xs text-slate-400">بۆ ئەندرۆید و ئایفۆن</p>
+                <h3 className="font-bold text-base text-white">{t('ئەپی مۆبایلی شاخ')}</h3>
+                <p className="text-xs text-slate-400">{t('بۆ ئەندرۆید و ئایفۆن')}</p>
               </div>
             </div>
 
             <p className="text-xs text-slate-300 leading-relaxed">
-              ئەپەکە دابەزێنە بۆ خێراترین کڕین، ئاگاداری ڕاستەوخۆ و داشکاندنی تایبەت.
+              {t('ئەپەکە دابەزێنە بۆ خێراترین کڕین، ئاگاداری ڕاستەوخۆ و داشکاندنی تایبەت.')}
             </p>
 
             <button
@@ -524,15 +512,15 @@ export const HomeView: React.FC<HomeViewProps> = ({
               className="w-full py-3 rounded-xl bg-[#F97316] hover:bg-orange-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-transform active:scale-95 cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              <span>دابەزاندنی ئەپ بۆ مۆبایل</span>
+              <span>{t('دابەزاندنی ئەپ بۆ مۆبایل')}</span>
             </button>
           </div>
 
           {/* Post Car Promotion Card */}
           <div className="bg-[#2563EB] text-white rounded-3xl p-6 shadow-md">
-            <h3 className="text-xl font-black mb-2">ئۆتۆمبێلەکەت بفرۆشە!</h3>
+            <h3 className="text-xl font-black mb-2">{t('ئۆتۆمبێلەکەت بفرۆشە!')}</h3>
             <p className="text-sm opacity-90 mb-5 leading-relaxed">
-              ئێستا دەتوانیت ئۆتۆمبێلەکەت لە شاخ پۆست بکەیت بە کاتی دیاریکراو و بە خێراترین کات بیفرۆشیت.
+              {t('ئێستا دەتوانیت ئۆتۆمبێلەکەت لە شاخ پۆست بکەیت بە کاتی دیاریکراو و بە خێراترین کات بیفرۆشیت.')}
             </p>
 
             <div className="space-y-2.5 mb-6">
@@ -540,21 +528,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <div className="bg-white text-[#2563EB] w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm flex-shrink-0">
                   ١
                 </div>
-                <span className="text-xs sm:text-sm font-semibold">زانیارییەکان بنووسە</span>
+                <span className="text-xs sm:text-sm font-semibold">{t('١ زانیارییەکان بنووسە')}</span>
               </div>
 
               <div className="flex items-center gap-3 bg-blue-700/50 p-2.5 rounded-xl border border-blue-400/30">
                 <div className="bg-white text-[#2563EB] w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm flex-shrink-0">
                   ٢
                 </div>
-                <span className="text-xs sm:text-sm font-semibold">پاکێج و کات هەڵبژێرە</span>
+                <span className="text-xs sm:text-sm font-semibold">{t('٢ پاکێج و کات هەڵبژێرە')}</span>
               </div>
 
               <div className="flex items-center gap-3 bg-blue-700/50 p-2.5 rounded-xl border border-blue-400/30">
                 <div className="bg-white text-[#2563EB] w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm flex-shrink-0">
                   ٣
                 </div>
-                <span className="text-xs sm:text-sm font-semibold">پۆستەکەت چالاک بکە</span>
+                <span className="text-xs sm:text-sm font-semibold">{t('٣ پۆستەکەت چالاک بکە')}</span>
               </div>
             </div>
 
@@ -562,19 +550,19 @@ export const HomeView: React.FC<HomeViewProps> = ({
               onClick={() => onNavigate('post-car-ad')}
               className="w-full bg-[#F97316] text-white py-3 rounded-xl font-bold shadow-md hover:bg-orange-600 transition-colors text-sm cursor-pointer"
             >
-              دەستپێبکە ئێستا
+              {t('دەستپێبکە ئێستا')}
             </button>
           </div>
 
           {/* Popular Food Centers List */}
-          <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-              <h3 className="text-base font-black text-slate-800">ناوەندەکانی خواردن</h3>
+          <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 shadow-xs border border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-base font-black text-slate-800 dark:text-slate-100">{t('ناوەندەکانی خواردن')}</h3>
               <button
                 onClick={() => onSelectCategory('food')}
                 className="text-xs text-[#2563EB] font-bold hover:underline cursor-pointer"
               >
-                هەمووی ←
+                {t('هەمووی ←')}
               </button>
             </div>
 
@@ -606,14 +594,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* Supermarkets Sidebar List */}
-          <div className="bg-white rounded-3xl p-6 shadow-xs border border-slate-100">
-            <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
-              <h3 className="text-base font-black text-slate-800">سوپەرمارکێتەکان</h3>
+          <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-6 shadow-xs border border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-base font-black text-slate-800 dark:text-slate-100">{t('سوپەرمارکێتەکان')}</h3>
               <button
                 onClick={() => onSelectCategory('market')}
                 className="text-xs text-[#2563EB] font-bold hover:underline cursor-pointer"
               >
-                هەمووی ←
+                {t('هەمووی ←')}
               </button>
             </div>
 
@@ -651,26 +639,26 @@ export const HomeView: React.FC<HomeViewProps> = ({
       <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-8 sm:p-12 shadow-sm">
         <div className="max-w-2xl space-y-3">
           <span className="inline-block px-3 py-1 rounded-full bg-blue-500/20 text-[#2563EB] text-xs font-bold border border-blue-500/30">
-            تایبەت بە فرۆشیاران و خاوەن کارەکان
+            {t('تایبەت بە فرۆشیاران و خاوەن کارەکان')}
           </span>
           <h2 className="text-2xl sm:text-3xl font-black">
-            فرۆشگات هەیە؟ لەگەڵ شاخ فرۆشت زیادبکە!
+            {t('فرۆشگات هەیە؟ لەگەڵ شاخ فرۆشت زیادبکە!')}
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            لە کەمتر لە ٥ خولەک فرۆشگاکەت تۆماربکە، کاڵاکانت دابنێ و بە خێراترین کات بگەرێ بە دەستی هەزاران کڕیار لە شارەکەت.
+            {t('لە کەمتر لە ٥ خولەک فرۆشگاکەت تۆماربکە، کاڵاکانت دابنێ و بە خێراترین کات بگەرێ بە دەستی هەزاران کڕیار لە شارەکەت.')}
           </p>
           <div className="pt-2 flex flex-wrap gap-3">
             <button
               onClick={() => onNavigate('auth', 'register')}
               className="px-6 py-3 bg-[#F97316] hover:bg-orange-600 text-white font-bold text-xs rounded-xl shadow transition-transform active:scale-95 cursor-pointer"
             >
-              تۆمارکردنی فرۆشگای خۆت
+              {t('تۆمارکردنی فرۆشگای خۆت')}
             </button>
             <button
               onClick={() => onNavigate('seller-dashboard')}
               className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white font-bold text-xs rounded-xl border border-white/20 transition-colors cursor-pointer"
             >
-              چوونەژوورەوەی فرۆشیاران
+              {t('چوونەژوورەوەی فرۆشیاران')}
             </button>
           </div>
         </div>

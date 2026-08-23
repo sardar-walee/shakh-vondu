@@ -1,5 +1,6 @@
 import React from 'react';
 import { OrderStatus, UserRole, ProductCategory, CarPackageType } from '../../types';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface StatusBadgeProps {
   status: OrderStatus;
@@ -7,6 +8,7 @@ interface StatusBadgeProps {
 }
 
 export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' }) => {
+  const { t } = useLanguage();
   const sizeClasses = {
     sm: 'text-[11px] px-2 py-0.5',
     md: 'text-xs px-2.5 py-1',
@@ -29,12 +31,13 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' })
   return (
     <span className={`inline-flex items-center gap-1.5 font-medium rounded-full border ${cfg.bg} ${cfg.text} ${sizeClasses[size]}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot} animate-pulse`}></span>
-      {cfg.label}
+      {t(cfg.label)}
     </span>
   );
 };
 
 export const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
+  const { t } = useLanguage();
   const roleMap: Record<UserRole, { label: string; color: string }> = {
     admin: { label: 'Super Admin', color: 'bg-red-600 text-white' },
     super_admin: { label: 'Super Admin', color: 'bg-red-600 text-white' },
@@ -57,12 +60,13 @@ export const RoleBadge: React.FC<{ role: UserRole }> = ({ role }) => {
 
   return (
     <span className={`inline-flex items-center text-xs font-semibold px-2.5 py-0.5 rounded-full ${item.color}`}>
-      {item.label}
+      {t(item.label)}
     </span>
   );
 };
 
 export const CategoryBadge: React.FC<{ category: ProductCategory }> = ({ category }) => {
+  const { t } = useLanguage();
   const catNames: Record<ProductCategory, { name: string; bg: string; text: string }> = {
     food: { name: 'خواردن', bg: 'bg-orange-50', text: 'text-orange-600' },
     market: { name: 'مارکێت', bg: 'bg-blue-50', text: 'text-blue-600' },
@@ -79,29 +83,30 @@ export const CategoryBadge: React.FC<{ category: ProductCategory }> = ({ categor
 
   return (
     <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-md ${item.bg} ${item.text}`}>
-      {item.name}
+      {t(item.name)}
     </span>
   );
 };
 
 export const CarPackageBadge: React.FC<{ packageType: CarPackageType }> = ({ packageType }) => {
+  const { t } = useLanguage();
   if (packageType === '1_month') {
     return (
       <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-gradient-to-r from-amber-500 to-orange-500 text-white px-2.5 py-0.5 rounded-full shadow-sm">
-        ★ VIP ٣٠ ڕۆژ
+        ★ VIP {t('٣٠ ڕۆژ')}
       </span>
     );
   }
   if (packageType === '15_days') {
     return (
       <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full">
-        پێشنیارکراو ١٥ ڕۆژ
+        {t('پێشنیارکراو')} {t('١٥ ڕۆژ')}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center text-[11px] font-medium bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
-      ٧ ڕۆژ
+      {t('٧ ڕۆژ')}
     </span>
   );
 };

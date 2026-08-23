@@ -1,7 +1,8 @@
 import React from 'react';
-import { Home, Layers, PlusCircle, ShoppingBag, User, Car, Clock } from 'lucide-react';
+import { Home, Layers, PlusCircle, ShoppingBag, User } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface MobileBottomNavProps {
   currentView: string;
@@ -17,10 +18,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 }) => {
   const { totalItems, setIsOpen: setCartOpen } = useCart();
   const { currentUser, isAuthenticated } = useAuth();
+  const { t, dir } = useLanguage();
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0f172a]/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-slate-800 shadow-lg safe-area-bottom pb-1 transition-colors duration-300">
-      <div className="grid grid-cols-5 items-center h-16 max-w-lg mx-auto px-2 text-center" dir="rtl">
+      <div className="grid grid-cols-5 items-center h-16 max-w-lg mx-auto px-2 text-center" dir={dir}>
         
         {/* 1. Home */}
         <button
@@ -30,7 +32,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           }`}
         >
           <Home className={`w-5 h-5 ${currentView === 'home' ? 'stroke-[2.5]' : 'stroke-2'}`} />
-          <span className="text-[10px] font-bold mt-1">سەرەکی</span>
+          <span className="text-[10px] font-bold mt-1">{t('سەرەکی')}</span>
           {currentView === 'home' && (
             <span className="w-1.5 h-1.5 rounded-full bg-[#FF5500] absolute -bottom-0.5" />
           )}
@@ -50,7 +52,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           }`}
         >
           <Layers className={`w-5 h-5 ${currentView === 'category' ? 'stroke-[2.5]' : 'stroke-2'}`} />
-          <span className="text-[10px] font-bold mt-1">بەشەکان</span>
+          <span className="text-[10px] font-bold mt-1">{t('بەشەکان')}</span>
           {currentView === 'category' && (
             <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] dark:bg-blue-400 absolute -bottom-0.5" />
           )}
@@ -64,7 +66,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5500] to-amber-500 text-white flex items-center justify-center shadow-lg shadow-orange-500/40 group-hover:scale-105 transition-all">
             <PlusCircle className="w-6 h-6 stroke-[2.5]" />
           </div>
-          <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 mt-0.5">پۆست بکە</span>
+          <span className="text-[10px] font-black text-slate-800 dark:text-slate-200 mt-0.5">{t('پۆست بکە')}</span>
         </button>
 
         {/* 4. Cart */}
@@ -82,7 +84,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               </span>
             )}
           </div>
-          <span className="text-[10px] font-bold mt-1">سەبەتە</span>
+          <span className="text-[10px] font-bold mt-1">{t('سەبەتە')}</span>
         </button>
 
         {/* 5. Account / Profile or Login */}
@@ -108,7 +110,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
             <User className={`w-5 h-5 ${['user-profile', 'customer-orders', 'auth'].includes(currentView) ? 'stroke-[2.5]' : 'stroke-2'}`} />
           )}
           <span className="text-[10px] font-bold mt-1">
-            {isAuthenticated ? 'پڕۆفایل' : 'چوونە ژوورەوە'}
+            {isAuthenticated ? t('پڕۆفایل') : t('چوونەژوورەوە')}
           </span>
           {['user-profile', 'customer-orders', 'auth'].includes(currentView) && (
             <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB] dark:bg-blue-400 absolute -bottom-0.5" />

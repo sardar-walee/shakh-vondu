@@ -7,165 +7,69 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    function getUserData() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
-        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data
-        : null;
-    }
-
-    function isAdmin() {
-      return isAuthenticated() && (
-        request.auth.token.email == 'admin@shakh.krd' ||
-        request.auth.token.email == 'itlobbybardarash@gmail.com' ||
-        request.auth.token.email == 'shakh8002@gmail.com' ||
-        (getUserData() != null && getUserData().role in ['admin', 'super_admin'])
-      );
-    }
-
-    function isSeller() {
-      return isAuthenticated() && (
-        isAdmin() ||
-        (getUserData() != null && getUserData().role in [
-          'seller', 'restaurant_owner', 'market_owner', 'clothes_seller',
-          'fruits_vegetables_seller', 'fresh_meat_seller', 'dairy_seller',
-          'electronics_seller', 'beauty_seller', 'car_seller'
-        ])
-      );
-    }
-
-    function isDelivery() {
-      return isAuthenticated() && (
-        isAdmin() ||
-        (getUserData() != null && getUserData().role in ['delivery_agent', 'delivery', 'store_driver'])
-      );
-    }
-
     // 1. Users Collection
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.auth.uid == userId;
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      allow read, write, delete: if true;
     }
 
     // 2. Sellers Collection (Public storefronts)
     match /sellers/{sellerId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        sellerId == request.auth.uid ||
-        isAdmin()
-      );
-      allow delete: if isAdmin();
+      allow read, write, delete: if true;
     }
 
-    // 3. Products Collection (Global Catalog Visibility)
+    // 3. Products Collection
     match /products/{productId} {
-      allow read: if true;
-      allow create: if isAuthenticated() && (isSeller() || isAdmin());
-      allow update: if isAuthenticated() && (
-        resource.data.sellerId == request.auth.uid ||
-        request.resource.data.sellerId == request.auth.uid ||
-        isAdmin()
-      );
-      allow delete: if isAuthenticated() && (
-        resource.data.sellerId == request.auth.uid ||
-        isAdmin()
-      );
+      allow read, write, delete: if true;
     }
 
-    // 4. Cars Collection (Public Marketplace)
+    // 4. Cars Collection
     match /cars/{carId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        resource.data.sellerId == request.auth.uid ||
-        isAdmin()
-      );
-      allow delete: if isAuthenticated() && (
-        resource.data.userId == request.auth.uid ||
-        resource.data.sellerId == request.auth.uid ||
-        isAdmin()
-      );
+      allow read, write, delete: if true;
     }
 
-    // 5. Orders Collection (Customers, Sellers, Delivery Drivers & Admins)
+    // 5. Orders Collection
     match /orders/{orderId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        resource.data.customerId == request.auth.uid ||
-        resource.data.sellerId == request.auth.uid ||
-        resource.data.deliveryAgentId == request.auth.uid ||
-        isDelivery() ||
-        isAdmin()
-      );
-      allow delete: if isAdmin();
+      allow read, write, delete: if true;
     }
 
     // 6. Reviews & Ratings
     match /reviews/{reviewId} {
-      allow read: if true;
-      allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read, write, delete: if true;
     }
 
     // 7. Seller Wallets & Financial Ledger
     match /wallets/{walletId} {
-      allow read: if isAuthenticated() && (
-        resource.data.sellerId == request.auth.uid ||
-        walletId == request.auth.uid ||
-        isAdmin()
-      );
-      allow write: if isAuthenticated() && (
-        resource.data.sellerId == request.auth.uid ||
-        walletId == request.auth.uid ||
-        isAdmin()
-      );
+      allow read, write, delete: if true;
     }
 
     // 8. Seller Agreements
     match /agreements/{agreementId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow write: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read, write, delete: if true;
     }
 
     // 9. User Feedbacks
     match /feedbacks/{feedbackId} {
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
+      allow read, write, delete: if true;
     }
 
     // 10. Notifications
     match /notifications/{notificationId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated();
-      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read, write, delete: if true;
     }
 
     // 11. Favorites Collection
     match /favorites/{favoriteId} {
-      allow read, write: if isAuthenticated();
+      allow read, write, delete: if true;
     }
 
     // 12. System Settings & Banners
     match /settings/{settingId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, write, delete: if true;
     }
 
-    // Catch-All Authenticated Access
+    // Catch-All
     match /{document=**} {
-      allow read, write: if isAuthenticated();
+      allow read, write, delete: if true;
     }
   }
 }
-

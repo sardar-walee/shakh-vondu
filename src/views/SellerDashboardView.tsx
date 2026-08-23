@@ -39,6 +39,7 @@ import { useMarketplace } from '../context/MarketplaceContext';
 import { Product, Order, ProductCategory, DeliveryZoneSettings, SellerProfile, StoreDriver, DeliveryMode } from '../types';
 import { StatusBadge, CategoryBadge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
+import { EmptyState } from '../components/common/EmptyState';
 import { ImageUpload } from '../components/common/ImageUpload';
 import { DynamicProductForm } from '../components/products/DynamicProductForm';
 import { getDefaultDeliveryZone, calculateDeliveryFee, CITY_NEIGHBORHOOD_DISTANCES } from '../utils/deliveryUtils';
@@ -544,7 +545,13 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
           <h3 className="text-sm font-black text-slate-900">بەڕێوەبردنی داواکارییەکان</h3>
 
           {myOrders.length === 0 ? (
-            <p className="text-xs text-slate-400 py-8 text-center">هیچ داواکارییەک نییە.</p>
+            <EmptyState
+              type="orders"
+              title="هیچ داواکارییەکت نییە"
+              description="هێشتا هیچ داواکارییەک بۆ فرۆشگاکەت لەلایەن کڕیارانەوە تۆمار نەکراوە."
+              actionLabel="ڕێکخستنەکانی ناوچەی گەیاندن"
+              onAction={() => setActiveTab('delivery')}
+            />
           ) : (
             <div className="space-y-4">
               {myOrders.map(order => (
@@ -655,8 +662,17 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {myProducts.map(prod => (
+          {myProducts.length === 0 ? (
+            <EmptyState
+              type="products"
+              title="هیچ کاڵایەک لە فرۆشگاکەتدا نییە"
+              description="سەرجەم کاڵاکانت لێرە بەڕێوەدەبرێن. یەکەم کاڵای خۆت ئێستا زیاد بکە."
+              actionLabel="+ زیادکردنی کاڵای نوێ"
+              onAction={openAddModal}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {myProducts.map(prod => (
               <div key={prod.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between space-y-3 hover:border-orange-300 transition-colors">
                 <div className="space-y-2.5">
                   <div className="flex gap-3 items-start">
@@ -855,6 +871,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
@@ -926,11 +943,13 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
               </h3>
 
               {totalReviews === 0 ? (
-                <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center space-y-2">
-                  <Star className="w-10 h-10 text-slate-300 mx-auto" />
-                  <h4 className="text-sm font-bold text-slate-700">هێشتا هیچ هەڵسەنگاندنێک تۆمار نەکراوە</h4>
-                  <p className="text-xs text-slate-400">دوای تەواوبوونی داواکارییەکان، کڕیاران هەڵسەنگاندن بۆ فرۆشگاکەت دەنوسن.</p>
-                </div>
+                <EmptyState
+                  type="feedbacks"
+                  title="هێشتا هیچ هەڵسەنگاندنێک تۆمار نەکراوە"
+                  description="دوای تەواوبوونی داواکارییەکان، کڕیاران ڕا و هەڵسەنگاندنی خۆیان بۆ فرۆشگاکەت دەنوسن."
+                  actionLabel="بینینی کاڵاکان"
+                  onAction={() => setActiveTab('products')}
+                />
               ) : (
                 <div className="grid grid-cols-1 gap-4">
                   {sellerReviews.map(rev => (

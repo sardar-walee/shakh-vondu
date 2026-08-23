@@ -17,7 +17,8 @@ import {
   AlertCircle,
   Heart,
   Eye,
-  Tag
+  Tag,
+  Trash2
 } from 'lucide-react';
 import { CarPackageBadge } from '../components/common/Badge';
 import { CarCountdownTimer } from '../components/common/CarCountdownTimer';
@@ -32,7 +33,7 @@ interface CarDetailViewProps {
 }
 
 export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate }) => {
-  const { carAds, favoriteProductIds, toggleFavoriteProduct, updateCarAdStatus } = useMarketplace();
+  const { carAds, favoriteProductIds, toggleFavoriteProduct, updateCarAdStatus, deleteCarAd } = useMarketplace();
   const { currentUser, isSuperAdmin } = useAuth();
   const car = carAds.find(c => c.id === carId) || carAds[0];
 
@@ -42,6 +43,14 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate 
 
   const [activeImage, setActiveImage] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
+
+  const handleDelete = async () => {
+    if (!car) return;
+    if (window.confirm(`ئایا دڵنیایت لە سڕینەوەی بەردەوامی ڕیکلامی ئۆتۆمبێلی "${car.title}"؟`)) {
+      await deleteCarAd(car.id);
+      onNavigate('car-marketplace');
+    }
+  };
 
   if (!car) {
     return (
@@ -111,16 +120,27 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate 
       )}
 
       {/* Owner / Admin Quick Toggle if active */}
-      {isOwnerOrAdmin && !isSold && (
-        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-center justify-between text-xs">
-          <span className="font-bold text-amber-900">تۆ بەکارهێنەری ئەم ڕیکلامەی، ئایا ئۆتۆمبێلەکەت فرۆشتووە؟</span>
-          <button
-            onClick={handleToggleSold}
-            className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl cursor-pointer shadow-xs transition-transform active:scale-95 flex items-center gap-1.5"
-          >
-            <Tag className="w-4 h-4" />
-            <span>دیاریکردن وەک (فرۆشرا)</span>
-          </button>
+      {isOwnerOrAdmin && (
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 text-xs">
+          <span className="font-bold text-amber-900">تۆ بەکارهێنەری ئەم ڕیکلامەی (خاوەن / ئەدمین). دەتوانیت دۆخەکەی بگۆڕیت یان ڕیکلامەکە بسڕیتەوە:</span>
+          <div className="flex items-center gap-2">
+            {!isSold && (
+              <button
+                onClick={handleToggleSold}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl cursor-pointer shadow-xs transition-transform active:scale-95 flex items-center gap-1.5"
+              >
+                <Tag className="w-4 h-4" />
+                <span>دیاریکردن وەک (فرۆشرا)</span>
+              </button>
+            )}
+            <button
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-black rounded-xl cursor-pointer shadow-xs transition-transform active:scale-95 flex items-center gap-1.5"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>سڕینەوەی ڕیکلام</span>
+            </button>
+          </div>
         </div>
       )}
       

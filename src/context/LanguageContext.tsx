@@ -1,310 +1,233 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import {
+  Language,
+  LanguageOption,
+  SUPPORTED_LANGUAGES,
+  RTL_LANGUAGES,
+  translate
+} from '../locales';
 
-export type Language = 'ku' | 'en' | 'ar';
+const STORAGE_KEY = 'shakh_language';
+const OVERRIDES_STORAGE_KEY = 'shakh_i18n_overrides';
+const LEGACY_STORAGE_KEYS = ['language', 'locale', 'selected_language'];
+
+const VALID_LANGUAGES: Language[] = ['ku', 'ku_badini', 'ar', 'en', 'tr', 'fa'];
 
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   dir: 'rtl' | 'ltr';
-  t: (key: string) => string;
+  t: (keyOrText: string, params?: Record<string, string | number>) => string;
+  supportedLanguages: LanguageOption[];
+  customOverrides: Record<string, Record<string, string>>;
+  setCustomOverride: (lang: Language, key: string, value: string) => void;
 }
 
-const translations: Record<Language, Record<string, string>> = {
-  ku: {
-    // Brand & General
-    'app.name': 'شاخ',
-    'app.tagline': 'پلاتفۆرمی بازاڕ و گەیاندنی کوردستان و عێراق',
-    'app.domain': 'daim-post.online',
-    'currency': 'د.ع',
-    'currency.full': 'دیناری عێراقی',
-    'all': 'هەمووی',
-    'search': 'گەڕان',
-    'search.placeholder': 'بگەڕێ بۆ خواردن، مارکێت، جلوبەرگ، مۆبایل، ئۆتۆمبێل...',
-    'select.city': 'شار هەڵبژێرە',
-    'login': 'چوونەژوورەوە',
-    'register': 'تۆمارکردن',
-    'logout': 'چوونەدەرەوە',
-    'profile': 'پڕۆفایل',
-    'dashboard': 'داشبۆرد',
-    'cart': 'سەبەتە',
-    'favorites': 'دڵخوازەکان',
-    'orders': 'داواکارییەکانم',
-    'notifications': 'ئاگادارییەکان',
-    'save': 'پاشەکەوتکردن',
-    'cancel': 'پاشگەزبوونەوە',
-    'delete': 'سڕینەوە',
-    'edit': 'دەستکاری',
-    'add': 'زیادکردن',
-    'view_all': 'هەمووی ببینە',
-    'view_store': 'سەردانی فرۆشگا',
-    'contact_seller': 'پەیوەندی بە فرۆشیار',
-    'call_now': 'پەیوەندی بکە',
-    'whatsapp': 'واتسئەپ',
-    'in_stock': 'لە کۆگا ماوە',
-    'out_of_stock': 'تەواو بووە',
-    'verified': 'پشتڕاستکراوە',
-    'open_now': 'کراوەیە',
-    'closed': 'داخراوە',
+function getInitialLanguage(): Language {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && VALID_LANGUAGES.includes(saved as Language)) {
+      return saved as Language;
+    }
 
-    // Categories
-    'cat.food': 'چێشتخانە و خواردن',
-    'cat.market': 'مارکێت و سوپەرمارکێت',
-    'cat.clothes': 'جلوبەرگ و مۆدە',
-    'cat.fruits_vegetables': 'سەوزە و میوە',
-    'cat.fresh_meat': 'گۆشتی تازە',
-    'cat.dairy': 'شیرەمەنی و ماست',
-    'cat.electronics': 'ئەلیکترۆنیات',
-    'cat.beauty': 'جوانی و مکیاژ',
-    'cat.cars': 'ئۆتۆمبێل و گواستنەوە',
+    for (const legacyKey of LEGACY_STORAGE_KEYS) {
+      const legacyVal = localStorage.getItem(legacyKey);
+      if (legacyVal) {
+        if (VALID_LANGUAGES.includes(legacyVal as Language)) {
+          try {
+            localStorage.setItem(STORAGE_KEY, legacyVal);
+          } catch {}
+          return legacyVal as Language;
+        }
+        if (legacyVal === 'ku_sorani') {
+          try {
+            localStorage.setItem(STORAGE_KEY, 'ku');
+          } catch {}
+          return 'ku';
+        }
+      }
+    }
 
-    // Roles
-    'role.customer': 'کڕیار',
-    'role.restaurant_owner': 'خاوەن چێشتخانە',
-    'role.market_owner': 'خاوەن مارکێت',
-    'role.clothes_seller': 'فرۆشیاری جلوبەرگ',
-    'role.fruits_vegetables_seller': 'فرۆشیاری میوە و سەوزە',
-    'role.fresh_meat_seller': 'فرۆشیاری گۆشتی تازە',
-    'role.dairy_seller': 'فرۆشیاری شیرەمەنی',
-    'role.electronics_seller': 'فرۆشیاری ئەلیکترۆنیات',
-    'role.beauty_seller': 'فرۆشیاری جوانی و مکیاژ',
-    'role.car_seller': 'فرۆشیاری ئۆتۆمبێل',
-    'role.delivery_agent': 'شۆفێری گەیاندن',
-    'role.admin': 'سووپەر ئەدمین (Super Admin)',
-
-    // Order Statuses
-    'status.pending': 'لە چاوەڕوانیدا',
-    'status.accepted': 'پەسەندکرا',
-    'status.preparing': 'لە ئامادەکردندا',
-    'status.ready': 'ئامادەیە بۆ وەرگرتن',
-    'status.picked_up': 'شۆفێر وەریگرت',
-    'status.on_the_way': 'لە ڕێگادایە بۆ لات',
-    'status.delivered': 'بە سەرکەوتوویی گەیەندرا',
-    'status.cancelled': 'هەڵوەشێنرایەوە',
-
-    // Car Ads
-    'car.post_ad': 'ڕیکلامی ئۆتۆمبێل دابنێ',
-    'car.packages': 'پاکێجەکانی ڕیکلامی ئۆتۆمبێل',
-    'car.package.1_week': 'یەک هەفتە (٥,٠٠٠ دینار)',
-    'car.package.15_days': '١٥ ڕۆژ (٧,٠٠٠ دینار)',
-    'car.package.1_month': 'یەک مانگ (١٠,٠٠٠ دینار)',
-    'car.year': 'ساڵ',
-    'car.mileage': 'ڕۆیشتوو',
-    'car.fuel': 'سووتەمەنی',
-    'car.transmission': 'گێڕ',
-    'car.color': 'ڕەنگ',
-    'car.price_iqd': 'نرخ بە دینار',
-    'car.price_usd': 'نرخ بە دۆلار',
-
-    // Financial & Commission
-    'commission.shakh': 'ڕێژەی کۆمسیۆنی شاخ',
-    'wallet.balance': 'باڵانسی بەردەست',
-    'wallet.total_sales': 'کۆی گشتی فرۆش',
-    'wallet.net_earnings': 'قازانجی پاکی فرۆشیار',
-    'wallet.pending': 'قازانجی لە پرۆسەدا'
-  },
-  en: {
-    'app.name': 'Shakh',
-    'app.tagline': 'Kurdistan & Iraq Marketplace & Fast Delivery',
-    'app.domain': 'daim-post.online',
-    'currency': 'IQD',
-    'currency.full': 'Iraqi Dinar',
-    'all': 'All',
-    'search': 'Search',
-    'search.placeholder': 'Search food, groceries, fashion, electronics, cars...',
-    'select.city': 'Select City',
-    'login': 'Sign In',
-    'register': 'Sign Up',
-    'logout': 'Sign Out',
-    'profile': 'Profile',
-    'dashboard': 'Dashboard',
-    'cart': 'Cart',
-    'favorites': 'Favorites',
-    'orders': 'My Orders',
-    'notifications': 'Notifications',
-    'save': 'Save',
-    'cancel': 'Cancel',
-    'delete': 'Delete',
-    'edit': 'Edit',
-    'add': 'Add',
-    'view_all': 'View All',
-    'view_store': 'Visit Store',
-    'contact_seller': 'Contact Seller',
-    'call_now': 'Call Now',
-    'whatsapp': 'WhatsApp',
-    'in_stock': 'In Stock',
-    'out_of_stock': 'Out of Stock',
-    'verified': 'Verified',
-    'open_now': 'Open Now',
-    'closed': 'Closed',
-
-    'cat.food': 'Restaurants & Food',
-    'cat.market': 'Supermarket & Groceries',
-    'cat.clothes': 'Fashion & Clothes',
-    'cat.fruits_vegetables': 'Fruits & Vegetables',
-    'cat.fresh_meat': 'Fresh Meat',
-    'cat.dairy': 'Dairy & Milk',
-    'cat.electronics': 'Electronics & Mobiles',
-    'cat.beauty': 'Beauty & Cosmetics',
-    'cat.cars': 'Cars & Vehicles',
-
-    'role.customer': 'Customer',
-    'role.restaurant_owner': 'Restaurant Owner',
-    'role.market_owner': 'Market Owner',
-    'role.clothes_seller': 'Clothes Seller',
-    'role.fruits_vegetables_seller': 'Fruits & Veg Seller',
-    'role.fresh_meat_seller': 'Meat Seller',
-    'role.dairy_seller': 'Dairy Seller',
-    'role.electronics_seller': 'Electronics Seller',
-    'role.beauty_seller': 'Beauty Seller',
-    'role.car_seller': 'Car Seller',
-    'role.delivery_agent': 'Delivery Agent',
-    'role.admin': 'Super Admin',
-
-    'status.pending': 'Pending',
-    'status.accepted': 'Accepted',
-    'status.preparing': 'Preparing',
-    'status.ready': 'Ready for Pickup',
-    'status.picked_up': 'Picked Up by Driver',
-    'status.on_the_way': 'On The Way',
-    'status.delivered': 'Delivered',
-    'status.cancelled': 'Cancelled',
-
-    'car.post_ad': 'Post Car Ad',
-    'car.packages': 'Car Advertisement Packages',
-    'car.package.1_week': '1 Week (5,000 IQD)',
-    'car.package.15_days': '15 Days (7,000 IQD)',
-    'car.package.1_month': '1 Month (10,000 IQD)',
-    'car.year': 'Year',
-    'car.mileage': 'Mileage',
-    'car.fuel': 'Fuel',
-    'car.transmission': 'Transmission',
-    'car.color': 'Color',
-    'car.price_iqd': 'Price in IQD',
-    'car.price_usd': 'Price in USD',
-
-    'commission.shakh': 'Shakh Commission Rate',
-    'wallet.balance': 'Available Balance',
-    'wallet.total_sales': 'Total Gross Sales',
-    'wallet.net_earnings': 'Net Seller Earnings',
-    'wallet.pending': 'Pending Earnings'
-  },
-  ar: {
-    'app.name': 'شاخ',
-    'app.tagline': 'منصة التسوق والتوصيل السريع في كردستان والعراق',
-    'app.domain': 'daim-post.online',
-    'currency': 'د.ع',
-    'currency.full': 'دينار عراقي',
-    'all': 'الكل',
-    'search': 'بحث',
-    'search.placeholder': 'ابحث عن مطاعم، سوبرماركت، ملابس، إلكترونيات، سيارات...',
-    'select.city': 'اختر المدينة',
-    'login': 'تسجيل الدخول',
-    'register': 'إنشاء حساب',
-    'logout': 'تسجيل الخروج',
-    'profile': 'الملف الشخصي',
-    'dashboard': 'لوحة التحكم',
-    'cart': 'السلة',
-    'favorites': 'المفضلة',
-    'orders': 'طلباتي',
-    'notifications': 'الإشعارات',
-    'save': 'حفظ',
-    'cancel': 'إلغاء',
-    'delete': 'حذف',
-    'edit': 'تعديل',
-    'add': 'إضافة',
-    'view_all': 'عرض الكل',
-    'view_store': 'زيارة المتجر',
-    'contact_seller': 'الاتصال بالبائع',
-    'call_now': 'اتصل الآن',
-    'whatsapp': 'واتساب',
-    'in_stock': 'متوفر',
-    'out_of_stock': 'نفذت الكمية',
-    'verified': 'موثق',
-    'open_now': 'مفتوح',
-    'closed': 'مغلق',
-
-    'cat.food': 'المطاعم والمأكولات',
-    'cat.market': 'سوبرماركت ومواد غذائية',
-    'cat.clothes': 'الملابس والأزياء',
-    'cat.fruits_vegetables': 'خضار وفواكه طازجة',
-    'cat.fresh_meat': 'اللحوم والدواجن',
-    'cat.dairy': 'الألبان والأجبان',
-    'cat.electronics': 'الإلكترونيات والموبايل',
-    'cat.beauty': 'العناية والجمال',
-    'cat.cars': 'السيارات والمركبات',
-
-    'role.customer': 'زبون',
-    'role.restaurant_owner': 'صاحب مطعم',
-    'role.market_owner': 'صاحب ماركت',
-    'role.clothes_seller': 'بائع ملابس',
-    'role.fruits_vegetables_seller': 'بائع خضار وفواكه',
-    'role.fresh_meat_seller': 'قصاب ولحوم',
-    'role.dairy_seller': 'بائع ألبان',
-    'role.electronics_seller': 'بائع إلكترونيات',
-    'role.beauty_seller': 'بائع مستحضرات تجميل',
-    'role.car_seller': 'بائع سيارات',
-    'role.delivery_agent': 'مندوب توصيل',
-    'role.admin': 'المشرف العام (Super Admin)',
-
-    'status.pending': 'قيد الانتظار',
-    'status.accepted': 'تم القبول',
-    'status.preparing': 'قيد التحضير',
-    'status.ready': 'جاهز للتسليم',
-    'status.picked_up': 'تم الاستلام من قبل السائق',
-    'status.on_the_way': 'في الطريق إليك',
-    'status.delivered': 'تم التوصيل بنجاح',
-    'status.cancelled': 'ملغي',
-
-    'car.post_ad': 'أضف إعلان سيارة',
-    'car.packages': 'باقات إعلانات السيارات',
-    'car.package.1_week': 'أسبوع واحد (٥٠٠٠ دينار)',
-    'car.package.15_days': '١٥ يوماً (٧٠٠٠ دينار)',
-    'car.package.1_month': 'شهر كامل (١٠٠٠٠ دينار)',
-    'car.year': 'الموديل/السنة',
-    'car.mileage': 'المسافة المقطوعة',
-    'car.fuel': 'نوع الوقود',
-    'car.transmission': 'ناقل الحركة',
-    'car.color': 'اللون',
-    'car.price_iqd': 'السعر بالدينار',
-    'car.price_usd': 'السعر بالدولار',
-
-    'commission.shakh': 'نسبة عمولة شاخ',
-    'wallet.balance': 'الرصيد المتاح',
-    'wallet.total_sales': 'إجمالي المبيعات',
-    'wallet.net_earnings': 'صافي أرباح البائع',
-    'wallet.pending': 'أرباح معلقة'
+    const browserLang = navigator.language?.toLowerCase() || '';
+    if (browserLang.startsWith('ar')) return 'ar';
+    if (browserLang.startsWith('tr')) return 'tr';
+    if (browserLang.startsWith('fa')) return 'fa';
+    if (browserLang.startsWith('en')) return 'en';
+  } catch (e) {
+    console.warn('Failed to read language preference from storage:', e);
   }
-};
+  return 'ku';
+}
+
+// Immediately apply initial language direction to HTML to avoid layout flash
+if (typeof document !== 'undefined') {
+  try {
+    const initLang = getInitialLanguage();
+    const initDir = RTL_LANGUAGES.includes(initLang) ? 'rtl' : 'ltr';
+    document.documentElement.dir = initDir;
+    document.documentElement.lang = initLang === 'ku_badini' ? 'ku' : initLang;
+    if (initDir === 'rtl') {
+      document.documentElement.classList.add('rtl');
+      document.documentElement.classList.remove('ltr');
+    } else {
+      document.documentElement.classList.add('ltr');
+      document.documentElement.classList.remove('rtl');
+    }
+  } catch (e) {
+    console.warn('Initial document language setup skipped:', e);
+  }
+}
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem('shakh_language') as Language;
-    return saved && ['ku', 'en', 'ar'].includes(saved) ? saved : 'ku';
+  const [language, setLanguageState] = useState<Language>(getInitialLanguage);
+  const [customOverrides, setCustomOverrides] = useState<Record<string, Record<string, string>>>(() => {
+    try {
+      const saved = localStorage.getItem(OVERRIDES_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
   });
 
-  const dir = language === 'en' ? 'ltr' : 'rtl';
+  const dir: 'rtl' | 'ltr' = RTL_LANGUAGES.includes(language) ? 'rtl' : 'ltr';
+
+  const applyLanguageEffects = useCallback((lang: Language) => {
+    const computedDir: 'rtl' | 'ltr' = RTL_LANGUAGES.includes(lang) ? 'rtl' : 'ltr';
+    try {
+      localStorage.setItem(STORAGE_KEY, lang);
+    } catch (e) {
+      console.warn('Failed to save language to localStorage:', e);
+    }
+    if (typeof document !== 'undefined') {
+      document.documentElement.dir = computedDir;
+      document.documentElement.lang = lang === 'ku_badini' ? 'ku' : lang;
+      if (computedDir === 'rtl') {
+        document.documentElement.classList.add('rtl');
+        document.documentElement.classList.remove('ltr');
+      } else {
+        document.documentElement.classList.add('ltr');
+        document.documentElement.classList.remove('rtl');
+      }
+      if (document.body) {
+        document.body.dir = computedDir;
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem('shakh_language', language);
-    document.documentElement.dir = dir;
-    document.documentElement.lang = language;
-  }, [language, dir]);
+    applyLanguageEffects(language);
+  }, [language, applyLanguageEffects]);
 
-  const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-  };
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === STORAGE_KEY && e.newValue && VALID_LANGUAGES.includes(e.newValue as Language)) {
+        setLanguageState(e.newValue as Language);
+        applyLanguageEffects(e.newValue as Language);
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [applyLanguageEffects]);
 
-  const t = (key: string): string => {
-    return translations[language]?.[key] || translations['ku']?.[key] || key;
-  };
+  const setLanguage = useCallback((lang: Language) => {
+    if (VALID_LANGUAGES.includes(lang)) {
+      try {
+        localStorage.setItem(STORAGE_KEY, lang);
+      } catch (e) {
+        console.warn('Failed to save language to localStorage:', e);
+      }
+      setLanguageState(lang);
+      applyLanguageEffects(lang);
+    }
+  }, [applyLanguageEffects]);
+
+  const setCustomOverride = useCallback((lang: Language, key: string, value: string) => {
+    setCustomOverrides(prev => {
+      const updated = {
+        ...prev,
+        [lang]: {
+          ...(prev[lang] || {}),
+          [key]: value
+        }
+      };
+      try {
+        localStorage.setItem(OVERRIDES_STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.warn('Failed to save translation override:', e);
+      }
+      return updated;
+    });
+  }, []);
+
+  const t = useCallback((keyOrText: string, params?: Record<string, string | number>): string => {
+    if (!keyOrText) return '';
+    const trimmed = keyOrText.trim();
+
+    // Check custom overrides first
+    if (customOverrides[language]?.[trimmed]) {
+      let val = customOverrides[language][trimmed];
+      if (params) {
+        for (const [k, v] of Object.entries(params)) {
+          val = val
+            .replace(new RegExp(`#{${k}}`, 'g'), String(v))
+            .replace(new RegExp(`{${k}}`, 'g'), String(v));
+        }
+      }
+      return val;
+    }
+
+    return translate(trimmed, language, params);
+  }, [language, customOverrides]);
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, dir, t }}>
+    <LanguageContext.Provider value={{
+      language,
+      setLanguage,
+      dir,
+      t,
+      supportedLanguages: SUPPORTED_LANGUAGES,
+      customOverrides,
+      setCustomOverride
+    }}>
       {children}
     </LanguageContext.Provider>
   );
+};
+
+/**
+ * Hook to observe language changes and dynamically update document direction & attributes
+ */
+export const useDirectionObserver = () => {
+  const { language, dir } = useLanguage();
+
+  useEffect(() => {
+    const computedDir = RTL_LANGUAGES.includes(language) ? 'rtl' : 'ltr';
+    const htmlEl = document.documentElement;
+
+    htmlEl.setAttribute('dir', computedDir);
+    htmlEl.setAttribute('lang', language === 'ku_badini' ? 'ku' : language);
+    
+    if (computedDir === 'rtl') {
+      htmlEl.classList.add('rtl');
+      htmlEl.classList.remove('ltr');
+    } else {
+      htmlEl.classList.add('ltr');
+      htmlEl.classList.remove('rtl');
+    }
+
+    if (document.body) {
+      document.body.setAttribute('dir', computedDir);
+    }
+  }, [language, dir]);
+
+  return { language, dir, isRtl: dir === 'rtl' };
+};
+
+export const useDirection = () => {
+  const { dir } = useLanguage();
+  return { dir, isRtl: dir === 'rtl', isLtr: dir === 'ltr' };
 };
 
 export const useLanguage = () => {
@@ -314,3 +237,5 @@ export const useLanguage = () => {
   }
   return context;
 };
+
+export type { Language };

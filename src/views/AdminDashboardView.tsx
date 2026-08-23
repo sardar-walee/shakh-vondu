@@ -40,17 +40,20 @@ import {
   ShieldAlert,
   UserCheck,
   UserX,
-  Layers
+  Layers,
+  Languages
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge, CategoryBadge, RoleBadge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
+import { EmptyState } from '../components/common/EmptyState';
 import { DynamicProductForm } from '../components/products/DynamicProductForm';
 import { Product, ProductCategory, OrderStatus, CarPackageType, FeedbackStatus, OccasionBanner, OccasionType, OccasionThemeStyle, UserRole } from '../types';
 import { OCCASION_PRESETS } from '../data/occasionPresets';
 import { OccasionHeaderBanner } from '../components/common/OccasionHeaderBanner';
 import { OccasionBannerAdminPanel } from '../components/common/OccasionBannerAdminPanel';
+import { I18nAdminManager } from '../components/admin/I18nAdminManager';
 
 interface AdminDashboardViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -90,7 +93,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   } = useMarketplace();
   const { currentUser, isSuperAdmin } = useAuth();
 
-  const [tab, setTab] = useState<'overview' | 'super_omni' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances'>('super_omni');
+  const [tab, setTab] = useState<'overview' | 'super_omni' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances' | 'i18n'>('super_omni');
 
   // Super Admin Omni Control State
   const [omniSection, setOmniSection] = useState<'users' | 'products' | 'cars' | 'posts'>('users');
@@ -277,6 +280,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           { id: 'orders', label: `داواکارییەکان (${orders.length})`, icon: <Package className="w-4 h-4" /> },
           { id: 'products', label: `کاڵاکان (${products.length})`, icon: <Sliders className="w-4 h-4" /> },
           { id: 'cars', label: `ڕیکلامی ئۆتۆمبێل (${carAds.length})`, icon: <Car className="w-4 h-4" /> },
+          { id: 'i18n', label: 'زمانەکان و وەرگێڕان (i18n)', icon: <Languages className="w-4 h-4 text-blue-500" /> },
           { id: 'finances', label: 'تۆماری کۆمسیۆن و داهات', icon: <DollarSign className="w-4 h-4" /> }
         ].map(t => (
           <button
@@ -495,20 +499,39 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {allUsers
-                      .filter(u => {
-                        const q = omniSearch.toLowerCase().trim();
-                        const matchesQuery = !q || ((u.fullName || '').toLowerCase().includes(q) || (u.id || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.phone || '').toLowerCase().includes(q));
-                        const matchesRole = omniRoleFilter === 'all' || u.role === omniRoleFilter || (omniRoleFilter === 'seller' && (u.role as string).includes('seller'));
-                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !u.isBlocked) || (omniStatusFilter === 'blocked_hidden' && u.isBlocked);
-                        const hasImg = Boolean(u.avatarUrl && u.avatarUrl.length > 5);
-                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
-                        return matchesQuery && matchesRole && matchesStatus && matchesImg;
-                      })
-                      .map(user => (
-                        <div
-                          key={user.id}
+                  {(() => {
+                    const filteredOmniUsers = allUsers.filter(u => {
+                      const q = omniSearch.toLowerCase().trim();
+                      const matchesQuery = !q || ((u.fullName || '').toLowerCase().includes(q) || (u.id || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.phone || '').toLowerCase().includes(q));
+                      const matchesRole = omniRoleFilter === 'all' || u.role === omniRoleFilter || (omniRoleFilter === 'seller' && (u.role as string).includes('seller'));
+                      const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !u.isBlocked) || (omniStatusFilter === 'blocked_hidden' && u.isBlocked);
+                      const hasImg = Boolean(u.avatarUrl && u.avatarUrl.length > 5);
+                      const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                      return matchesQuery && matchesRole && matchesStatus && matchesImg;
+                    });
+
+                    if (filteredOmniUsers.length === 0) {
+                      return (
+                        <EmptyState
+                          type="users"
+                          title="هیچ بەکارهێنەرێک نەدۆزرایەوە"
+                          description="هیچ بەکارهێنەرێک بەپێی گەڕان یان فلتەری هەڵبژێردراو بەردەست نییە."
+                          actionLabel="پاککردنەوەی فلتەرەکان"
+                          onAction={() => {
+                            setOmniSearch('');
+                            setOmniRoleFilter('all');
+                            setOmniStatusFilter('all');
+                            setOmniImageFilter('all');
+                          }}
+                        />
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredOmniUsers.map(user => (
+                          <div
+                            key={user.id}
                           className={`p-4 rounded-3xl border transition-all space-y-3 relative ${
                             user.isBlocked
                               ? 'bg-red-50/50 border-red-200'
@@ -627,7 +650,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                           </div>
                         </div>
                       ))}
-                  </div>
+                    </div>
+                  );
+                  })()}
                 </div>
               )}
 
@@ -651,19 +676,42 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {products
-                      .filter(p => {
-                        const q = omniSearch.toLowerCase().trim();
-                        const matchesQuery = !q || ((p.title || '').toLowerCase().includes(q) || (p.id || '').toLowerCase().includes(q) || (p.sellerId || '').toLowerCase().includes(q) || (p.sellerName || '').toLowerCase().includes(q));
-                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !p.isHidden && p.isAvailable) || (omniStatusFilter === 'blocked_hidden' && (p.isHidden || !p.isAvailable));
-                        const hasImg = Boolean(p.images && p.images.length > 0);
-                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
-                        return matchesQuery && matchesStatus && matchesImg;
-                      })
-                      .map(prod => (
-                        <div
-                          key={prod.id}
+                  {(() => {
+                    const filteredOmniProducts = products.filter(p => {
+                      const q = omniSearch.toLowerCase().trim();
+                      const matchesQuery = !q || ((p.title || '').toLowerCase().includes(q) || (p.id || '').toLowerCase().includes(q) || (p.sellerId || '').toLowerCase().includes(q) || (p.sellerName || '').toLowerCase().includes(q));
+                      const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !p.isHidden && p.isAvailable) || (omniStatusFilter === 'blocked_hidden' && (p.isHidden || !p.isAvailable));
+                      const hasImg = Boolean(p.images && p.images.length > 0);
+                      const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                      return matchesQuery && matchesStatus && matchesImg;
+                    });
+
+                    if (filteredOmniProducts.length === 0) {
+                      return (
+                        <EmptyState
+                          type="products"
+                          title="هیچ کاڵایەک نەدۆزرایەوە"
+                          description="هیچ بەرهەمێک بەپێی ئەم گەڕانە یان فلتەرە لە داتابەیسدا نەدۆزرایەوە."
+                          actionLabel="پاککردنەوەی فلتەرەکان"
+                          onAction={() => {
+                            setOmniSearch('');
+                            setOmniStatusFilter('all');
+                            setOmniImageFilter('all');
+                          }}
+                          secondaryActionLabel="+ زیادکردنی کاڵای نوێ"
+                          onSecondaryAction={() => {
+                            setEditingProduct(null);
+                            setIsProductModalOpen(true);
+                          }}
+                        />
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredOmniProducts.map(prod => (
+                          <div
+                            key={prod.id}
                           className={`p-4 rounded-3xl border transition-all space-y-3 relative ${
                             prod.isHidden || !prod.isAvailable
                               ? 'bg-slate-50 border-amber-300'
@@ -767,7 +815,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                           </div>
                         </div>
                       ))}
-                  </div>
+                    </div>
+                  );
+                  })()}
                 </div>
               )}
 
@@ -791,19 +841,37 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {carAds
-                      .filter(c => {
-                        const q = omniSearch.toLowerCase().trim();
-                        const matchesQuery = !q || ((c.title || '').toLowerCase().includes(q) || (c.id || '').toLowerCase().includes(q) || (c.userId || '').toLowerCase().includes(q) || (c.userName || '').toLowerCase().includes(q) || (c.userPhone || '').toLowerCase().includes(q) || (c.brand || '').toLowerCase().includes(q));
-                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !c.isHidden && c.adStatus === 'active') || (omniStatusFilter === 'blocked_hidden' && (c.isHidden || c.adStatus === 'hidden' || c.adStatus === 'rejected'));
-                        const hasImg = Boolean(c.images && c.images.length > 0);
-                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
-                        return matchesQuery && matchesStatus && matchesImg;
-                      })
-                      .map(car => (
-                        <div
-                          key={car.id}
+                  {(() => {
+                    const filteredOmniCars = carAds.filter(c => {
+                      const q = omniSearch.toLowerCase().trim();
+                      const matchesQuery = !q || ((c.title || '').toLowerCase().includes(q) || (c.id || '').toLowerCase().includes(q) || (c.userId || '').toLowerCase().includes(q) || (c.userName || '').toLowerCase().includes(q) || (c.userPhone || '').toLowerCase().includes(q) || (c.brand || '').toLowerCase().includes(q));
+                      const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !c.isHidden && c.adStatus === 'active') || (omniStatusFilter === 'blocked_hidden' && (c.isHidden || c.adStatus === 'hidden' || c.adStatus === 'rejected'));
+                      const hasImg = Boolean(c.images && c.images.length > 0);
+                      const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                      return matchesQuery && matchesStatus && matchesImg;
+                    });
+
+                    if (filteredOmniCars.length === 0) {
+                      return (
+                        <EmptyState
+                          type="cars"
+                          title="هیچ ئۆتۆمبێلێک نەدۆزرایەوە"
+                          description="هیچ ڕیکلامێکی ئۆتۆمبێل بەم فلتەرانە نییە."
+                          actionLabel="پاککردنەوەی فلتەرەکان"
+                          onAction={() => {
+                            setOmniSearch('');
+                            setOmniStatusFilter('all');
+                            setOmniImageFilter('all');
+                          }}
+                        />
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredOmniCars.map(car => (
+                          <div
+                            key={car.id}
                           className={`p-4 rounded-3xl border transition-all space-y-3 relative ${
                             car.isHidden || car.adStatus === 'hidden'
                               ? 'bg-slate-50 border-amber-300'
@@ -909,7 +977,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                           </div>
                         </div>
                       ))}
-                  </div>
+                    </div>
+                  );
+                  })()}
                 </div>
               )}
 
@@ -933,19 +1003,37 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {userFeedbacks
-                      .filter(f => {
-                        const q = omniSearch.toLowerCase().trim();
-                        const matchesQuery = !q || ((f.title || '').toLowerCase().includes(q) || (f.message || '').toLowerCase().includes(q) || (f.id || '').toLowerCase().includes(q) || (f.userName || '').toLowerCase().includes(q));
-                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !f.isHidden && f.status !== 'hidden') || (omniStatusFilter === 'blocked_hidden' && (f.isHidden || f.status === 'hidden'));
-                        const hasImg = Boolean(f.message.includes('http') || (f as any).imageUrl || (f as any).attachmentUrl);
-                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
-                        return matchesQuery && matchesStatus && matchesImg;
-                      })
-                      .map(fb => (
-                        <div
-                          key={fb.id}
+                  {(() => {
+                    const filteredOmniPosts = userFeedbacks.filter(f => {
+                      const q = omniSearch.toLowerCase().trim();
+                      const matchesQuery = !q || ((f.title || '').toLowerCase().includes(q) || (f.message || '').toLowerCase().includes(q) || (f.id || '').toLowerCase().includes(q) || (f.userName || '').toLowerCase().includes(q));
+                      const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !f.isHidden && f.status !== 'hidden') || (omniStatusFilter === 'blocked_hidden' && (f.isHidden || f.status === 'hidden'));
+                      const hasImg = Boolean(f.message.includes('http') || (f as any).imageUrl || (f as any).attachmentUrl);
+                      const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                      return matchesQuery && matchesStatus && matchesImg;
+                    });
+
+                    if (filteredOmniPosts.length === 0) {
+                      return (
+                        <EmptyState
+                          type="feedbacks"
+                          title="هیچ فیدباک یان پۆستێک نەدۆزرایەوە"
+                          description="هیچ پەیامێک لەگەڵ ئەم گەڕانە یان فلتەرەدا ناگونجێت."
+                          actionLabel="پاککردنەوەی فلتەرەکان"
+                          onAction={() => {
+                            setOmniSearch('');
+                            setOmniStatusFilter('all');
+                            setOmniImageFilter('all');
+                          }}
+                        />
+                      );
+                    }
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {filteredOmniPosts.map(fb => (
+                          <div
+                            key={fb.id}
                           className={`p-4 rounded-3xl border transition-all space-y-3 relative ${
                             fb.isHidden || fb.status === 'hidden'
                               ? 'bg-slate-50 border-amber-300'
@@ -1014,7 +1102,9 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                           </div>
                         </div>
                       ))}
-                  </div>
+                    </div>
+                  );
+                  })()}
                 </div>
               )}
             </div>
@@ -1092,7 +1182,16 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {sellers.length === 0 ? (
+            <EmptyState
+              type="sellers"
+              title="هیچ فرۆشگایەک تۆمار نەکراوە"
+              description="تۆمارەکانی Firestore بۆ فرۆشیاران لەم کاتەدا بەتاڵن."
+              actionLabel="پوختەی گشتی"
+              onAction={() => setTab('overview')}
+            />
+          ) : (
+            <div className="overflow-x-auto">
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
                 <tr>
@@ -1167,6 +1266,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
               </tbody>
             </table>
           </div>
+          )}
         </div>
       )}
 
@@ -1354,9 +1454,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             </div>
           </div>
 
-          <div className="space-y-4">
-            {userFeedbacks.map(fb => (
-              <div key={fb.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
+          {userFeedbacks.length === 0 ? (
+            <EmptyState
+              type="feedbacks"
+              title="هیچ فیدباکێک نییە"
+              description="هێشتا هیچ بەکارهێنەرێک فیدباک یان پێشنیاری بۆ سیستەم نەناردووە."
+              actionLabel="پوختەی گشتی"
+              onAction={() => setTab('overview')}
+            />
+          ) : (
+            <div className="space-y-4">
+              {userFeedbacks.map(fb => (
+                <div key={fb.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-2">
                   <div className="flex items-center gap-2.5">
                     <span className="font-black text-slate-900 text-sm">{fb.userName}</span>
@@ -1432,20 +1541,36 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                       تۆمارکراوە لە: {new Date(fb.createdAt).toLocaleString()}
                     </span>
 
-                    <button
-                      onClick={() => {
-                        setReplyingFbId(fb.id);
-                        setAdminReplyMsg(fb.adminResponse || '');
-                      }}
-                      className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold rounded-lg cursor-pointer transition-colors"
-                    >
-                      {fb.adminResponse ? 'دەستکاری وەڵام' : 'وەڵامدانەوەی فیدباک'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`دڵنیای لە سڕینەوەی ئەم فیدباکەی "${fb.userName}"؟`)) {
+                            deleteUserFeedback(fb.id);
+                          }
+                        }}
+                        className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-[11px] font-bold rounded-lg cursor-pointer transition-colors flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>سڕینەوە</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setReplyingFbId(fb.id);
+                          setAdminReplyMsg(fb.adminResponse || '');
+                        }}
+                        className="px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold rounded-lg cursor-pointer transition-colors"
+                      >
+                        {fb.adminResponse ? 'دەستکاری وەڵام' : 'وەڵامدانەوەی فیدباک'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
@@ -1454,43 +1579,53 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 space-y-6">
           <h3 className="text-base font-black text-slate-900">سەرجەم داواکارییەکانی پلاتفۆرم</h3>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
-                <tr>
-                  <th className="p-3">کۆدی داواکاری</th>
-                  <th className="p-3">فرۆشگا</th>
-                  <th className="p-3">کۆی پارە</th>
-                  <th className="p-3">کۆمسیۆنی شاخی</th>
-                  <th className="p-3">دۆخی داواکاری</th>
-                  <th className="p-3">شار</th>
-                  <th className="p-3">کردار</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {orders.map(o => (
-                  <tr key={o.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-bold font-latin">{o.orderNumber}</td>
-                    <td className="p-3 text-slate-800">{o.sellerName}</td>
-                    <td className="p-3 font-black font-latin">{o.total.toLocaleString()} د.ع</td>
-                    <td className="p-3 font-black text-orange-600 font-latin">
-                      {(o.commissionAmount || Math.round(o.subtotal * 0.1)).toLocaleString()} د.ع
-                    </td>
-                    <td className="p-3"><StatusBadge status={o.status} /></td>
-                    <td className="p-3 text-slate-600">{o.deliveryCity}</td>
-                    <td className="p-3">
-                      <button
-                        onClick={() => onNavigate('order-tracking', o.id)}
-                        className="px-2.5 py-1 bg-slate-900 text-white rounded-lg text-[10px] font-bold"
-                      >
-                        وردەکاری
-                      </button>
-                    </td>
+          {orders.length === 0 ? (
+            <EmptyState
+              type="orders"
+              title="هیچ داواکارییەک لە سیستەمدا نییە"
+              description="لە ئێستادا هیچ داواکارییەکی كڕین لە داتابەیسی Firestoreدا تۆمار نەکراوە."
+              actionLabel="پوختەی گشتی"
+              onAction={() => setTab('overview')}
+            />
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-right text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
+                  <tr>
+                    <th className="p-3">کۆدی داواکاری</th>
+                    <th className="p-3">فرۆشگا</th>
+                    <th className="p-3">کۆی پارە</th>
+                    <th className="p-3">کۆمسیۆنی شاخی</th>
+                    <th className="p-3">دۆخی داواکاری</th>
+                    <th className="p-3">شار</th>
+                    <th className="p-3">کردار</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {orders.map(o => (
+                    <tr key={o.id} className="hover:bg-slate-50">
+                      <td className="p-3 font-bold font-latin">{o.orderNumber}</td>
+                      <td className="p-3 text-slate-800">{o.sellerName}</td>
+                      <td className="p-3 font-black font-latin">{o.total.toLocaleString()} د.ع</td>
+                      <td className="p-3 font-black text-orange-600 font-latin">
+                        {(o.commissionAmount || Math.round(o.subtotal * 0.1)).toLocaleString()} د.ع
+                      </td>
+                      <td className="p-3"><StatusBadge status={o.status} /></td>
+                      <td className="p-3 text-slate-600">{o.deliveryCity}</td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => onNavigate('order-tracking', o.id)}
+                          className="px-2.5 py-1 bg-slate-900 text-white rounded-lg text-[10px] font-bold"
+                        >
+                          وردەکاری
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
@@ -1499,33 +1634,43 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 space-y-6">
           <h3 className="text-base font-black text-slate-900">بەڕێوەبردنی ڕیکلامەکانی ئۆتۆمبێل</h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {carAds.map(car => (
-              <div key={car.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <img src={car.images[0]} alt="" className="w-full h-32 rounded-xl object-cover" />
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900">{car.title}</h4>
-                  <p className="text-xs font-black text-blue-700 font-latin mt-0.5">{car.priceIqd.toLocaleString()} د.ع</p>
-                  <p className="text-[10px] text-slate-400">پاکێج: {car.packageType} • خاوەن: {car.userName}</p>
-                </div>
+          {carAds.length === 0 ? (
+            <EmptyState
+              type="cars"
+              title="هیچ ڕیکلامێکی ئۆتۆمبێل نییە"
+              description="هیچ ئۆتۆمبێلێک بۆ ڕیکلام لەلایەن بەکارهێنەرانەوە تۆمار نەکراوە."
+              actionLabel="پوختەی گشتی"
+              onAction={() => setTab('overview')}
+            />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {carAds.map(car => (
+                <div key={car.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                  <img src={car.images[0]} alt="" className="w-full h-32 rounded-xl object-cover" />
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900">{car.title}</h4>
+                    <p className="text-xs font-black text-blue-700 font-latin mt-0.5">{car.priceIqd.toLocaleString()} د.ع</p>
+                    <p className="text-[10px] text-slate-400">پاکێج: {car.packageType} • خاوەن: {car.userName}</p>
+                  </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                    car.adStatus === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {car.adStatus}
-                  </span>
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                      car.adStatus === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {car.adStatus}
+                    </span>
 
-                  <button
-                    onClick={() => updateCarAdStatus(car.id, car.adStatus === 'active' ? 'expired' : 'active')}
-                    className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 text-[10px] font-bold rounded-lg"
-                  >
-                    گۆڕینی دۆخ
-                  </button>
+                    <button
+                      onClick={() => updateCarAdStatus(car.id, car.adStatus === 'active' ? 'expired' : 'active')}
+                      className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-800 text-[10px] font-bold rounded-lg"
+                    >
+                      گۆڕینی دۆخ
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -1595,10 +1740,21 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
 
             if (filteredProducts.length === 0) {
               return (
-                <div className="text-center py-12 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                  <Package className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                  <p className="text-xs font-bold text-slate-600">هیچ کاڵایەک نەدۆزرایەوە بەپێی ئەم فلتەرە</p>
-                </div>
+                <EmptyState
+                  type="products"
+                  title="هیچ کاڵایەک نەدۆزرایەوە"
+                  description="هیچ کاڵایەک بەپێی بەشی دیاریکراو یان وشەی گەڕان لە داتابەیسدا بەردەست نییە."
+                  actionLabel="سڕینەوەی فلتەرەکان"
+                  onAction={() => {
+                    setProductSearch('');
+                    setProductCategoryFilter('all');
+                  }}
+                  secondaryActionLabel="+ زیادکردنی کاڵای نوێ"
+                  onSecondaryAction={() => {
+                    setEditingProduct(null);
+                    setIsProductModalOpen(true);
+                  }}
+                />
               );
             }
 
@@ -1766,6 +1922,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             ))}
           </div>
         </div>
+      )}
+
+      {tab === 'i18n' && (
+        <I18nAdminManager />
       )}
 
       {/* Dynamic Product Modal for Super Admin */}

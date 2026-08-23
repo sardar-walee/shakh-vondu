@@ -33,7 +33,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
+import { useLanguage } from '../context/LanguageContext';
 import { RoleBadge } from '../components/common/Badge';
+import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { CITIES } from '../data/seedData';
 import { FeedbackType, UserRole, GeoLocation } from '../types';
 import { GPSLocationPicker } from '../components/common/GPSLocationPicker';
@@ -58,6 +60,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
     userFeedbacks,
     submitUserFeedback
   } = useMarketplace();
+  const { t, dir } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'terms' | 'feedback'>('profile');
 
@@ -126,13 +129,13 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-20" dir="rtl">
+    <div className="max-w-4xl mx-auto space-y-6 pb-20" dir={dir}>
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-right">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-start">
         <div>
-          <h1 className="text-2xl font-black text-slate-900">هەژمارم و پڕۆفایل</h1>
-          <p className="text-xs text-slate-500 mt-1">بەڕێوەبردنی پڕۆفایلی کەسی، جزدانی پۆینت، داشبۆردەکان و یاساکانی شاخ</p>
+          <h1 className="text-2xl font-black text-slate-900">{t('profile')} & {t('dashboard')}</h1>
+          <p className="text-xs text-slate-500 mt-1">{t('app.tagline')}</p>
         </div>
 
         <button
@@ -146,7 +149,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
           className="self-start sm:self-auto px-4 py-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           <LogOut className="w-4 h-4" />
-          <span>{currentUser ? 'چوونەدەرەوە لە هەژمار' : 'چوونە ژوورەوە'}</span>
+          <span>{currentUser ? t('logout') : t('login')}</span>
         </button>
       </div>
 
@@ -365,6 +368,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
                 <Heart className="w-5 h-5 text-rose-500" />
                 <span>دڵخوازەکانم</span>
               </button>
+            </div>
+
+            {/* Language Selector Preference Card */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <LanguageSwitcher variant="full" />
             </div>
 
             <div className="border-t border-slate-100 pt-4">

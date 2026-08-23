@@ -5,6 +5,7 @@ import { CarPackageBadge } from '../common/Badge';
 import { CarCountdownTimer } from '../common/CarCountdownTimer';
 import { ShareModal } from '../common/ShareModal';
 import { useMarketplace } from '../../context/MarketplaceContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface CarAdCardProps {
   car: CarAd;
@@ -15,6 +16,7 @@ export const CarAdCard: React.FC<CarAdCardProps> = ({ car, onClick }) => {
   const isVip = car.packageType === '1_month';
   const isSold = car.adStatus === 'sold';
   const { favoriteProductIds, toggleFavoriteProduct } = useMarketplace();
+  const { t } = useLanguage();
   const isFav = favoriteProductIds.includes(`car-${car.id}`);
   const [showShareModal, setShowShareModal] = useState(false);
 
@@ -70,7 +72,7 @@ export const CarAdCard: React.FC<CarAdCardProps> = ({ car, onClick }) => {
             <div className="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] flex items-center justify-center z-20">
               <span className="bg-rose-600 text-white font-black text-xs sm:text-sm px-4 py-1.5 rounded-2xl shadow-xl flex items-center gap-1.5 border border-rose-400/50 transform -rotate-3 animate-pulse">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>فرۆشرا (SOLD)</span>
+                <span>{t('فرۆشراو')} (SOLD)</span>
               </span>
             </div>
           )}
@@ -79,7 +81,7 @@ export const CarAdCard: React.FC<CarAdCardProps> = ({ car, onClick }) => {
           <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 z-10">
             {isSold ? (
               <span className="bg-rose-600 text-white font-black text-[11px] px-2.5 py-0.5 rounded-lg border border-rose-500 shadow-xs">
-                فرۆشرا
+                {t('فرۆشراو')}
               </span>
             ) : (
               <>
@@ -185,7 +187,7 @@ export const CarAdCard: React.FC<CarAdCardProps> = ({ car, onClick }) => {
                   className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold transition-colors cursor-pointer"
                 >
                   <MessageCircle className="w-3.5 h-3.5" />
-                  <span>واتسئەپ</span>
+                  <span>{t('واتسئەپ')}</span>
                 </button>
 
                 <button
@@ -193,7 +195,7 @@ export const CarAdCard: React.FC<CarAdCardProps> = ({ car, onClick }) => {
                   className="flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563EB] text-xs font-bold transition-colors cursor-pointer"
                 >
                   <Phone className="w-3.5 h-3.5" />
-                  <span>پەیوەندی</span>
+                  <span>{t('پەیوەندی')}</span>
                 </button>
               </div>
             )}
