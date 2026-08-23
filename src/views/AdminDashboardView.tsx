@@ -30,14 +30,24 @@ import {
   Save,
   Image,
   RefreshCw,
-  RotateCcw
+  RotateCcw,
+  Ban,
+  EyeOff,
+  Crown,
+  Maximize2,
+  Copy,
+  ExternalLink,
+  ShieldAlert,
+  UserCheck,
+  UserX,
+  Layers
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
 import { StatusBadge, CategoryBadge, RoleBadge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
 import { DynamicProductForm } from '../components/products/DynamicProductForm';
-import { Product, ProductCategory, OrderStatus, CarPackageType, FeedbackStatus, OccasionBanner, OccasionType, OccasionThemeStyle } from '../types';
+import { Product, ProductCategory, OrderStatus, CarPackageType, FeedbackStatus, OccasionBanner, OccasionType, OccasionThemeStyle, UserRole } from '../types';
 import { OCCASION_PRESETS } from '../data/occasionPresets';
 import { OccasionHeaderBanner } from '../components/common/OccasionHeaderBanner';
 import { OccasionBannerAdminPanel } from '../components/common/OccasionBannerAdminPanel';
@@ -67,11 +77,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     updateProduct,
     deleteProduct,
     purgeAllDemoData,
-    cleanTaggedDemoOnly
+    cleanTaggedDemoOnly,
+    allUsers,
+    adminUpdateUserRole,
+    adminToggleBlockUser,
+    adminDeleteUser,
+    deleteCarAd,
+    toggleCarAdHidden,
+    deleteUserFeedback,
+    toggleFeedbackHidden,
+    toggleProductHidden
   } = useMarketplace();
   const { currentUser, isSuperAdmin } = useAuth();
 
-  const [tab, setTab] = useState<'overview' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances'>('overview');
+  const [tab, setTab] = useState<'overview' | 'super_omni' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances'>('super_omni');
+
+  // Super Admin Omni Control State
+  const [omniSection, setOmniSection] = useState<'users' | 'products' | 'cars' | 'posts'>('users');
+  const [omniSearch, setOmniSearch] = useState('');
+  const [omniRoleFilter, setOmniRoleFilter] = useState<string>('all');
+  const [omniStatusFilter, setOmniStatusFilter] = useState<'all' | 'active' | 'blocked_hidden'>('all');
+  const [omniImageFilter, setOmniImageFilter] = useState<'all' | 'with_image' | 'no_image'>('all');
+
+  // Image Preview Modal State
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewImageTitle, setPreviewImageTitle] = useState<string>('');
 
   // Purge database state
   const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
@@ -238,6 +268,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
       {/* Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-3 scrollbar-none">
         {[
+          { id: 'super_omni', label: `⚡ بەشی سوپەر ئەدمین (کۆنترۆڵی سەرجەم بەکارهێنەر/کالا/پۆست)`, icon: <Crown className="w-4 h-4 text-amber-300" /> },
           { id: 'overview', label: 'پوختەی دارایی و گشتی', icon: <TrendingUp className="w-4 h-4" /> },
           { id: 'occasions', label: 'بۆنە و یادەکان (مەولود)', icon: <Sparkles className="w-4 h-4 text-amber-500" /> },
           { id: 'sellers', label: `فرۆشیاران (${sellers.length})`, icon: <Store className="w-4 h-4" /> },
@@ -266,6 +297,729 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
       {/* Occasions & Mawlid Banner Tab */}
       {tab === 'occasions' && (
         <OccasionBannerAdminPanel isModal={false} />
+      )}
+
+      {/* Super Admin Omni Control Panel Tab */}
+      {tab === 'super_omni' && (
+        <div className="space-y-6">
+          {!isSuperAdmin ? (
+            <div className="p-8 bg-red-50 border border-red-200 rounded-3xl text-center space-y-3">
+              <ShieldAlert className="w-12 h-12 text-red-600 mx-auto animate-pulse" />
+              <h3 className="text-lg font-black text-red-900">تەنها بۆ سوپەر ئەدمین (Super Admin) ڕێگەپێدراوە</h3>
+              <p className="text-xs text-red-700 max-w-md mx-auto">
+                بۆ بەکارهێنانی ئەم بەشە و ئەنجامدانی کرداری سڕینەوە، بلۆککردن، بزرکردن و گۆڕینی ڕۆڵ پێویستە بە هەژماری سوپەر ئەدمین چوو بیتە ژوورەوە.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Top Header Banner */}
+              <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-red-950 text-white p-6 rounded-3xl border border-red-900/40 shadow-xl space-y-5">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 flex items-center justify-center font-black text-xl shadow-lg shadow-amber-500/20 shrink-0">
+                      <Crown className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-black text-white flex items-center gap-2">
+                        کۆنترۆڵی سەرانسەریی سوپەر ئەدمین
+                        <span className="bg-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full font-latin">
+                          SUPER ADMIN OMNI
+                        </span>
+                      </h2>
+                      <p className="text-xs text-slate-300 mt-1">
+                        بەڕێوەبردنی گشتگیری بەکارهێنەران، کالاکان، ئۆتۆمبێلەکان و پۆستەکان بە گەڕانی خێرا (ناو، ئایدی، ئیمەیڵ، وێنە)
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Counters Summary */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <div className="bg-slate-800/80 px-3.5 py-2 rounded-2xl text-center border border-slate-700/60 shadow-xs">
+                      <span className="block text-[10px] text-slate-400 font-bold">بەکارهێنەران</span>
+                      <span className="text-base font-black text-amber-400 font-latin">{allUsers.length}</span>
+                    </div>
+                    <div className="bg-slate-800/80 px-3.5 py-2 rounded-2xl text-center border border-slate-700/60 shadow-xs">
+                      <span className="block text-[10px] text-slate-400 font-bold">کالاکان</span>
+                      <span className="text-base font-black text-cyan-400 font-latin">{products.length}</span>
+                    </div>
+                    <div className="bg-slate-800/80 px-3.5 py-2 rounded-2xl text-center border border-slate-700/60 shadow-xs">
+                      <span className="block text-[10px] text-slate-400 font-bold">ئۆتۆمبێل</span>
+                      <span className="text-base font-black text-orange-400 font-latin">{carAds.length}</span>
+                    </div>
+                    <div className="bg-slate-800/80 px-3.5 py-2 rounded-2xl text-center border border-slate-700/60 shadow-xs">
+                      <span className="block text-[10px] text-slate-400 font-bold">پۆست و فیدباک</span>
+                      <span className="text-base font-black text-emerald-400 font-latin">{userFeedbacks.length}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sub Sections Navigation Bar */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3 border-t border-slate-800/80">
+                  <button
+                    type="button"
+                    onClick={() => setOmniSection('users')}
+                    className={`px-4 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      omniSection === 'users'
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 shadow-lg font-bold'
+                        : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                    }`}
+                  >
+                    <Users className="w-4 h-4" />
+                    <span>👥 بەکارهێنەران و ڕۆڵەکان ({allUsers.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOmniSection('products')}
+                    className={`px-4 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      omniSection === 'products'
+                        ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-lg font-bold'
+                        : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                    }`}
+                  >
+                    <Package className="w-4 h-4" />
+                    <span>📦 سەرجەم کالاکان ({products.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOmniSection('cars')}
+                    className={`px-4 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      omniSection === 'cars'
+                        ? 'bg-gradient-to-r from-orange-500 to-red-500 text-slate-950 shadow-lg font-bold'
+                        : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                    }`}
+                  >
+                    <Car className="w-4 h-4" />
+                    <span>🚗 ئۆتۆمبێلەکان ({carAds.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOmniSection('posts')}
+                    className={`px-4 py-3 rounded-2xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      omniSection === 'posts'
+                        ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-lg font-bold'
+                        : 'bg-slate-800/80 text-slate-300 hover:bg-slate-700/80 border border-slate-700/50'
+                    }`}
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>💬 پۆست و فیدباککان ({userFeedbacks.length})</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Universal Search & Multi-Filter Bar */}
+              <div className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
+                <div className="flex flex-col lg:flex-row items-center gap-3">
+                  {/* Search input matching Name, ID, Email, Phone */}
+                  <div className="relative flex-1 w-full">
+                    <Search className="w-4 h-4 absolute right-4 top-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      value={omniSearch}
+                      onChange={(e) => setOmniSearch(e.target.value)}
+                      placeholder="🔍 گەڕانی خێرا بە ناو، ئایدی (ID)، ئیمەیڵ، تەلەفۆن..."
+                      className="w-full pr-11 pl-10 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                    />
+                    {omniSearch && (
+                      <button
+                        type="button"
+                        onClick={() => setOmniSearch('')}
+                        className="absolute left-3 top-3 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer bg-slate-200 hover:bg-slate-300 px-2 py-0.5 rounded-lg"
+                      >
+                        سڕینەوە
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filter Dropdowns */}
+                  <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+                    {/* Role Filter (Only for Users tab) */}
+                    {omniSection === 'users' && (
+                      <select
+                        value={omniRoleFilter}
+                        onChange={(e) => setOmniRoleFilter(e.target.value)}
+                        className="px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none cursor-pointer focus:ring-2 focus:ring-amber-500"
+                      >
+                        <option value="all">👑 هەموو ڕۆڵەکان</option>
+                        <option value="customer">👥 کڕیار (Customer)</option>
+                        <option value="seller">🏪 فرۆشیار (Seller)</option>
+                        <option value="delivery_agent">🚚 گەیاندنکار (Delivery Agent)</option>
+                        <option value="store_driver">🛵 شۆفێری فرۆشگا (Store Driver)</option>
+                        <option value="admin">🛡️ ئەدمین (Admin)</option>
+                        <option value="super_admin">⚡ سوپەر ئەدمین (Super Admin)</option>
+                      </select>
+                    )}
+
+                    {/* Status Filter */}
+                    <select
+                      value={omniStatusFilter}
+                      onChange={(e) => setOmniStatusFilter(e.target.value as any)}
+                      className="px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none cursor-pointer focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="all">🟢 هەموو باری بڵاوکردنەوە</option>
+                      <option value="active">✅ چالاک / دیار (Active)</option>
+                      <option value="blocked_hidden">⛔ بلۆککراو / بزرکراو (Blocked/Hidden)</option>
+                    </select>
+
+                    {/* Image Filter */}
+                    <select
+                      value={omniImageFilter}
+                      onChange={(e) => setOmniImageFilter(e.target.value as any)}
+                      className="px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-700 outline-none cursor-pointer focus:ring-2 focus:ring-amber-500"
+                    >
+                      <option value="all">🖼️ هەموو فۆرماتەکان</option>
+                      <option value="with_image">📷 تەنها وێنەدار (With Image)</option>
+                      <option value="no_image">🚫 بێ وێنە (No Image)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* ==================== 1. USERS SECTION ==================== */}
+              {omniSection === 'users' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                      <Users className="w-4 h-4 text-amber-500" />
+                      <span>بەڕێوەبردنی بەکارهێنەران و ڕۆڵەکان</span>
+                    </h3>
+                    <span className="text-xs font-bold text-slate-500 font-latin">
+                      نیشاندانی {allUsers.filter(u => {
+                        const q = omniSearch.toLowerCase().trim();
+                        const matchesQuery = !q || ((u.fullName || '').toLowerCase().includes(q) || (u.id || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.phone || '').toLowerCase().includes(q));
+                        const matchesRole = omniRoleFilter === 'all' || u.role === omniRoleFilter || (omniRoleFilter === 'seller' && (u.role as string).includes('seller'));
+                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !u.isBlocked) || (omniStatusFilter === 'blocked_hidden' && u.isBlocked);
+                        const hasImg = Boolean(u.avatarUrl && u.avatarUrl.length > 5);
+                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                        return matchesQuery && matchesRole && matchesStatus && matchesImg;
+                      }).length} بەکارهێنەر لە کۆی {allUsers.length}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allUsers
+                      .filter(u => {
+                        const q = omniSearch.toLowerCase().trim();
+                        const matchesQuery = !q || ((u.fullName || '').toLowerCase().includes(q) || (u.id || '').toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q) || (u.phone || '').toLowerCase().includes(q));
+                        const matchesRole = omniRoleFilter === 'all' || u.role === omniRoleFilter || (omniRoleFilter === 'seller' && (u.role as string).includes('seller'));
+                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !u.isBlocked) || (omniStatusFilter === 'blocked_hidden' && u.isBlocked);
+                        const hasImg = Boolean(u.avatarUrl && u.avatarUrl.length > 5);
+                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                        return matchesQuery && matchesRole && matchesStatus && matchesImg;
+                      })
+                      .map(user => (
+                        <div
+                          key={user.id}
+                          className={`p-4 rounded-3xl border transition-all space-y-3 relative ${
+                            user.isBlocked
+                              ? 'bg-red-50/50 border-red-200'
+                              : 'bg-white border-slate-200 hover:shadow-md'
+                          }`}
+                        >
+                          {/* User Header */}
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              {/* Avatar */}
+                              <div
+                                onClick={() => {
+                                  if (user.avatarUrl) {
+                                    setPreviewImageUrl(user.avatarUrl);
+                                    setPreviewImageTitle(`وێنەی پرۆفایلی ${user.fullName}`);
+                                  }
+                                }}
+                                className="relative w-12 h-12 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 cursor-pointer group"
+                              >
+                                {user.avatarUrl ? (
+                                  <>
+                                    <img src={user.avatarUrl} alt={user.fullName} className="w-full h-full object-cover group-hover:scale-105 transition-all" />
+                                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                      <Maximize2 className="w-4 h-4 text-white" />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-500 font-bold text-lg">
+                                    {user.fullName?.substring(0, 1) || 'U'}
+                                  </div>
+                                )}
+                              </div>
+
+                              <div>
+                                <h4 className="font-black text-slate-900 text-sm flex items-center gap-1.5">
+                                  <span>{user.fullName || 'بەکارهێنەر'}</span>
+                                  {user.isBlocked && (
+                                    <span className="bg-red-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md">
+                                      بلۆککراو
+                                    </span>
+                                  )}
+                                </h4>
+                                <p className="text-[11px] text-slate-500 font-latin truncate max-w-[160px]">
+                                  {user.email || 'no-email@shakh.app'}
+                                </p>
+                                <p className="text-[10px] text-slate-400 font-latin">
+                                  {user.phone || 'no-phone'}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* User ID Tag */}
+                            <span className="bg-slate-100 text-slate-600 font-latin text-[10px] font-bold px-2 py-1 rounded-lg border border-slate-200 shrink-0">
+                              ID: {user.id.substring(0, 8)}...
+                            </span>
+                          </div>
+
+                          {/* Role Badge and Role Selector */}
+                          <div className="p-2.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <RoleBadge role={user.role} />
+                            </div>
+
+                            {/* Role Dropdown */}
+                            <select
+                              value={user.role}
+                              onChange={(e) => adminUpdateUserRole(user.id, e.target.value as UserRole)}
+                              className="text-[11px] font-black bg-white border border-slate-200 rounded-xl px-2 py-1 text-slate-700 outline-none cursor-pointer hover:border-amber-500 transition-all"
+                            >
+                              <option value="customer">👤 کڕیار (Customer)</option>
+                              <option value="seller">🏪 فرۆشیار (Seller)</option>
+                              <option value="delivery_agent">🚚 گەیاندنکار (Delivery)</option>
+                              <option value="store_driver">🛵 شۆفێری فرۆشگا (Store Driver)</option>
+                              <option value="admin">🛡️ ئەدمین (Admin)</option>
+                              <option value="super_admin">⚡ سوپەر ئەدمین (Super Admin)</option>
+                            </select>
+                          </div>
+
+                          {/* Actions: Block / Unblock & Delete */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => adminToggleBlockUser(user.id, !user.isBlocked)}
+                              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                user.isBlocked
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                  : 'bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-xs'
+                              }`}
+                            >
+                              {user.isBlocked ? (
+                                <>
+                                  <UserCheck className="w-3.5 h-3.5" />
+                                  <span>لادانی بلۆک</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="w-3.5 h-3.5" />
+                                  <span>بلۆککردن</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`دڵنیای لە سڕینەوەی بەکارهێنەری "${user.fullName}"؟ هەژمارەکە ڕاستەوخۆ دەسڕدرێتەوە.`)) {
+                                  adminDeleteUser(user.id);
+                                }
+                              }}
+                              className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer"
+                              title="سڕینەوەی بەکارهێنەر"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>سڕینەوە</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ==================== 2. PRODUCTS SECTION ==================== */}
+              {omniSection === 'products' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                      <Package className="w-4 h-4 text-cyan-500" />
+                      <span>بەڕێوەبردنی سەرجەم کالاکان و بەرهەمەکان</span>
+                    </h3>
+                    <span className="text-xs font-bold text-slate-500 font-latin">
+                      نیشاندانی {products.filter(p => {
+                        const q = omniSearch.toLowerCase().trim();
+                        const matchesQuery = !q || ((p.title || '').toLowerCase().includes(q) || (p.id || '').toLowerCase().includes(q) || (p.sellerId || '').toLowerCase().includes(q) || (p.sellerName || '').toLowerCase().includes(q));
+                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !p.isHidden && p.isAvailable) || (omniStatusFilter === 'blocked_hidden' && (p.isHidden || !p.isAvailable));
+                        const hasImg = Boolean(p.images && p.images.length > 0);
+                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                        return matchesQuery && matchesStatus && matchesImg;
+                      }).length} کالا لە کۆی {products.length}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {products
+                      .filter(p => {
+                        const q = omniSearch.toLowerCase().trim();
+                        const matchesQuery = !q || ((p.title || '').toLowerCase().includes(q) || (p.id || '').toLowerCase().includes(q) || (p.sellerId || '').toLowerCase().includes(q) || (p.sellerName || '').toLowerCase().includes(q));
+                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !p.isHidden && p.isAvailable) || (omniStatusFilter === 'blocked_hidden' && (p.isHidden || !p.isAvailable));
+                        const hasImg = Boolean(p.images && p.images.length > 0);
+                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                        return matchesQuery && matchesStatus && matchesImg;
+                      })
+                      .map(prod => (
+                        <div
+                          key={prod.id}
+                          className={`p-4 rounded-3xl border transition-all space-y-3 relative ${
+                            prod.isHidden || !prod.isAvailable
+                              ? 'bg-slate-50 border-amber-300'
+                              : 'bg-white border-slate-200 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Image Thumbnail */}
+                            <div
+                              onClick={() => {
+                                if (prod.images && prod.images[0]) {
+                                  setPreviewImageUrl(prod.images[0]);
+                                  setPreviewImageTitle(prod.title);
+                                }
+                              }}
+                              className="w-16 h-16 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 cursor-pointer relative group"
+                            >
+                              {prod.images && prod.images[0] ? (
+                                <>
+                                  <img src={prod.images[0]} alt={prod.title} className="w-full h-full object-cover group-hover:scale-105 transition-all" />
+                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                    <Maximize2 className="w-4 h-4 text-white" />
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-400">
+                                  <Package className="w-6 h-6" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5">
+                                <CategoryBadge category={prod.category} />
+                                {prod.isHidden && (
+                                  <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-md">
+                                    بزرکراو (Hidden)
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="font-black text-slate-900 text-sm truncate mt-1">
+                                {prod.title}
+                              </h4>
+                              <p className="text-xs font-black text-emerald-600 font-latin">
+                                {prod.price.toLocaleString()} د.ع
+                              </p>
+                              <p className="text-[10px] text-slate-400 font-latin truncate">
+                                فرۆشیار: {prod.sellerName || prod.sellerId}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Product Controls: Hide/Unhide & Delete */}
+                          <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => toggleProductHidden(prod.id, !prod.isHidden)}
+                              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                prod.isHidden
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                  : 'bg-slate-800 hover:bg-slate-900 text-white shadow-xs'
+                              }`}
+                            >
+                              {prod.isHidden ? (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>دیاریکردنەوە (Show)</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3.5 h-3.5" />
+                                  <span>بزرکردن (Hide)</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingProduct(prod);
+                                setIsProductModalOpen(true);
+                              }}
+                              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                              <span>دەستکاری</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`دڵنیای لە سڕینەوەی کالای "${prod.title}"؟`)) {
+                                  deleteProduct(prod.id);
+                                }
+                              }}
+                              className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>سڕینەوە</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ==================== 3. CARS SECTION ==================== */}
+              {omniSection === 'cars' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                      <Car className="w-4 h-4 text-orange-500" />
+                      <span>بەڕێوەبردنی ئۆتۆمبێلەکان و ڕیکلامەکان</span>
+                    </h3>
+                    <span className="text-xs font-bold text-slate-500 font-latin">
+                      نیشاندانی {carAds.filter(c => {
+                        const q = omniSearch.toLowerCase().trim();
+                        const matchesQuery = !q || ((c.title || '').toLowerCase().includes(q) || (c.id || '').toLowerCase().includes(q) || (c.userId || '').toLowerCase().includes(q) || (c.userName || '').toLowerCase().includes(q) || (c.userPhone || '').toLowerCase().includes(q) || (c.brand || '').toLowerCase().includes(q));
+                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !c.isHidden && c.adStatus === 'active') || (omniStatusFilter === 'blocked_hidden' && (c.isHidden || c.adStatus === 'hidden' || c.adStatus === 'rejected'));
+                        const hasImg = Boolean(c.images && c.images.length > 0);
+                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                        return matchesQuery && matchesStatus && matchesImg;
+                      }).length} ئۆتۆمبێل لە کۆی {carAds.length}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {carAds
+                      .filter(c => {
+                        const q = omniSearch.toLowerCase().trim();
+                        const matchesQuery = !q || ((c.title || '').toLowerCase().includes(q) || (c.id || '').toLowerCase().includes(q) || (c.userId || '').toLowerCase().includes(q) || (c.userName || '').toLowerCase().includes(q) || (c.userPhone || '').toLowerCase().includes(q) || (c.brand || '').toLowerCase().includes(q));
+                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !c.isHidden && c.adStatus === 'active') || (omniStatusFilter === 'blocked_hidden' && (c.isHidden || c.adStatus === 'hidden' || c.adStatus === 'rejected'));
+                        const hasImg = Boolean(c.images && c.images.length > 0);
+                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                        return matchesQuery && matchesStatus && matchesImg;
+                      })
+                      .map(car => (
+                        <div
+                          key={car.id}
+                          className={`p-4 rounded-3xl border transition-all space-y-3 relative ${
+                            car.isHidden || car.adStatus === 'hidden'
+                              ? 'bg-slate-50 border-amber-300'
+                              : 'bg-white border-slate-200 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Car Image */}
+                            <div
+                              onClick={() => {
+                                if (car.images && car.images[0]) {
+                                  setPreviewImageUrl(car.images[0]);
+                                  setPreviewImageTitle(car.title);
+                                }
+                              }}
+                              className="w-20 h-20 rounded-2xl bg-slate-100 overflow-hidden shrink-0 border border-slate-200 cursor-pointer relative group"
+                            >
+                              {car.images && car.images[0] ? (
+                                <>
+                                  <img src={car.images[0]} alt={car.title} className="w-full h-full object-cover group-hover:scale-105 transition-all" />
+                                  <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                    <Maximize2 className="w-4 h-4 text-white" />
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-slate-200 text-slate-400">
+                                  <Car className="w-8 h-8" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                                  {car.adStatus === 'active' ? '🟢 چالاک' : car.adStatus === 'pending_payment' ? '⏳ لە چاوەڕوانیدا' : car.adStatus === 'sold' ? '🤝 فرۆشراو' : car.adStatus === 'rejected' ? '❌ ڕەتکراوە' : '👁️‍🗨️ بزرکراو'}
+                                </span>
+                                {car.isHidden && (
+                                  <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-md">
+                                    بزرکراو
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="font-black text-slate-900 text-sm truncate mt-1">
+                                {car.title}
+                              </h4>
+                              <p className="text-xs font-black text-orange-600 font-latin">
+                                {car.priceIqd?.toLocaleString()} د.ع {car.priceUsd ? `($${car.priceUsd.toLocaleString()})` : ''}
+                              </p>
+                              <p className="text-[10px] text-slate-500 font-latin truncate">
+                                خاوەن: {car.userName} ({car.userPhone})
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Controls: Hide/Show, Delete, Change Status */}
+                          <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                            <button
+                              type="button"
+                              onClick={() => toggleCarAdHidden(car.id, !car.isHidden)}
+                              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                car.isHidden
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                  : 'bg-slate-800 hover:bg-slate-900 text-white shadow-xs'
+                              }`}
+                            >
+                              {car.isHidden ? (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>نیشاندانەوە</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3.5 h-3.5" />
+                                  <span>بزرکردن</span>
+                                </>
+                              )}
+                            </button>
+
+                            <select
+                              value={car.adStatus}
+                              onChange={(e) => updateCarAdStatus(car.id, e.target.value as any)}
+                              className="text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-slate-700 outline-none cursor-pointer"
+                            >
+                              <option value="active">🟢 چالاک (Active)</option>
+                              <option value="pending_payment">⏳ لە چاوەڕوانیدا</option>
+                              <option value="sold">🤝 فرۆشراو (Sold)</option>
+                              <option value="rejected">❌ ڕەتکراوە</option>
+                              <option value="hidden">👁️‍🗨️ بزرکراو</option>
+                            </select>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`دڵنیای لە سڕینەوەی ڕیکلامی ئۆتۆمبێلی "${car.title}"؟`)) {
+                                  deleteCarAd(car.id);
+                                }
+                              }}
+                              className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>سڕینەوە</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ==================== 4. POSTS & FEEDBACKS SECTION ==================== */}
+              {omniSection === 'posts' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between px-1">
+                    <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-emerald-500" />
+                      <span>بەڕێوەبردنی سەرجەم پۆستەکان، بیروڕاکان و سەرنجەکان</span>
+                    </h3>
+                    <span className="text-xs font-bold text-slate-500 font-latin">
+                      نیشاندانی {userFeedbacks.filter(f => {
+                        const q = omniSearch.toLowerCase().trim();
+                        const matchesQuery = !q || ((f.title || '').toLowerCase().includes(q) || (f.message || '').toLowerCase().includes(q) || (f.id || '').toLowerCase().includes(q) || (f.userName || '').toLowerCase().includes(q));
+                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !f.isHidden && f.status !== 'hidden') || (omniStatusFilter === 'blocked_hidden' && (f.isHidden || f.status === 'hidden'));
+                        const hasImg = Boolean(f.message.includes('http') || (f as any).imageUrl || (f as any).attachmentUrl);
+                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                        return matchesQuery && matchesStatus && matchesImg;
+                      }).length} پۆست لە کۆی {userFeedbacks.length}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {userFeedbacks
+                      .filter(f => {
+                        const q = omniSearch.toLowerCase().trim();
+                        const matchesQuery = !q || ((f.title || '').toLowerCase().includes(q) || (f.message || '').toLowerCase().includes(q) || (f.id || '').toLowerCase().includes(q) || (f.userName || '').toLowerCase().includes(q));
+                        const matchesStatus = omniStatusFilter === 'all' || (omniStatusFilter === 'active' && !f.isHidden && f.status !== 'hidden') || (omniStatusFilter === 'blocked_hidden' && (f.isHidden || f.status === 'hidden'));
+                        const hasImg = Boolean(f.message.includes('http') || (f as any).imageUrl || (f as any).attachmentUrl);
+                        const matchesImg = omniImageFilter === 'all' || (omniImageFilter === 'with_image' && hasImg) || (omniImageFilter === 'no_image' && !hasImg);
+                        return matchesQuery && matchesStatus && matchesImg;
+                      })
+                      .map(fb => (
+                        <div
+                          key={fb.id}
+                          className={`p-4 rounded-3xl border transition-all space-y-3 relative ${
+                            fb.isHidden || fb.status === 'hidden'
+                              ? 'bg-slate-50 border-amber-300'
+                              : 'bg-white border-slate-200 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="font-black text-slate-900 text-sm flex items-center gap-1.5">
+                                <span>{fb.title || 'پۆستی بەکارهێنەر'}</span>
+                                {fb.isHidden && (
+                                  <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-md">
+                                    بزرکراو
+                                  </span>
+                                )}
+                              </h4>
+                              <p className="text-[11px] text-slate-500 font-latin">
+                                لەلایەن: {fb.userName} ({fb.userRole})
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-latin font-bold text-slate-400">
+                              {new Date(fb.createdAt).toLocaleDateString('en-US')}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-slate-700 leading-relaxed bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            {fb.message}
+                          </p>
+
+                          {/* Action controls: Hide / Delete */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => toggleFeedbackHidden(fb.id, !fb.isHidden)}
+                              className={`flex-1 py-2 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                fb.isHidden
+                                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
+                                  : 'bg-slate-800 hover:bg-slate-900 text-white shadow-xs'
+                              }`}
+                            >
+                              {fb.isHidden ? (
+                                <>
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>دیاریکردنەوە</span>
+                                </>
+                              ) : (
+                                <>
+                                  <EyeOff className="w-3.5 h-3.5" />
+                                  <span>بزرکردنی پۆست</span>
+                                </>
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (window.confirm(`دڵنیای لە سڕینەوەی ئەم پۆستەی "${fb.userName}"؟`)) {
+                                  deleteUserFeedback(fb.id);
+                                }
+                              }}
+                              className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>سڕینەوە</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Overview Tab */}
@@ -1149,6 +1903,50 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           </div>
         </div>
       </Modal>
+
+      {/* Image Preview Modal */}
+      {previewImageUrl && (
+        <Modal
+          isOpen={Boolean(previewImageUrl)}
+          onClose={() => setPreviewImageUrl(null)}
+          title={previewImageTitle || 'بینی وێنە'}
+        >
+          <div className="space-y-4 text-center">
+            <div className="max-h-[70vh] overflow-hidden rounded-2xl border border-slate-200 bg-slate-950 flex items-center justify-center p-2">
+              <img
+                src={previewImageUrl}
+                alt="Preview"
+                className="max-h-[65vh] w-auto max-w-full object-contain rounded-xl shadow-2xl"
+              />
+            </div>
+            <div className="flex items-center justify-between gap-3 pt-2">
+              <span className="text-[10px] text-slate-400 font-latin truncate max-w-[280px]">
+                {previewImageUrl}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard.writeText(previewImageUrl);
+                    alert('لینکەکە کۆپیکرا!');
+                  }}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>کۆپی کردنی لینک</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImageUrl(null)}
+                  className="px-4 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black cursor-pointer"
+                >
+                  داخستن
+                </button>
+              </div>
+            </div>
+          </div>
+        </Modal>
+      )}
 
     </div>
   );

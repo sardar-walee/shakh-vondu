@@ -19,6 +19,7 @@ import {
   AgreementTier,
   UserRole,
   UserFeedback,
+  UserProfile,
   GeoLocation,
   StoreDriver,
   DeliveryMode,
@@ -171,6 +172,17 @@ interface MarketplaceContextType {
   };
   purgeAllDemoData: () => Promise<{ success: boolean; message: string }>;
   cleanTaggedDemoOnly: (options?: { dryRun?: boolean }) => Promise<DemoCleanerResult>;
+
+  // Super Admin Master Control Actions
+  allUsers: UserProfile[];
+  adminUpdateUserRole: (userId: string, newRole: UserRole) => Promise<{ success: boolean; error?: string }>;
+  adminToggleBlockUser: (userId: string, blockStatus: boolean) => Promise<{ success: boolean; error?: string }>;
+  adminDeleteUser: (userId: string) => Promise<{ success: boolean; error?: string }>;
+  deleteCarAd: (adId: string) => Promise<{ success: boolean; error?: string }>;
+  toggleCarAdHidden: (adId: string, isHidden: boolean) => Promise<{ success: boolean; error?: string }>;
+  deleteUserFeedback: (feedbackId: string) => Promise<{ success: boolean; error?: string }>;
+  toggleFeedbackHidden: (feedbackId: string, isHidden: boolean) => Promise<{ success: boolean; error?: string }>;
+  toggleProductHidden: (productId: string, isHidden: boolean) => Promise<{ success: boolean; error?: string }>;
 }
 
 const MarketplaceContext = createContext<MarketplaceContextType | undefined>(undefined);
@@ -302,8 +314,18 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return DEFAULT_MAWLID_BANNER;
   });
 
+  // All Users State (Synced for Super Admin)
+  const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
+    const saved = localStorage.getItem('shakh_all_users');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [];
+  });
+
   // Sync to local storage
   useEffect(() => { localStorage.setItem('shakh_products', JSON.stringify(products)); }, [products]);
+  useEffect(() => { localStorage.setItem('shakh_all_users', JSON.stringify(allUsers)); }, [allUsers]);
   useEffect(() => { localStorage.setItem('shakh_sellers', JSON.stringify(sellers)); }, [sellers]);
   useEffect(() => { localStorage.setItem('shakh_car_ads', JSON.stringify(carAds)); }, [carAds]);
   useEffect(() => { localStorage.setItem('shakh_orders', JSON.stringify(orders)); }, [orders]);
@@ -328,6 +350,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     let unsubCars: () => void;
     let unsubReviews: () => void;
     let unsubFeedbacks: () => void;
+    let unsubUsers: () => void;
 
     const setupFirestoreSync = async () => {
       try {
@@ -428,6 +451,19 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           },
           (err) => console.warn('Banner onSnapshot error:', err)
         );
+        // 8. Users Listener for Super Admin Management
+        const usersCol = collection(db, 'users');
+        unsubUsers = onSnapshot(
+          usersCol,
+          (snapshot) => {
+            const list: UserProfile[] = [];
+            snapshot.forEach((docSnap) => list.push(docSnap.data() as UserProfile));
+            setAllUsers(list);
+          },
+          (err) => {
+            console.warn('Users onSnapshot error:', err);
+          }
+        );
       } catch (err) {
         console.error('Firestore real-time sync init error:', err);
       }
@@ -442,6 +478,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       if (unsubCars) unsubCars();
       if (unsubReviews) unsubReviews();
       if (unsubFeedbacks) unsubFeedbacks();
+      if (unsubUsers) unsubUsers();
     };
   }, []);
 
@@ -1772,6 +1809,110 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return await cleanTaggedDemoRecords(db, options);
   };
 
+  // Super Admin Action Handlers
+  const adminUpdateUserRole = async (userId: string, newRole: UserRole): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await updateDoc(doc(db, 'users', userId), { role: newRole, updatedAt: new Date().toISOString() });
+      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      addNotification({
+        userId,
+        title: 'گۆڕینی ڕۆڵ 👑',
+        message: `ڕۆڵی هەژمارەکەت لە ڕێگەی سوپەر ئەدمین گۆڕدرا بۆ: ${newRole}`,
+        type: 'system',
+        status: 'info'
+      });
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا لە گۆڕینی ڕۆڵ' };
+    }
+  };
+
+  const adminToggleBlockUser = async (userId: string, blockStatus: boolean): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await updateDoc(doc(db, 'users', userId), { isBlocked: blockStatus, updatedAt: new Date().toISOString() });
+      setAllUsers(prev => prev.map(u => u.id === userId ? { ...u, isBlocked: blockStatus } : u));
+      addNotification({
+        userId,
+        title: blockStatus ? 'بلۆککردنی هەژمار 🛑' : 'لادانی بلۆک 🟢',
+        message: blockStatus ? 'هەژمارەکەت بەکاتی بلۆککرا لەلایەن بەڕێوەبەرایەتی شاخ' : 'بلۆک لەسەر هەژمارەکەت لادرا',
+        type: 'system',
+        status: blockStatus ? 'error' : 'success'
+      });
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا لە گۆڕینی باری بلۆک' };
+    }
+  };
+
+  const adminDeleteUser = async (userId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await deleteDoc(doc(db, 'users', userId));
+      setAllUsers(prev => prev.filter(u => u.id !== userId));
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا لە سڕینەوەی بەکارهێنەر' };
+    }
+  };
+
+  const deleteCarAd = async (adId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await deleteDoc(doc(db, 'cars', adId));
+      setCarAds(prev => prev.filter(c => c.id !== adId));
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا لە سڕینەوەی ئۆتۆمبێل' };
+    }
+  };
+
+  const toggleCarAdHidden = async (adId: string, isHidden: boolean): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await updateDoc(doc(db, 'cars', adId), {
+        isHidden,
+        adStatus: isHidden ? 'hidden' : 'active'
+      });
+      setCarAds(prev => prev.map(c => c.id === adId ? { ...c, isHidden, adStatus: isHidden ? 'hidden' : 'active' } : c));
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا' };
+    }
+  };
+
+  const deleteUserFeedback = async (feedbackId: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await deleteDoc(doc(db, 'feedbacks', feedbackId));
+      setUserFeedbacks(prev => prev.filter(f => f.id !== feedbackId));
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا لە سڕینەوەی پۆست' };
+    }
+  };
+
+  const toggleFeedbackHidden = async (feedbackId: string, isHidden: boolean): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await updateDoc(doc(db, 'feedbacks', feedbackId), {
+        isHidden,
+        status: isHidden ? 'hidden' : 'reviewed'
+      });
+      setUserFeedbacks(prev => prev.map(f => f.id === feedbackId ? { ...f, isHidden, status: isHidden ? 'hidden' : 'reviewed' } : f));
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا' };
+    }
+  };
+
+  const toggleProductHidden = async (productId: string, isHidden: boolean): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await updateDoc(doc(db, 'products', productId), {
+        isHidden,
+        isAvailable: !isHidden
+      });
+      setProducts(prev => prev.map(p => p.id === productId ? { ...p, isHidden, isAvailable: !isHidden } : p));
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message || 'هەڵەیەک ڕوویدا' };
+    }
+  };
+
   // Super Admin Platform Statistics
   const totalGrossMerchandiseValue = orders.reduce((sum, o) => sum + (o.subtotal || 0), 0);
   const totalShakhCommission = commissionTransactions.reduce((sum, c) => sum + (c.commissionAmount || 0), 0);
@@ -1855,7 +1996,16 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         getDriverStats,
         platformStats,
         purgeAllDemoData,
-        cleanTaggedDemoOnly
+        cleanTaggedDemoOnly,
+        allUsers,
+        adminUpdateUserRole,
+        adminToggleBlockUser,
+        adminDeleteUser,
+        deleteCarAd,
+        toggleCarAdHidden,
+        deleteUserFeedback,
+        toggleFeedbackHidden,
+        toggleProductHidden
       }}
     >
       {children}

@@ -55,7 +55,7 @@ export type CarPackageType = '1_week' | '15_days' | '1_month';
 
 export type CarPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
-export type CarAdStatus = 'pending_payment' | 'active' | 'expired' | 'rejected' | 'sold';
+export type CarAdStatus = 'pending_payment' | 'active' | 'expired' | 'rejected' | 'sold' | 'hidden';
 
 export type PaymentMethod = 'cash_on_delivery' | 'fib' | 'fastpay' | 'zaincash' | 'asiapay';
 
@@ -201,6 +201,7 @@ export interface Product {
   salesCount?: number;
   isBestSeller?: boolean;
   isFeatured?: boolean;
+  isHidden?: boolean;
 }
 
 export interface CartItem {
@@ -346,6 +347,7 @@ export interface CarAd {
   viewsCount?: number;
   likesCount?: number;
   sharesCount?: number;
+  isHidden?: boolean;
   createdAt: string;
 }
 
@@ -458,7 +460,7 @@ export interface PointsTransaction {
 }
 
 export type FeedbackType = 'feature_request' | 'bug_report' | 'general_review' | 'category_suggestion';
-export type FeedbackStatus = 'pending' | 'reviewed' | 'implemented';
+export type FeedbackStatus = 'pending' | 'reviewed' | 'implemented' | 'hidden';
 
 export interface UserFeedback {
   id: string;
@@ -472,6 +474,7 @@ export interface UserFeedback {
   rating: number; // 1 to 5
   status: FeedbackStatus;
   adminResponse?: string;
+  isHidden?: boolean;
   createdAt: string;
 }
 
