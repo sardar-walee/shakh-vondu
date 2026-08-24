@@ -34,8 +34,12 @@ export const SellerStoreView: React.FC<SellerStoreViewProps> = ({
 }) => {
   const { sellers, products, favoriteSellerIds, toggleFavoriteSeller, getSellerReviews } = useMarketplace();
 
-  const seller = sellers.find(s => s.id === sellerId) || sellers[0];
-  const storeProducts = products.filter(p => p.sellerId === seller?.id);
+  const seller = sellers.find(s => s.id === sellerId || s.userId === sellerId || `store-${s.userId}` === sellerId || s.id === `store-${sellerId}`) || sellers[0];
+  const storeProducts = products.filter(p => 
+    (p.sellerId === seller?.id || p.sellerId === sellerId || p.sellerId === seller?.userId || p.sellerId === `store-${seller?.userId}`) &&
+    p.isAvailable !== false &&
+    p.productStatus !== 'hidden'
+  );
   const sellerReviews = getSellerReviews(seller?.id || '');
   const isFav = favoriteSellerIds.includes(seller?.id || '');
 

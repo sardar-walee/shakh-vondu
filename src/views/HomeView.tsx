@@ -72,16 +72,16 @@ export const HomeView: React.FC<HomeViewProps> = ({
     ? carAds.filter(c => c.city.includes(selectedCity.split(' ')[0]))
     : carAds;
 
-  const specialOffers = products.filter(p => p.discountPrice && p.discountPrice < p.price).slice(0, 4);
-  const featuredRestaurants = sellers.filter(s => s.category === 'food').slice(0, 4);
-  const featuredMarkets = sellers.filter(s => s.category === 'market').slice(0, 4);
-  const activeCarAds = filteredCarAds.filter(c => c.adStatus === 'active').slice(0, 4);
-  const trendingProducts = products.slice(0, 8);
+  const specialOffers = products.filter(p => p.isAvailable !== false && p.productStatus !== 'hidden' && p.discountPrice && p.discountPrice < p.price).slice(0, 8);
+  const featuredRestaurants = sellers.filter(s => s.category === 'food').slice(0, 8);
+  const featuredMarkets = sellers.filter(s => s.category === 'market').slice(0, 8);
+  const activeCarAds = filteredCarAds.filter(c => c.adStatus === 'active').slice(0, 8);
+  const trendingProducts = products.filter(p => p.isAvailable !== false && p.productStatus !== 'hidden').slice(0, 12);
 
   // Best sellers computation (filtered by category if selected)
   const bestSellers = products
-    .filter(p => bestSellerCategory === 'all' || p.category === bestSellerCategory)
-    .slice(0, 8);
+    .filter(p => (bestSellerCategory === 'all' || p.category === bestSellerCategory) && p.isAvailable !== false && p.productStatus !== 'hidden')
+    .slice(0, 12);
 
   const mainCategories = [
     { id: 'food' as ProductCategory, name: t('چێشتخانە و خواردن'), subtitle: t('خواردنی بەتام و خێرا'), icon: <Utensils className="w-5 h-5" />, count: '١٢٠+' },

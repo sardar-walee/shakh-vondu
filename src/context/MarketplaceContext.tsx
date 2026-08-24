@@ -38,6 +38,7 @@ import { cleanTaggedDemoRecords, DemoCleanerResult } from '../lib/firestoreDemoC
 import {
   collection,
   doc,
+  getDoc,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -426,7 +427,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const setupFirestoreSync = async () => {
       try {
-        // 1. Products Listener
+        // 1. Products Listener (Real-time Firestore source of truth)
         const prodCol = collection(db, 'products');
         unsubProducts = onSnapshot(
           prodCol,
@@ -437,9 +438,15 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
               const data = docSnap.data() as Product;
               const itemId = data.id || docSnap.id;
               if (!delSet.has(itemId) && !delSet.has(docSnap.id)) {
-                list.push({ ...data, id: itemId });
+                list.push({
+                  ...data,
+                  id: itemId,
+                  isAvailable: data.isAvailable !== false,
+                  productStatus: data.productStatus || 'active'
+                });
               }
             });
+            list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
             setProducts(list);
           },
           (err) => {
@@ -453,7 +460,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           sellersCol,
           (snapshot) => {
             const list: SellerProfile[] = [];
-            snapshot.forEach((docSnap) => list.push(docSnap.data() as SellerProfile));
+            snapshot.forEach((docSnap) => {
+              const data = docSnap.data() as SellerProfile;
+              list.push({ ...data, id: data.id || docSnap.id });
+            });
             setSellers(list);
           },
           (err) => {
@@ -605,25 +615,73 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const addProduct = async (productData: Omit<Product, 'id' | 'createdAt'>): Promise<{ success: boolean; error?: string }> => {
     if (!currentUser) return { success: false, error: 'تکایە سەرەتا بچۆ ژوورەوە' };
 
-    if (!isSuperAdmin && sellerCategory !== productData.category) {
+    // Super Admin can post in ALL categories. Regular sellers can post in their own assigned category or if not restricted.
+    if (!isSuperAdmin && sellerCategory && sellerCategory !== productData.category) {
       return {
         success: false,
-        error: `تۆ تەنها دەتوانیت کاڵای بەشی (${sellerCategory}) بڵاوبکەیتەوە، ڕێگەپێدراو نییت بۆ بەشەکانی تر.`
+        error: `تۆ وەک فرۆشیاری بەشی (${sellerCategory}) دیاریکراویت، ناتوانیت لە بەشی (${productData.category}) کاڵا بڵاوبکەیتەوە.`
       };
     }
 
     const newProduct: Product = {
       ...productData,
       id: `prod-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      isAvailable: productData.isAvailable !== false,
+      productStatus: productData.productStatus || 'active',
       createdAt: new Date().toISOString()
     };
 
-    setProducts(prev => [newProduct, ...prev]);
+    setProducts(prev => {
+      const updated = [newProduct, ...prev.filter(p => p.id !== newProduct.id)];
+      try {
+        localStorage.setItem('shakh_products', JSON.stringify(updated));
+      } catch (e) {}
+      return updated;
+    });
 
+    // 1. Write product to Firestore
     try {
       await setDoc(doc(db, 'products', newProduct.id), newProduct);
     } catch (e) {
-      console.log('Firestore addProduct notice:', e);
+      console.warn('Firestore addProduct notice:', e);
+    }
+
+    // 2. Ensure seller profile exists in Firestore 'sellers' collection for customers
+    try {
+      const sellerIdToUse = newProduct.sellerId || (currentUser ? `store-${currentUser.id}` : 'store-main');
+      const sellerDocRef = doc(db, 'sellers', sellerIdToUse);
+      const sellerDocSnap = await getDoc(sellerDocRef);
+      if (!sellerDocSnap.exists()) {
+        const newSeller: SellerProfile = {
+          id: sellerIdToUse,
+          userId: currentUser.id,
+          storeName: newProduct.sellerName || currentUser.storeName || currentUser.fullName || 'فرۆشگای شاخ',
+          slug: sellerIdToUse,
+          category: newProduct.category,
+          description: 'فرۆشگای چالاک لە شاخی',
+          logoUrl: currentUser.avatarUrl || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
+          coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
+          rating: 5.0,
+          totalReviews: 0,
+          totalSales: 0,
+          city: currentUser.city || 'Erbil (هەولێر)',
+          address: currentUser.address || 'ناوبازاڕ',
+          phone: currentUser.phone || '07501234567',
+          isOpen: true,
+          isVerified: true,
+          commissionRate: 10,
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(sellerDocRef, newSeller, { merge: true });
+        setSellers(prev => {
+          if (prev.some(s => s.id === newSeller.id)) return prev;
+          const list = [...prev, newSeller];
+          try { localStorage.setItem('shakh_sellers', JSON.stringify(list)); } catch (e) {}
+          return list;
+        });
+      }
+    } catch (e) {
+      console.warn('Seller upsert check notice:', e);
     }
 
     if (isSupabaseConfigured) {

@@ -390,6 +390,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isSuperAdmin = currentUser?.role === 'admin' || currentUser?.email === 'shakh8002@gmail.com';
   
   const roleToCategoryMap: Partial<Record<UserRole, ProductCategory>> = {
+    seller: 'food',
     restaurant_owner: 'food',
     market_owner: 'market',
     clothes_seller: 'clothes',
@@ -401,16 +402,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     car_seller: 'cars'
   };
 
-  const sellerCategory = currentUser?.role ? roleToCategoryMap[currentUser.role] || null : null;
-  const isSeller = Boolean(sellerCategory);
+  const sellerCategory = currentUser?.category || (currentUser?.role ? roleToCategoryMap[currentUser.role] || null : null);
+  const isSeller = Boolean(sellerCategory) || currentUser?.role === 'seller' || Boolean(currentUser?.storeName);
 
   const sellerProfile: SellerProfile | null = (currentUser && isSeller)
     ? {
         id: `store-${currentUser.id}`,
         userId: currentUser.id,
-        storeName: currentUser.storeName || currentUser.fullName || 'فرۆشگا',
+        storeName: currentUser.storeName || currentUser.fullName || 'فرۆشگای من',
         slug: `store-${currentUser.id}`,
-        category: sellerCategory!,
+        category: sellerCategory || currentUser.category || 'food',
         description: 'فرۆشگای فەرمی لە شاخی',
         logoUrl: currentUser.avatarUrl || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
         coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
@@ -426,6 +427,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         createdAt: currentUser.createdAt || new Date().toISOString()
       }
     : null;
+
+  // Automatically ensure seller document is persisted in Firestore 'sellers' collection for customers
+  useEffect(() => {
+    if (sellerProfile && db) {
+      setDoc(doc(db, 'sellers', sellerProfile.id), sellerProfile, { merge: true }).catch((err) => {
+        console.warn('Auto-sync seller profile to Firestore sellers collection:', err);
+      });
+    }
+  }, [sellerProfile?.id, sellerProfile?.storeName, sellerProfile?.category, sellerProfile?.city]);
 
   const canManageCategory = (category: ProductCategory): boolean => {
     if (isSuperAdmin) return true;

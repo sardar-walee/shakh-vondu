@@ -40,7 +40,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const { currentUser } = useAuth();
 
   const product = products.find(p => p.id === productId) || products[0];
-  const seller = sellers.find(s => s.id === product?.sellerId);
+  const seller = sellers.find(s => s.id === product?.sellerId || s.userId === product?.sellerId || `store-${s.userId}` === product?.sellerId || s.id === `store-${product?.sellerId}`);
   const productReviews = reviews.filter(r => r.targetId === product?.id);
 
   const isFav = favoriteProductIds.includes(product?.id || '');

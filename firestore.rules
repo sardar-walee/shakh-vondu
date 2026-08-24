@@ -7,69 +7,86 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
     // 1. Users Collection
     match /users/{userId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
-    // 2. Sellers Collection (Public storefronts)
+    // 2. Sellers Collection (Public storefronts for all buyers)
     match /sellers/{sellerId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
-    // 3. Products Collection
+    // 3. Products Collection (Publicly visible to all customers across marketplace)
     match /products/{productId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
-    // 4. Cars Collection
+    // 4. Cars Collection (Publicly visible to all customers in Shakh Auto)
     match /cars/{carId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
     // 5. Orders Collection
     match /orders/{orderId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
-    // 6. Reviews & Ratings
+    // 6. Reviews & Ratings (Publicly visible to all customers)
     match /reviews/{reviewId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
     // 7. Seller Wallets & Financial Ledger
     match /wallets/{walletId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
     // 8. Seller Agreements
     match /agreements/{agreementId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
     // 9. User Feedbacks
     match /feedbacks/{feedbackId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
     // 10. Notifications
     match /notifications/{notificationId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
     // 11. Favorites Collection
     match /favorites/{favoriteId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
-    // 12. System Settings & Banners
+    // 12. System Settings & Banners (Publicly readable)
     match /settings/{settingId} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
 
     // Catch-All
     match /{document=**} {
-      allow read, write, delete: if true;
+      allow read: if true;
+      allow write: if true;
     }
   }
 }

@@ -103,7 +103,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
   const config = categoryConfig[category] || categoryConfig.food;
 
   // Filter products by category, subcategory, search, and city
-  let filteredProducts = products.filter(p => p.category === category && p.isAvailable);
+  let filteredProducts = products.filter(p => p.category === category && p.isAvailable !== false && p.productStatus !== 'hidden' && p.productStatus !== 'draft');
 
   if (selectedSubcategory !== 'all') {
     filteredProducts = filteredProducts.filter(p => p.subcategory === selectedSubcategory);
@@ -116,11 +116,16 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
     );
   }
 
-  if (selectedCity) {
-    // Check if seller matches city
-    const cityPrefix = selectedCity.split(' ')[0];
-    const sellerIdsInCity = sellers.filter(s => s.city.includes(cityPrefix)).map(s => s.id);
-    filteredProducts = filteredProducts.filter(p => sellerIdsInCity.includes(p.sellerId));
+  if (selectedCity && selectedCity !== 'all') {
+    const cityPrefix = selectedCity.split(' ')[0].toLowerCase();
+    filteredProducts = filteredProducts.filter(p => {
+      if ((p as any).city && (p as any).city.toLowerCase().includes(cityPrefix)) return true;
+      if ((p as any).sellerCity && (p as any).sellerCity.toLowerCase().includes(cityPrefix)) return true;
+      const seller = sellers.find(s => s.id === p.sellerId || s.userId === p.sellerId || `store-${s.userId}` === p.sellerId || s.id === `store-${p.sellerId}`);
+      if (seller && seller.city && seller.city.toLowerCase().includes(cityPrefix)) return true;
+      if (!seller) return true;
+      return false;
+    });
   }
 
   // Sort
@@ -134,9 +139,9 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
 
   // Filter sellers by category
   let categorySellers = sellers.filter(s => s.category === category);
-  if (selectedCity) {
-    const cityPrefix = selectedCity.split(' ')[0];
-    categorySellers = categorySellers.filter(s => s.city.includes(cityPrefix));
+  if (selectedCity && selectedCity !== 'all') {
+    const cityPrefix = selectedCity.split(' ')[0].toLowerCase();
+    categorySellers = categorySellers.filter(s => s.city && s.city.toLowerCase().includes(cityPrefix));
   }
 
   return (
