@@ -25,7 +25,8 @@ import {
   GeoLocation,
   StoreDriver,
   DeliveryMode,
-  OccasionBanner
+  OccasionBanner,
+  PointsSettings
 } from '../types';
 import { CAR_PACKAGES } from '../data/seedData';
 import { DEFAULT_MAWLID_BANNER } from '../data/occasionPresets';
@@ -156,6 +157,10 @@ interface MarketplaceContextType {
   toggleFavoriteSeller: (sellerId: string) => void;
 
   // Shakh & Business Owner Points Agreement & Role Points System
+  pointsSettings: PointsSettings;
+  updatePointsSettings: (newSettings: Partial<PointsSettings>) => Promise<void>;
+  calculateDiscountFromPoints: (points: number) => number;
+  calculatePointsRequiredForDiscount: (discountIQD: number) => number;
   shakhAgreements: ShakhPointsAgreement[];
   pointsTransactions: PointsTransaction[];
   getSellerAgreement: (sellerId: string) => ShakhPointsAgreement;
@@ -314,6 +319,24 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
     return {};
   });
+
+  // Points Settings Config (Default 150 points = 1 IQD)
+  const [pointsSettings, setPointsSettings] = useState<PointsSettings>(() => {
+    const saved = localStorage.getItem('shakh_points_settings');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return {
+      pointsPerIQD: 150,
+      minRedemptionPoints: 150,
+      lastUpdated: new Date().toISOString()
+    };
+  });
+
+  // Save pointsSettings to localStorage
+  useEffect(() => {
+    localStorage.setItem('shakh_points_settings', JSON.stringify(pointsSettings));
+  }, [pointsSettings]);
 
   // Shakh & Business Owner Points Agreements
   const [shakhAgreements, setShakhAgreements] = useState<ShakhPointsAgreement[]>(() => {
@@ -1014,19 +1037,58 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       } catch (e) {}
     }
 
+    // 1. Actionable request for store owner
     addNotification({
-      userId: currentUser.id,
-      title: 'داواکاری نوێ تۆمارکرا',
-      message: `داواکاری ژمارە ${newOrder.orderNumber} بە سەرکەوتوویی تۆمارکرا.`,
+      id: `req-${newOrder.id}-store-pending`,
+      userId: seller.userId || seller.id,
+      recipientId: seller.userId || seller.id,
+      orderId: newOrder.id,
+      orderNumber: newOrder.orderNumber,
+      title: `داواکاری نوێ #${newOrder.orderNumber}`,
+      message: `کڕیار ${newOrder.customerName} داواکارییەکی نوێی بە بڕی ${newOrder.total.toLocaleString()} د.ع ناردووە. تکایە پشکنینی بۆ بکە و پەسەندی بکە.`,
       type: 'order',
-      linkUrl: `/order/${newOrder.id}`
+      category: 'request',
+      status: 'info',
+      actionRequired: true,
+      actionType: 'store_accept',
+      linkUrl: 'notifications',
+      actionLabel: 'پەسەندکردنی داواکاری',
+      metadata: {
+        orderId: newOrder.id,
+        orderNumber: newOrder.orderNumber,
+        amount: newOrder.total,
+        itemsCount: newOrder.items.length,
+        customerName: newOrder.customerName,
+        customerPhone: newOrder.customerPhone,
+        deliveryAddress: newOrder.deliveryAddress,
+        deliveryCity: newOrder.deliveryCity,
+        deliveryFee: newOrder.deliveryFee,
+        sellerId: seller.id
+      }
     });
 
+    // 2. Status update for customer
     addNotification({
-      userId: seller.id,
-      title: 'داواکارییەکی نوێت بۆ هات!',
-      message: `کڕیار ${newOrder.customerName} داواکارییەکی نوێی بە بڕی ${newOrder.total.toLocaleString()} د.ع نارد.`,
-      type: 'order'
+      id: `notif-${newOrder.id}-cust-pending`,
+      userId: currentUser.id,
+      recipientId: currentUser.id,
+      orderId: newOrder.id,
+      orderNumber: newOrder.orderNumber,
+      title: `داواکاری تۆمارکرا #${newOrder.orderNumber}`,
+      message: `داواکارییەکەت بۆ ${seller.storeName} بە سەرکەوتوویی نێردرا و چاوەڕوانی وەڵامی فرۆشگایە.`,
+      type: 'order',
+      category: 'update',
+      status: 'info',
+      actionRequired: false,
+      actionType: 'customer_track',
+      linkUrl: 'order-tracking',
+      actionLabel: 'شوێنپێهەڵگرتن',
+      metadata: {
+        orderId: newOrder.id,
+        orderNumber: newOrder.orderNumber,
+        amount: newOrder.total,
+        sellerId: seller.id
+      }
     });
 
     return { success: true, orderId: newOrder.id, orderNumber: newOrder.orderNumber };
@@ -1215,38 +1277,200 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
       // Notifications for all roles
       addNotification({
+        id: `pts-${order.id}-cust`,
         userId: order.customerId,
+        recipientId: order.customerId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
         title: 'پۆینتی پاداشتی شاخ و خاوەن کار! 🎁',
-        message: `پیرۆزە! +${customerPointsEarned} پۆینت بۆ هەژمارەکەت زیادکرا لەسەر کڕینی داواکاری ${order.orderNumber} لە ${order.sellerName} (بەپێی ڕێککەوتنی شاخ).`,
-        type: 'points'
+        message: `پیرۆزە! +${customerPointsEarned} پۆینت بۆ هەژمارەکەت زیادکرا لەسەر کڕینی داواکاری ${order.orderNumber} لە ${order.sellerName}.`,
+        type: 'points',
+        category: 'update',
+        status: 'success'
       });
 
       addNotification({
+        id: `pts-${order.id}-store`,
         userId: order.sellerId,
+        recipientId: order.sellerId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
         title: 'پۆینتی گەشەی خاوەن کار! 📈',
         message: `+${sellerPointsEarned} پۆینت بۆ هەژماری فرۆشیارەکەت زیادکرا بەپێی ڕێککەوتنی شاخ و خاوەن کار (ئاستی ${sellerAgreement.tier}).`,
-        type: 'points'
+        type: 'points',
+        category: 'update',
+        status: 'success'
       });
 
       addNotification({
+        id: `pts-${order.id}-driver`,
         userId: dId,
+        recipientId: dId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
         title: 'پۆینتی کاپتن زیادکرا! 🛵',
         message: `داواکاری ${order.orderNumber} بە سەرکەوتوویی گەیەندرا. +${driverPointsEarned} پۆینتی شاخ بەدەستهات (قازانجی خاوێن: ${driverNetEarnings.toLocaleString()} د.ع).`,
-        type: 'delivery'
+        type: 'delivery',
+        category: 'update',
+        status: 'success'
       });
     }
 
-    addNotification({
-      userId: order.customerId,
-      title: 'گۆڕانکاری لە دۆخی داواکاری',
-      message: `دۆخی داواکاری ژمارە ${order.orderNumber} گۆڕدرا بۆ: ${status}`,
-      type: 'order'
-    });
+    // Role-tailored Order Progression Notifications
+    if (status === 'accepted') {
+      addNotification({
+        id: `notif-${order.id}-cust-accepted`,
+        userId: order.customerId,
+        recipientId: order.customerId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        title: `داواکاری پەسەندکرا #${order.orderNumber}`,
+        message: `فرۆشگای ${order.sellerName} داواکارییەکەت (${order.orderNumber})ی پەسەندکرد و ئامادەکاری دەستی پێکرد.`,
+        type: 'order',
+        category: 'update',
+        status: 'info',
+        actionRequired: false,
+        linkUrl: 'order-tracking',
+        metadata: { orderId: order.id, orderNumber: order.orderNumber, sellerId: order.sellerId }
+      });
+    } else if (status === 'preparing') {
+      addNotification({
+        id: `notif-${order.id}-cust-prep`,
+        userId: order.customerId,
+        recipientId: order.customerId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        title: `داواکاری لە ئامادەکردندایە #${order.orderNumber}`,
+        message: `فرۆشگای ${order.sellerName} سەرقاڵی ئامادەکردن و پێچانەوەی داواکارییەکەتە.`,
+        type: 'order',
+        category: 'update',
+        status: 'info',
+        actionRequired: false,
+        linkUrl: 'order-tracking',
+        metadata: { orderId: order.id, orderNumber: order.orderNumber, sellerId: order.sellerId }
+      });
+    } else if (status === 'ready') {
+      // If Shakh Captain network delivery, dispatch actionable request to all Shakh Captains
+      if (!order.isStoreDelivery && order.deliveryMode !== 'store_delivery') {
+        addNotification({
+          id: `req-${order.id}-shakh-captains-ready`,
+          userId: 'all_shakh_captains',
+          recipientId: 'all_shakh_captains',
+          recipientRole: 'all_shakh_captains',
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          title: `داواکاری گەیاندنی نوێ #${order.orderNumber}`,
+          message: `داواکاری نوێ لە ${order.sellerName} ئامادەیە بۆ گەیاندن (کرێی کاپتن: ${(order.deliveryFee || 3000).toLocaleString()} د.ع - شوێن: ${order.deliveryCity}).`,
+          type: 'delivery',
+          category: 'request',
+          status: 'warning',
+          actionRequired: true,
+          actionType: 'captain_accept',
+          linkUrl: 'delivery-dashboard',
+          actionLabel: 'وەرگرتنی گەیاندن',
+          metadata: {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            storeName: order.sellerName,
+            storeAddress: order.sellerAddress,
+            deliveryAddress: order.deliveryAddress,
+            deliveryCity: order.deliveryCity,
+            deliveryFee: order.deliveryFee || 3000,
+            amount: order.total,
+            captainType: 'shakh'
+          }
+        });
+      }
+
+      addNotification({
+        id: `notif-${order.id}-cust-ready`,
+        userId: order.customerId,
+        recipientId: order.customerId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        title: `داواکاری ئامادەیە #${order.orderNumber}`,
+        message: `داواکارییەکەت لە فرۆشگای ${order.sellerName} ئامادەیە و بەم زووانە بەڕێ دەکەوێت.`,
+        type: 'order',
+        category: 'update',
+        status: 'info',
+        actionRequired: false,
+        linkUrl: 'order-tracking',
+        metadata: { orderId: order.id, orderNumber: order.orderNumber, sellerId: order.sellerId }
+      });
+    } else if (status === 'picked_up' || status === 'on_the_way') {
+      addNotification({
+        id: `notif-${order.id}-cust-ontheway`,
+        userId: order.customerId,
+        recipientId: order.customerId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        title: `داواکاری لە ڕێگادایە بۆ لات! 🛵 (#${order.orderNumber})`,
+        message: `کاپتنی گەیاندن داواکارییەکەی لە ${order.sellerName} وەرگرت و بەرەو ناونیشانەکەت بەڕێکەوتووە.`,
+        type: 'order',
+        category: 'update',
+        status: 'warning',
+        actionRequired: false,
+        linkUrl: 'order-tracking',
+        metadata: { orderId: order.id, orderNumber: order.orderNumber, sellerId: order.sellerId }
+      });
+    } else if (status === 'delivered') {
+      addNotification({
+        id: `notif-${order.id}-cust-delivered`,
+        userId: order.customerId,
+        recipientId: order.customerId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        title: `داواکاری بە سەرکەوتوویی گەیەندرا! 🎉 (#${order.orderNumber})`,
+        message: `سوپاس بۆ کڕین لە پلاتفۆرمی شاخ. دەتوانیت هەڵسەنگاندن بۆ کوالیتی و شۆفێر بنووسیت.`,
+        type: 'order',
+        category: 'update',
+        status: 'success',
+        actionRequired: false,
+        linkUrl: 'customer-orders',
+        actionLabel: 'هەڵسەنگاندن بنووسە',
+        metadata: { orderId: order.id, orderNumber: order.orderNumber, sellerId: order.sellerId }
+      });
+
+      addNotification({
+        id: `notif-${order.id}-store-delivered`,
+        userId: order.sellerId,
+        recipientId: order.sellerId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        title: `داواکاری #${order.orderNumber} گەیەندرا`,
+        message: `داواکاری بە سەرکەوتوویی لەلایەن کاپتن گەیەندرا و باڵانسی فرۆشگاکەت نوێکرایەوە.`,
+        type: 'order',
+        category: 'update',
+        status: 'success',
+        metadata: { orderId: order.id, orderNumber: order.orderNumber, sellerId: order.sellerId }
+      });
+    } else if (status === 'cancelled') {
+      addNotification({
+        id: `notif-${order.id}-cust-cancelled`,
+        userId: order.customerId,
+        recipientId: order.customerId,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        title: `داواکاری هەڵوەشێنرایەوە ❌ (#${order.orderNumber})`,
+        message: `داواکاری ژمارە ${order.orderNumber} هەڵوەشێنرایەوە: ${note || 'لە لایەن فرۆشگا یان سیستەم'}.`,
+        type: 'order',
+        category: 'update',
+        status: 'error',
+        actionRequired: false,
+        metadata: { orderId: order.id, orderNumber: order.orderNumber, sellerId: order.sellerId }
+      });
+    }
 
     return { success: true };
   };
 
   const assignDeliveryAgent = async (orderId: string, agentId: string, agentName: string, agentPhone: string) => {
+    const existingOrder = orders.find(o => o.id === orderId);
+    if (existingOrder?.driverId && existingOrder.driverId !== agentId) {
+      console.warn('Order already assigned to another captain');
+      return;
+    }
+
     setOrders(prev => prev.map(o => (o.id === orderId ? {
       ...o,
       deliveryAgentId: agentId,
@@ -1255,7 +1479,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       driverId: agentId,
       driverName: agentName,
       driverPhone: agentPhone,
-      status: 'picked_up'
+      status: 'picked_up',
+      updatedAt: new Date().toISOString()
     } : o)));
 
     try {
@@ -1266,16 +1491,60 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         driverId: agentId,
         driverName: agentName,
         driverPhone: agentPhone,
-        status: 'picked_up'
+        status: 'picked_up',
+        updatedAt: new Date().toISOString()
       });
     } catch (e) {}
 
+    // 1. Captain notification
     addNotification({
+      id: `notif-${orderId}-captain-${agentId}`,
       userId: agentId,
-      title: 'داواکاری نوێت بۆ گەیاندن دیاریکرا',
-      message: `تۆ وەک شۆفێری گەیاندن بۆ داواکاری دیاریکرایت.`,
-      type: 'delivery'
+      recipientId: agentId,
+      orderId: orderId,
+      orderNumber: existingOrder?.orderNumber,
+      title: 'داواکاری گەیاندنت وەرگرت 🛵',
+      message: `تۆ وەک کاپتنی فەرمی بۆ گەیاندنی داواکاری #${existingOrder?.orderNumber || ''} دیاریکرایت.`,
+      type: 'delivery',
+      category: 'update',
+      status: 'success',
+      actionRequired: true,
+      actionType: 'captain_deliver',
+      actionLabel: 'بینینی لە داشبۆرد',
+      linkUrl: 'delivery-dashboard'
     });
+
+    // 2. Customer notification
+    if (existingOrder) {
+      addNotification({
+        id: `notif-${orderId}-cust-captain-assigned`,
+        userId: existingOrder.customerId,
+        recipientId: existingOrder.customerId,
+        orderId: existingOrder.id,
+        orderNumber: existingOrder.orderNumber,
+        title: 'کاپتنی گەیاندن دیاریکرا 🛵',
+        message: `کاپتن (${agentName}) داواکاری #${existingOrder.orderNumber} لە فرۆشگا وەردەگرێت و دەیهێنێت بۆت.`,
+        type: 'delivery',
+        category: 'update',
+        status: 'info',
+        linkUrl: 'order-tracking',
+        actionLabel: 'شوێنپێهەڵگرتن'
+      });
+
+      // 3. Store notification
+      addNotification({
+        id: `notif-${orderId}-store-captain-assigned`,
+        userId: existingOrder.sellerId,
+        recipientId: existingOrder.sellerId,
+        orderId: existingOrder.id,
+        orderNumber: existingOrder.orderNumber,
+        title: 'کاپتن بەرەو دوکان بەڕێکەوت',
+        message: `کاپتن (${agentName} - ${agentPhone}) داواکاری #${existingOrder.orderNumber}ی وەرگرت و دێت بۆ وەرگرتنی.`,
+        type: 'delivery',
+        category: 'update',
+        status: 'info'
+      });
+    }
   };
 
   const assignDriverToOrder = async (orderId: string, driverId: string, driverName: string, driverPhone?: string) => {
@@ -1733,6 +2002,44 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     });
   };
 
+  const updatePointsSettings = async (newSettings: Partial<PointsSettings>) => {
+    setPointsSettings(prev => {
+      const updated: PointsSettings = {
+        ...prev,
+        ...newSettings,
+        lastUpdated: new Date().toISOString()
+      };
+      return updated;
+    });
+
+    // Also persist to Firestore if available
+    try {
+      if (db) {
+        await setDoc(doc(db, 'system_settings', 'points_config'), {
+          ...pointsSettings,
+          ...newSettings,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn('Could not sync points settings to Firestore:', e);
+    }
+  };
+
+  // Safe currency discount calculation: discountIQD = pointsUsed / pointsPerIQD (150 pts = 1 IQD)
+  const calculateDiscountFromPoints = (points: number): number => {
+    if (!points || points <= 0) return 0;
+    const rate = pointsSettings.pointsPerIQD || 150;
+    return points / rate;
+  };
+
+  // Safe points required calculation: pointsRequired = discountIQD * pointsPerIQD
+  const calculatePointsRequiredForDiscount = (discountIQD: number): number => {
+    if (!discountIQD || discountIQD <= 0) return 0;
+    const rate = pointsSettings.pointsPerIQD || 150;
+    return Math.round(discountIQD * rate);
+  };
+
   const getUserPointsWallet = (uId: string, role: UserRole = 'customer'): UserPointsWallet => {
     if (userPointsWallets[uId]) {
       return userPointsWallets[uId];
@@ -2087,6 +2394,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         getProductReviews,
         toggleFavoriteProduct,
         toggleFavoriteSeller,
+        pointsSettings,
+        updatePointsSettings,
+        calculateDiscountFromPoints,
+        calculatePointsRequiredForDiscount,
         shakhAgreements,
         pointsTransactions,
         getSellerAgreement,

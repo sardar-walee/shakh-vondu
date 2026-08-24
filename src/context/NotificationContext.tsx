@@ -1,117 +1,36 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { NotificationItem, NotificationType, NotificationStatus } from '../types';
+import { NotificationItem, NotificationType, NotificationStatus, RequestCategory, RequestActionType } from '../types';
+import { db } from '../firebase';
+import {
+  collection,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  onSnapshot
+} from 'firebase/firestore';
 
 interface NotificationContextType {
   notifications: NotificationItem[];
   userNotifications: NotificationItem[];
   unreadCount: number;
+  actionableCount: number;
   activeToast: NotificationItem | null;
-  addNotification: (notification: Omit<NotificationItem, 'id' | 'createdAt' | 'isRead'>) => NotificationItem;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  deleteNotification: (id: string) => void;
-  clearNotifications: () => void;
+  addNotification: (notification: Omit<NotificationItem, 'id' | 'createdAt' | 'isRead'> & { id?: string }) => NotificationItem;
+  sendNotification: (notification: Omit<NotificationItem, 'id' | 'createdAt' | 'isRead'> & { id?: string }) => Promise<NotificationItem>;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  clearNotifications: () => Promise<void>;
   dismissToast: () => void;
-  simulateNotification: (scenario:
-    | 'order_accepted'
-    | 'order_preparing'
-    | 'order_out_for_delivery'
-    | 'order_delivered'
-    | 'order_cancelled'
-    | 'payment_success'
-    | 'payment_failed'
-    | 'car_expiring_soon'
-    | 'car_expired'
-    | 'seller_new_order'
-  ) => void;
+  markActionDone: (id: string) => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-const SEED_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif-1',
-    userId: 'all',
-    title: 'بەخێربێیت بۆ پلاتفۆرمی شاخی',
-    message: 'داواکارییەکانت لە ڕێگەی شاخی بە خێراترین کات دەگاتە دەستت بە باشترین نرخ.',
-    type: 'system',
-    status: 'info',
-    isRead: true,
-    createdAt: new Date(Date.now() - 86400000).toISOString()
-  },
-  {
-    id: 'notif-2',
-    userId: 'current',
-    title: 'داواکاری گەیەندرا #SHK-8901',
-    message: 'داواکارییەکەت لە چێشتخانەی دیلان بە سەرکەوتوویی گەیەندرا.',
-    type: 'order',
-    status: 'success',
-    isRead: false,
-    linkUrl: 'order-tracking',
-    actionLabel: 'بینینی داواکاری',
-    metadata: {
-      orderId: 'ord-1001',
-      orderNumber: 'SHK-8901',
-      amount: 52500
-    },
-    createdAt: new Date(Date.now() - 7200000).toISOString()
-  },
-  {
-    id: 'notif-3',
-    userId: 'current',
-    title: 'پارەدانی سەرکەوتوو (FIB)',
-    message: 'بڕی ١٠,٠٠٠ د.ع بۆ پاکێجی VIP ئۆتۆمبێلی Toyota Camry 2023 وەرگیرا.',
-    type: 'payment',
-    status: 'success',
-    isRead: false,
-    linkUrl: 'car-marketplace',
-    actionLabel: 'بینینی ڕیکلام',
-    metadata: {
-      carAdId: 'car-1',
-      amount: 10000,
-      paymentMethod: 'fib'
-    },
-    createdAt: new Date(Date.now() - 14400000).toISOString()
-  },
-  {
-    id: 'notif-4',
-    userId: 'current',
-    title: 'ئاگاداری: ڕیکلامەکەت بەم زووانە بەسەردەچێت',
-    message: 'ڕیکلامی ئۆتۆمبێلی Hyundai Tucson 2022 پاش ٢ ڕۆژی تر بەسەردەچێت. ئێستا نوێی بکەرەوە تا لە پێشەوە بمێنێتەوە.',
-    type: 'car',
-    status: 'warning',
-    isRead: false,
-    linkUrl: 'post-car-ad',
-    actionLabel: 'نوێکردنەوەی پاکێج',
-    metadata: {
-      carAdId: 'car-2',
-      daysLeft: 2
-    },
-    createdAt: new Date(Date.now() - 28800000).toISOString()
-  },
-  {
-    id: 'notif-5',
-    userId: 'store-rest-1',
-    title: 'داواکارییەکی نوێ گەیشت! #SHK-9240',
-    message: 'داواکاری نوێ لەلایەن کڕیار (ڕێبین ئەحمەد) بە بڕی ٤٢,٠٠٠ د.ع تۆمارکرا.',
-    type: 'seller',
-    status: 'info',
-    isRead: false,
-    linkUrl: 'seller-dashboard',
-    actionLabel: 'پەسەندکردنی داواکاری',
-    metadata: {
-      orderId: 'ord-1002',
-      orderNumber: 'SHK-9240',
-      sellerId: 'store-rest-1',
-      amount: 42000
-    },
-    createdAt: new Date(Date.now() - 3600000).toISOString()
-  }
-];
-
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    const saved = localStorage.getItem('shakh_notifications');
+    const saved = localStorage.getItem('shakh_realtime_notifications');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
@@ -125,12 +44,66 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const [activeToast, setActiveToast] = useState<NotificationItem | null>(null);
 
+  // Sync with Local Storage as resilient client cache
   useEffect(() => {
-    localStorage.setItem('shakh_notifications', JSON.stringify(notifications));
+    localStorage.setItem('shakh_realtime_notifications', JSON.stringify(notifications));
   }, [notifications]);
 
-  // Play audio chime for real-time alert
-  const playChime = useCallback((status?: NotificationStatus) => {
+  // Firebase Firestore Real-Time Listener
+  useEffect(() => {
+    let unsubNotifications: () => void;
+
+    try {
+      const notifCol = collection(db, 'notifications');
+      unsubNotifications = onSnapshot(
+        notifCol,
+        (snapshot) => {
+          const remoteList: NotificationItem[] = [];
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data() as NotificationItem;
+            remoteList.push({
+              ...data,
+              id: data.id || docSnap.id
+            });
+          });
+
+          // Sort by creation date descending
+          remoteList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+          // Merge deduplicated
+          setNotifications(prev => {
+            const map = new Map<string, NotificationItem>();
+            // Remote items first
+            remoteList.forEach(item => map.set(item.id, item));
+            // Add local-only items if not yet in Firestore
+            prev.forEach(item => {
+              if (!map.has(item.id)) {
+                map.set(item.id, item);
+              }
+            });
+            const merged = Array.from(map.values());
+            merged.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+            return merged;
+          });
+        },
+        (err) => {
+          console.warn('Notifications onSnapshot notice:', err);
+        }
+      );
+    } catch (e) {
+      console.warn('Firestore notifications listener init notice:', e);
+    }
+
+    return () => {
+      if (unsubNotifications) unsubNotifications();
+    };
+  }, []);
+
+  // Subtle clean chime sound ONLY for actionable high-priority requests
+  const playChime = useCallback((status?: NotificationStatus, actionRequired?: boolean) => {
+    // Only play chime if action is required or status is critical
+    if (!actionRequired && status !== 'warning' && status !== 'error') return;
+
     try {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return;
@@ -139,41 +112,29 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const gain = ctx.createGain();
 
       if (status === 'error') {
-        // Double low buzz
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(300, ctx.currentTime);
-        osc.frequency.setValueAtTime(220, ctx.currentTime + 0.12);
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        osc.frequency.setValueAtTime(260, ctx.currentTime);
+        osc.frequency.setValueAtTime(200, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.3);
-      } else if (status === 'warning') {
-        // Double ding
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-        osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1); // E5
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.35);
       } else {
-        // High upbeat bell (D5 -> A5)
+        // High pleasant priority alert (D5 -> A5)
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15); // A5
-        gain.gain.setValueAtTime(0.14, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.38);
         osc.connect(gain);
         gain.connect(ctx.destination);
         osc.start();
-        osc.stop(ctx.currentTime + 0.4);
+        osc.stop(ctx.currentTime + 0.38);
       }
     } catch {
-      // Audio playback silent fail
+      // Audio playback silent fallback
     }
   }, []);
 
@@ -190,211 +151,146 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return () => clearTimeout(timer);
   }, [activeToast]);
 
-  const addNotification = useCallback((item: Omit<NotificationItem, 'id' | 'createdAt' | 'isRead'>): NotificationItem => {
+  // Core Add Notification with Deduplication
+  const addNotification = useCallback((item: Omit<NotificationItem, 'id' | 'createdAt' | 'isRead'> & { id?: string }): NotificationItem => {
+    const deterministicId = item.id || `notif-${item.orderId || Date.now()}-${item.recipientId || item.userId}-${item.status || 'info'}-${item.actionType || 'none'}`;
+    const now = new Date().toISOString();
+
     const newNotif: NotificationItem = {
       ...item,
-      id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: deterministicId,
+      userId: item.userId || item.recipientId || 'current',
+      recipientId: item.recipientId || item.userId,
+      category: item.category || (item.actionRequired ? 'request' : 'update'),
       status: item.status || 'info',
+      actionRequired: item.actionRequired ?? false,
       isRead: false,
-      createdAt: new Date().toISOString()
+      createdAt: now,
+      updatedAt: now
     };
 
-    setNotifications(prev => [newNotif, ...prev]);
-    setActiveToast(newNotif);
-    playChime(newNotif.status);
+    setNotifications(prev => {
+      // Avoid duplicate cards
+      const existsIndex = prev.findIndex(n => n.id === deterministicId);
+      if (existsIndex >= 0) {
+        const updated = [...prev];
+        updated[existsIndex] = { ...updated[existsIndex], ...newNotif };
+        return updated;
+      }
+      return [newNotif, ...prev];
+    });
+
+    if (newNotif.actionRequired || newNotif.status === 'warning') {
+      setActiveToast(newNotif);
+      playChime(newNotif.status, newNotif.actionRequired);
+    }
+
+    // Persist to Firebase Firestore
+    try {
+      setDoc(doc(db, 'notifications', deterministicId), newNotif).catch(e => {
+        console.warn('Firestore setDoc notification notice:', e);
+      });
+    } catch (e) {
+      console.warn('Firestore notification write notice:', e);
+    }
 
     return newNotif;
   }, [playChime]);
 
-  const markAsRead = useCallback((id: string) => {
+  const sendNotification = useCallback(async (item: Omit<NotificationItem, 'id' | 'createdAt' | 'isRead'> & { id?: string }): Promise<NotificationItem> => {
+    return addNotification(item);
+  }, [addNotification]);
+
+  const markAsRead = useCallback(async (id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, isRead: true } : n));
+    try {
+      await updateDoc(doc(db, 'notifications', id), { isRead: true });
+    } catch (e) {}
   }, []);
 
-  const markAllAsRead = useCallback(() => {
+  const markAllAsRead = useCallback(async () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+    try {
+      // Background batch update can be handled per doc
+    } catch (e) {}
   }, []);
 
-  const deleteNotification = useCallback((id: string) => {
+  const markActionDone = useCallback(async (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, actionRequired: false, isRead: true, updatedAt: new Date().toISOString() } : n));
+    try {
+      await updateDoc(doc(db, 'notifications', id), { actionRequired: false, isRead: true, updatedAt: new Date().toISOString() });
+    } catch (e) {}
+  }, []);
+
+  const deleteNotification = useCallback(async (id: string) => {
     setNotifications(prev => prev.filter(n => n.id !== id));
+    try {
+      await deleteDoc(doc(db, 'notifications', id));
+    } catch (e) {}
   }, []);
 
-  const clearNotifications = useCallback(() => {
+  const clearNotifications = useCallback(async () => {
     setNotifications([]);
   }, []);
 
-  // Retrieve stored user id for filtering
-  const getCurrentUserId = (): string => {
+  // Retrieve current user details safely
+  const getCurrentUser = () => {
     try {
       const saved = localStorage.getItem('shakh_current_user');
-      if (saved) {
-        const u = JSON.parse(saved);
-        return u.id || 'current';
-      }
+      if (saved) return JSON.parse(saved);
     } catch {
-      // fallback
+      return null;
     }
-    return 'current';
+    return null;
   };
 
-  const currentUserId = getCurrentUserId();
+  const currentUser = getCurrentUser();
+  const currentUserId = currentUser?.id || 'guest';
+  const currentUserRole = currentUser?.role || 'customer';
+  const isSuperAdmin = currentUserRole === 'admin' || currentUser?.email === 'shakh8002@gmail.com';
+  const isDeliveryAgent = currentUserRole === 'delivery_agent';
+  const isStoreDriver = currentUserRole === 'store_driver';
 
-  // Filter user specific notifications
+  // Filter role-targeted notifications
   const userNotifications = notifications.filter(n => {
-    if (n.userId === 'all' || n.userId === 'current') return true;
-    if (n.userId === currentUserId) return true;
-    // Also match role/store if user is store owner or admin
-    return true; // Keep accessible for interactive demo and multi-role views
+    // 1. Explicit recipient ID matches current user
+    if (n.userId === currentUserId || n.recipientId === currentUserId) return true;
+    if (n.userId === 'current' || n.userId === 'all') return true;
+
+    // 2. Super Admin sees all admin notifications and store approval requests
+    if (isSuperAdmin) {
+      if (n.recipientRole === 'all_admins' || n.recipientId === 'all_admins' || n.type === 'admin' || n.type === 'store_approval') {
+        return true;
+      }
+    }
+
+    // 3. Shakh Captain sees broadcast Shakh delivery requests
+    if (isDeliveryAgent) {
+      if (n.recipientRole === 'all_shakh_captains' || n.recipientId === 'all_shakh_captains') {
+        return true;
+      }
+    }
+
+    // 4. Store Owner matching store ID or store role
+    if (currentUser?.storeName || currentUserRole.includes('seller') || currentUserRole.includes('owner')) {
+      const storeId = `store-${currentUserId}`;
+      if (n.recipientId === storeId || n.userId === storeId || n.metadata?.sellerId === storeId || n.metadata?.sellerId === currentUserId) {
+        return true;
+      }
+    }
+
+    // 5. Store Driver matching their store ID
+    if (isStoreDriver) {
+      if (n.recipientId === currentUserId || n.metadata?.captainPhone === currentUser?.phone) {
+        return true;
+      }
+    }
+
+    return false;
   });
 
   const unreadCount = userNotifications.filter(n => !n.isRead).length;
-
-  // Real-time Event Simulator Helper
-  const simulateNotification = useCallback((scenario:
-    | 'order_accepted'
-    | 'order_preparing'
-    | 'order_out_for_delivery'
-    | 'order_delivered'
-    | 'order_cancelled'
-    | 'payment_success'
-    | 'payment_failed'
-    | 'car_expiring_soon'
-    | 'car_expired'
-    | 'seller_new_order'
-  ) => {
-    const randomOrderNum = `SHK-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    switch (scenario) {
-      case 'order_accepted':
-        addNotification({
-          userId: 'current',
-          title: `داواکاری ${randomOrderNum} پەسەندکرا`,
-          message: 'چێشتخانە/فرۆشگا داواکارییەکەی پەسەندکرد و ئامادەکاری دەستی پێکرد.',
-          type: 'order',
-          status: 'info',
-          linkUrl: 'order-tracking',
-          actionLabel: 'شوێنپێهەڵگرتن',
-          metadata: { orderNumber: randomOrderNum }
-        });
-        break;
-
-      case 'order_preparing':
-        addNotification({
-          userId: 'current',
-          title: `داواکاری ${randomOrderNum} لە ئامادەکردندایە`,
-          message: 'چێشتخانە سەرقاڵی ئامادەکردنی خواردن و بەستەبەندییە بە پاکوخاوێنی.',
-          type: 'order',
-          status: 'info',
-          linkUrl: 'order-tracking',
-          actionLabel: 'بینینی دۆخ',
-          metadata: { orderNumber: randomOrderNum }
-        });
-        break;
-
-      case 'order_out_for_delivery':
-        addNotification({
-          userId: 'current',
-          title: `داواکاری ${randomOrderNum} لە ڕێگادایە بۆ لات! 🛵`,
-          message: 'شۆفێری شاخی داواکارییەکەی لە فرۆشگا وەرگرت و بەرەو ناونیشانەکەت بەڕێکەوتووە.',
-          type: 'order',
-          status: 'warning',
-          linkUrl: 'order-tracking',
-          actionLabel: 'شوێنپێهەڵگرتنی شۆفێر',
-          metadata: { orderNumber: randomOrderNum }
-        });
-        break;
-
-      case 'order_delivered':
-        addNotification({
-          userId: 'current',
-          title: `داواکاری ${randomOrderNum} بە سەرکەوتوویی گەیەندرا! 🎉`,
-          message: 'سوپاس بۆ کڕین لە شاخی. دەتوانیت هەڵسەنگاندن بۆ کوالیتی و شۆفێر بنووسیت.',
-          type: 'order',
-          status: 'success',
-          linkUrl: 'customer-orders',
-          actionLabel: 'هەڵسەنگاندن بنووسە',
-          metadata: { orderNumber: randomOrderNum }
-        });
-        break;
-
-      case 'order_cancelled':
-        addNotification({
-          userId: 'current',
-          title: `داواکاری ${randomOrderNum} هەڵوەشێنرایەوە ❌`,
-          message: 'داواکارییەکە بەهۆی تەواوبوونی بڕی کاڵاکە یان لەسەر داوای کڕیار هەڵوەشێنرایەوە.',
-          type: 'order',
-          status: 'error',
-          linkUrl: 'customer-orders',
-          actionLabel: 'بینینی هۆکار',
-          metadata: { orderNumber: randomOrderNum }
-        });
-        break;
-
-      case 'payment_success':
-        addNotification({
-          userId: 'current',
-          title: 'پارەدانی سەرکەوتوو 💳',
-          message: 'بڕی ١٠,٠٠٠ د.ع بە سەرکەوتوویی لە ڕێگەی FastPay درا و ڕیکلامەکەت چالاک بوو.',
-          type: 'payment',
-          status: 'success',
-          linkUrl: 'car-marketplace',
-          actionLabel: 'بینینی پسوولە',
-          metadata: { amount: 10000, paymentMethod: 'fastpay' }
-        });
-        break;
-
-      case 'payment_failed':
-        addNotification({
-          userId: 'current',
-          title: 'پارەدان سەرکەوتوو نەبوو! ⚠️',
-          message: 'پرۆسەی پارەدان شکستی هێنا بەهۆی بەردەست نەبوونی باڵانسی پێویست یان کێشەی هێڵ.',
-          type: 'payment',
-          status: 'error',
-          linkUrl: 'checkout',
-          actionLabel: 'دووبارە پارەدان',
-          metadata: { reason: 'insufficient_funds' }
-        });
-        break;
-
-      case 'car_expiring_soon':
-        addNotification({
-          userId: 'current',
-          title: 'ئاگاداری: ڕیکلامی ئۆتۆمبێل بەم زووانە بەسەردەچێت ⏳',
-          message: 'ڕیکلامی ئۆتۆمبێلی (Mercedes-Benz C300 2023) پاش ٢ ڕۆژی تر لە پێشانگای سەرەکی لادەبرێت.',
-          type: 'car',
-          status: 'warning',
-          linkUrl: 'post-car-ad',
-          actionLabel: 'نوێکردنەوەی پاکێج',
-          metadata: { daysLeft: 2 }
-        });
-        break;
-
-      case 'car_expired':
-        addNotification({
-          userId: 'current',
-          title: 'ڕیکلامی ئۆتۆمبێلەکەت بەسەرچوو 🚫',
-          message: 'ماوەی پاکێجی ڕیکلامەکەت کۆتایی هات. دەتوانیت ئێستا نوێی بکەیتەوە بە پاکێجی نوێ.',
-          type: 'car',
-          status: 'error',
-          linkUrl: 'post-car-ad',
-          actionLabel: 'نوێکردنەوە ئێستا',
-          metadata: { daysLeft: 0 }
-        });
-        break;
-
-      case 'seller_new_order':
-        addNotification({
-          userId: 'store-rest-1',
-          title: `داواکارییەکی نوێ گەیشت! 🔔 (${randomOrderNum})`,
-          message: 'کڕیارێک داواکارییەکی نوێی بە بڕی ٣٨,٥٠٠ د.ع بۆ چێشتخانەکەت تۆمارکرد. تکایە پشکنینی بۆ بکە.',
-          type: 'seller',
-          status: 'info',
-          linkUrl: 'seller-dashboard',
-          actionLabel: 'بینینی لە داشبۆرد',
-          metadata: { orderNumber: randomOrderNum, amount: 38500 }
-        });
-        break;
-    }
-  }, [addNotification]);
+  const actionableCount = userNotifications.filter(n => n.actionRequired).length;
 
   return (
     <NotificationContext.Provider
@@ -402,14 +298,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         notifications,
         userNotifications,
         unreadCount,
+        actionableCount,
         activeToast,
         addNotification,
+        sendNotification,
         markAsRead,
         markAllAsRead,
         deleteNotification,
         clearNotifications,
         dismissToast,
-        simulateNotification
+        markActionDone
       }}
     >
       {children}

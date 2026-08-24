@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { CarPackageBadge } from '../components/common/Badge';
 import { CarCountdownTimer } from '../components/common/CarCountdownTimer';
-import { ShareModal } from '../components/common/ShareModal';
+import { ShareModal, SocialShareBar } from '../components/common/ShareModal';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
 import { CarAd } from '../types';
@@ -190,10 +190,11 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate 
 
             <button
               onClick={() => setShowShareModal(true)}
-              className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-600 hover:text-[#2563EB] hover:bg-slate-100 transition-colors cursor-pointer"
-              title="هاوبەشکردنی ڕیکلام"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 hover:text-[#2563EB] hover:bg-blue-50/50 hover:border-blue-200 transition-colors cursor-pointer text-xs font-bold shadow-xs"
+              title="هاوبەشکردنی ڕیکلام لە سۆشیاڵ میدیا"
             >
-              <Share2 className="w-5 h-5" />
+              <Share2 className="w-4 h-4 text-[#2563EB]" />
+              <span className="hidden sm:inline">هاوبەشکردن</span>
             </button>
           </div>
 
@@ -362,6 +363,23 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate 
             <div className="pt-2 text-[11px] text-slate-400 text-center">
               شاخی بەرپرس نییە لە گرێبەستی کڕین و فرۆشتنی نێوان کڕیار و فرۆشیار.
             </div>
+          </div>
+
+          {/* Social Share Card for WhatsApp, Telegram, Facebook */}
+          <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-3">
+            <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5 border-b border-slate-100 pb-2">
+              <Share2 className="w-3.5 h-3.5 text-[#2563EB]" />
+              <span>هاوبەشکردنی ئەم ئۆتۆمبێلە (Social Share)</span>
+            </h4>
+            <p className="text-[11px] text-slate-500">
+              بەستەری ئەم ئۆتۆمبێلە لە تۆڕە کۆمەڵایەتییەکان هاوبەش بکە تا زووتر کڕیاری بۆ بدۆزرێتەوە:
+            </p>
+            <SocialShareBar
+              title={car.title}
+              description={`ئۆتۆمبێلی ${car.title} (${car.year}) بە نرخی ${car.priceIqd.toLocaleString()} د.ع لە شاخ`}
+              url={`${window.location.origin}/#car-${car.id}`}
+              onOpenModal={() => setShowShareModal(true)}
+            />
           </div>
 
         </div>

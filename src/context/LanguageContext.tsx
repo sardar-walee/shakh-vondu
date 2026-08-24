@@ -15,6 +15,7 @@ const VALID_LANGUAGES: Language[] = ['ku', 'ku_badini', 'ar', 'en', 'tr', 'fa'];
 
 interface LanguageContextType {
   language: Language;
+  currentLanguage: Language;
   setLanguage: (lang: Language) => void;
   dir: 'rtl' | 'ltr';
   t: (keyOrText: string, params?: Record<string, string | number>) => string;
@@ -184,6 +185,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   return (
     <LanguageContext.Provider value={{
       language,
+      currentLanguage: language,
       setLanguage,
       dir,
       t,

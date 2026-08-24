@@ -183,6 +183,58 @@ export interface Product {
   skinType?: string;
   volume?: string;
 
+  // Additional comprehensive category fields
+  rewardPoints?: number;
+  productStatus?: 'draft' | 'pending_review' | 'active' | 'out_of_stock' | 'hidden' | 'rejected' | 'sold' | 'expired';
+  rejectionReason?: string;
+  condition?: 'new' | 'used' | 'refurbished';
+  clothingStyle?: string;
+  fit?: string;
+  pattern?: string;
+  season?: string;
+  sleeveType?: string;
+  neckType?: string;
+  careInstructions?: string;
+  countryOfOrigin?: string;
+  packageSize?: string;
+  productionDate?: string;
+  expiryDate?: string;
+  barcode?: string;
+  calories?: number;
+  portionSize?: string;
+  allergens?: string[];
+  isVegan?: boolean;
+  spicyLevel?: 'none' | 'mild' | 'medium' | 'extra_spicy';
+  addOns?: { name: string; price: number }[];
+  meatOrigin?: string;
+  animalType?: string;
+  isHalal?: boolean;
+  boneStatus?: 'bone_in' | 'boneless';
+  isFreshOrFrozen?: 'fresh' | 'frozen';
+  packagingType?: string;
+  produceType?: string;
+  produceVariety?: string;
+  produceGrade?: string;
+  storageTemperature?: string;
+  storageCapacity?: string;
+  ramSize?: string;
+  processor?: string;
+  screenSize?: string;
+  batteryCapacity?: string;
+  operatingSystem?: string;
+  connectivity?: string;
+  paoMonths?: number;
+  isAuthenticVerified?: boolean;
+  hairType?: string;
+  usageInstructions?: string;
+  deliveryOptions?: {
+    isDeliveryAvailable?: boolean;
+    isPickupAvailable?: boolean;
+    deliveryFee?: number;
+    freeDeliveryThreshold?: number;
+  };
+  draftSavedAt?: string;
+
   // Cars / Vehicles Category specific fields
   year?: number;
   mileageKm?: number;
@@ -328,10 +380,12 @@ export interface CarAd {
   mileageKm: number;
   priceIqd: number;
   priceUsd?: number;
-  fuelType: 'gasoline' | 'diesel' | 'hybrid' | 'electric';
-  transmission: 'automatic' | 'manual';
+  isNegotiable?: boolean;
+  fuelType: 'gasoline' | 'diesel' | 'hybrid' | 'electric' | 'plug_in_hybrid' | 'lpg' | 'other';
+  transmission: 'automatic' | 'manual' | 'cvt' | 'dct' | 'other';
   color: string;
   city: string;
+  area?: string;
   locationDetails?: string;
   damageStatus?: string;
   licensePlateStatus?: string;
@@ -349,6 +403,52 @@ export interface CarAd {
   sharesCount?: number;
   isHidden?: boolean;
   createdAt: string;
+
+  // Extended Professional Vehicle Specifications
+  trim?: string;
+  bodyType?: string;
+  sellerType?: 'private' | 'showroom' | 'dealer';
+  carCondition?: 'new' | 'used';
+  usedConditionGrade?: 'excellent' | 'very_good' | 'good' | 'needs_repair';
+  engineType?: string;
+  engineSize?: string;
+  cylinders?: number;
+  hasTurbo?: boolean;
+  hasSupercharger?: boolean;
+  horsepower?: number;
+  torque?: number;
+  drivetrain?: 'FWD' | 'RWD' | 'AWD' | '4WD';
+  interiorColor?: string;
+  doorsCount?: number;
+  seatsCount?: number;
+  wheelSizeInch?: number;
+  tireCondition?: string;
+  sunroofType?: 'none' | 'sunroof' | 'panoramic';
+  lightingType?: string;
+  seatMaterial?: 'leather' | 'fabric' | 'alcantara' | 'mixed';
+  interiorFeatures?: string[];
+  technologyFeatures?: string[];
+  safetyFeatures?: string[];
+  exteriorFeatures?: string[];
+  accidentStatus?: 'none' | 'minor' | 'major';
+  paintStatus?: 'original_paint' | 'partial_paint' | 'full_paint';
+  paintDetails?: string;
+  chassisCondition?: 'clean' | 'repaired';
+  airbagStatus?: 'intact_original' | 'deployed_fixed';
+  floodDamage?: boolean;
+  fireDamage?: boolean;
+  importStatus?: string;
+  previousOwnersCount?: number;
+  serviceHistory?: boolean;
+  warrantyInfo?: string;
+  modificationStatus?: 'original' | 'light_mod' | 'cosmetic' | 'performance';
+  modificationsDescription?: string;
+  plateCity?: string;
+  registrationStatus?: 'new' | 'annual_valid' | 'expired';
+  vinNumber?: string;
+  showVinPublicly?: boolean;
+  saleOption?: 'for_sale' | 'for_trade' | 'sale_or_trade';
+  tradeNotes?: string;
 }
 
 export interface CarPayment {
@@ -391,16 +491,37 @@ export interface Review {
   createdAt: string;
 }
 
-export type NotificationType = 'order' | 'commission' | 'car' | 'payment' | 'system' | 'seller' | 'delivery' | 'points';
+export type NotificationType = 'order' | 'commission' | 'car' | 'payment' | 'system' | 'seller' | 'delivery' | 'points' | 'store_approval' | 'system_alert' | 'request' | 'admin';
 export type NotificationStatus = 'info' | 'success' | 'warning' | 'error';
+export type RequestCategory = 'request' | 'update' | 'message';
+export type RequestActionType = 
+  | 'store_accept'
+  | 'store_prepare'
+  | 'store_ready'
+  | 'store_reject'
+  | 'captain_accept'
+  | 'captain_pickup'
+  | 'captain_deliver'
+  | 'customer_track'
+  | 'admin_approve_store'
+  | 'none';
 
 export interface NotificationItem {
   id: string;
   userId: string;
+  recipientId?: string;
+  recipientRole?: UserRole | 'all_shakh_captains' | 'all_admins' | 'all';
+  senderId?: string;
+  senderName?: string;
+  orderId?: string;
+  orderNumber?: string;
   title: string;
   message: string;
   type: NotificationType;
+  category?: RequestCategory;
   status?: NotificationStatus;
+  actionRequired?: boolean;
+  actionType?: RequestActionType;
   isRead: boolean;
   linkUrl?: string;
   actionLabel?: string;
@@ -409,6 +530,18 @@ export interface NotificationItem {
     orderNumber?: string;
     carAdId?: string;
     amount?: number;
+    itemsCount?: number;
+    customerName?: string;
+    customerPhone?: string;
+    storeName?: string;
+    storeAddress?: string;
+    storePhone?: string;
+    deliveryAddress?: string;
+    deliveryCity?: string;
+    deliveryFee?: number;
+    captainType?: 'shakh' | 'store';
+    captainName?: string;
+    captainPhone?: string;
     paymentMethod?: string;
     reason?: string;
     sellerId?: string;
@@ -416,9 +549,16 @@ export interface NotificationItem {
     pointsEarned?: number;
   };
   createdAt: string;
+  updatedAt?: string;
 }
 
 export type AgreementTier = 'Standard' | 'Silver' | 'Gold' | 'VIP_Custom';
+
+export interface PointsSettings {
+  pointsPerIQD: number; // 150 points = 1 IQD
+  minRedemptionPoints?: number;
+  lastUpdated?: string;
+}
 
 export interface ShakhPointsAgreement {
   id: string;

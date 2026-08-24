@@ -1,0 +1,79 @@
+{
+  "id": "/?source=pwa",
+  "name": "شاخ | Shakh Marketplace & Delivery",
+  "short_name": "شاخ Shakh",
+  "description": "پلاتفۆرمی شاخ بۆ کڕین و فرۆشتن، خواردن، کەلوپەل، ئۆتۆمبێل و گەیاندنی ڕاستەوخۆ",
+  "lang": "ku",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui",
+    "window-controls-overlay"
+  ],
+  "background_color": "#0F172A",
+  "theme_color": "#F97316",
+  "orientation": "portrait-primary",
+  "categories": [
+    "shopping",
+    "lifestyle",
+    "business"
+  ],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "بازاڕ و کاڵاکان",
+      "short_name": "بازاڕ",
+      "description": "گەڕان بەناو هەموو بەش و کاڵاکاندا",
+      "url": "/#marketplace",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "پێشانگای ئۆتۆمبێل",
+      "short_name": "ئۆتۆمبێل",
+      "description": "کڕین و فرۆشتنی ئۆتۆمبێل",
+      "url": "/#cars",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "سەبەتەی کڕین",
+      "short_name": "سەبەتە",
+      "description": "بینینی کاڵاکانی سەبەتە و تەواوکردنی داواکاری",
+      "url": "/#cart",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

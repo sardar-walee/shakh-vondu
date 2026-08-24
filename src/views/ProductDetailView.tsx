@@ -21,7 +21,7 @@ import {
 import { Product } from '../types';
 import { CategoryBadge } from '../components/common/Badge';
 import { ProductCard } from '../components/cards/ProductCard';
-import { ShareModal } from '../components/common/ShareModal';
+import { ShareModal, SocialShareBar } from '../components/common/ShareModal';
 import { useCart } from '../context/CartContext';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
@@ -200,10 +200,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowShareModal(true)}
-                  className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-                  title="هاوبەشکردن"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-[#F97316] border border-orange-200 text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                  title="هاوبەشکردن لە سۆشیاڵ میدیا"
                 >
-                  <Share2 className="w-4 h-4" />
+                  <Share2 className="w-3.5 h-3.5" />
+                  <span>هاوبەشکردن</span>
                 </button>
 
                 {product.stock > 0 ? (
@@ -630,6 +631,16 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               >
                 <span>داواکردنی دەستبەجێ</span>
               </button>
+            </div>
+
+            {/* Direct Social Share Bar */}
+            <div className="pt-2 border-t border-slate-100">
+              <SocialShareBar
+                title={product.title}
+                description={`کاڵای ${product.title} بە نرخی ${effectivePrice.toLocaleString()} د.ع لە شاخ`}
+                url={`${window.location.origin}/#product-${product.id}`}
+                onOpenModal={() => setShowShareModal(true)}
+              />
             </div>
           </div>
 

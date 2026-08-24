@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="50%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#EA580C"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#F97316" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Background rounded squircle -->
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  
+  <!-- Outer subtle border -->
+  <rect width="504" height="504" x="4" y="4" rx="124" fill="none" stroke="rgba(249, 115, 22, 0.3)" stroke-width="8"/>
+
+  <!-- Mountain Peak Icon Graphic with glow -->
+  <g filter="url(#glow)">
+    <!-- Back mountain peak -->
+    <path d="M160 360 L270 170 L380 360 Z" fill="url(#accentGrad)" opacity="0.85"/>
+    
+    <!-- Front main mountain peak -->
+    <path d="M120 370 L240 130 L360 370 L290 370 L240 270 L190 370 Z" fill="url(#primaryGrad)"/>
+
+    <!-- Snow/Sun circle accent -->
+    <circle cx="240" cy="200" r="32" fill="#FFFFFF"/>
+    <circle cx="240" cy="200" r="18" fill="#F97316"/>
+  </g>
+
+  <!-- Kurdish / Brand Text -->
+  <text x="256" y="435" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="44" letter-spacing="4">
+    شاخ • SHAKH
+  </text>
+</svg>

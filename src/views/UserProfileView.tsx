@@ -57,6 +57,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
     getUserPointsWallet,
     getUserPointsHistory,
     redeemPoints,
+    pointsSettings,
+    calculateDiscountFromPoints,
+    calculatePointsRequiredForDiscount,
     userFeedbacks,
     submitUserFeedback
   } = useMarketplace();
@@ -228,47 +231,80 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
 
             {/* Quick Redemption Offers */}
             <div className="space-y-3">
-              <h3 className="text-xs font-bold text-amber-200 flex items-center gap-1.5">
-                <Gift className="w-4 h-4 text-amber-400" />
-                <span>گۆڕینی پۆینت بۆ کۆپۆنی داشکاندن:</span>
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-amber-200 flex items-center gap-1.5">
+                  <Gift className="w-4 h-4 text-amber-400" />
+                  <span>گۆڕینی پۆینت بۆ کۆپۆنی داشکاندن (ڕێژە: {pointsSettings.pointsPerIQD} پۆینت = ١ د.ع):</span>
+                </h3>
+                <span className="text-[11px] text-amber-300 font-latin font-bold bg-amber-900/40 px-2 py-0.5 rounded-lg border border-amber-500/30">
+                  {pointsSettings.pointsPerIQD} Pts = 1 IQD
+                </span>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* 300 pts = 2 IQD */}
                 <div className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 space-y-2 transition-colors">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-amber-300">داشکاندنی ٥,٠٠٠ د.ع</span>
-                    <span className="font-latin font-bold text-slate-300">500 پۆینت</span>
+                    <span className="font-bold text-amber-300">داشکاندنی ٢ د.ع</span>
+                    <span className="font-latin font-bold text-slate-300">300 پۆینت</span>
                   </div>
-                  <p className="text-[11px] text-slate-300">کۆپۆنی داشکاندنی شڕینی بەکاربهێنە بۆ هەموو کڕینەکانی دواتر</p>
+                  <p className="text-[11px] text-slate-300">
+                    بڕی داشکاندن: {calculateDiscountFromPoints(300).toLocaleString()} د.ع ({300} / {pointsSettings.pointsPerIQD})
+                  </p>
                   <button
-                    onClick={() => handleRedeemDiscount(500, 5000)}
-                    disabled={pointsWallet.totalPoints < 500}
+                    onClick={() => handleRedeemDiscount(300, calculateDiscountFromPoints(300))}
+                    disabled={pointsWallet.totalPoints < 300}
                     className={`w-full py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                      pointsWallet.totalPoints >= 500
+                      pointsWallet.totalPoints >= 300
                         ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md'
                         : 'bg-white/10 text-slate-400 cursor-not-allowed'
                     }`}
                   >
-                    {pointsWallet.totalPoints >= 500 ? 'وەرگرتنی کۆپۆن' : 'پۆینتی تەواوت نییە'}
+                    {pointsWallet.totalPoints >= 300 ? 'وەرگرتنی کۆپۆن' : 'پۆینتی تەواوت نییە'}
                   </button>
                 </div>
 
+                {/* 1,500 pts = 10 IQD */}
                 <div className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 space-y-2 transition-colors">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-amber-300">داشکاندنی ١٥,٠٠٠ د.ع</span>
-                    <span className="font-latin font-bold text-slate-300">1,200 پۆینت</span>
+                    <span className="font-bold text-amber-300">داشکاندنی ١٠ د.ع</span>
+                    <span className="font-latin font-bold text-slate-300">1,500 پۆینت</span>
                   </div>
-                  <p className="text-[11px] text-slate-300">پاداشتی تایبەتی كڕیارانی بەوەفای شاخ</p>
+                  <p className="text-[11px] text-slate-300">
+                    بڕی داشکاندن: {calculateDiscountFromPoints(1500).toLocaleString()} د.ع ({1500} / {pointsSettings.pointsPerIQD})
+                  </p>
                   <button
-                    onClick={() => handleRedeemDiscount(1200, 15000)}
-                    disabled={pointsWallet.totalPoints < 1200}
+                    onClick={() => handleRedeemDiscount(1500, calculateDiscountFromPoints(1500))}
+                    disabled={pointsWallet.totalPoints < 1500}
                     className={`w-full py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                      pointsWallet.totalPoints >= 1200
+                      pointsWallet.totalPoints >= 1500
                         ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md'
                         : 'bg-white/10 text-slate-400 cursor-not-allowed'
                     }`}
                   >
-                    {pointsWallet.totalPoints >= 1200 ? 'وەرگرتنی کۆپۆن' : 'پۆینتی تەواوت نییە'}
+                    {pointsWallet.totalPoints >= 1500 ? 'وەرگرتنی کۆپۆن' : 'پۆینتی تەواوت نییە'}
+                  </button>
+                </div>
+
+                {/* 3,000 pts = 20 IQD */}
+                <div className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 space-y-2 transition-colors">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-amber-300">داشکاندنی ٢٠ د.ع</span>
+                    <span className="font-latin font-bold text-slate-300">3,000 پۆینت</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">
+                    بڕی داشکاندن: {calculateDiscountFromPoints(3000).toLocaleString()} د.ع ({3000} / {pointsSettings.pointsPerIQD})
+                  </p>
+                  <button
+                    onClick={() => handleRedeemDiscount(3000, calculateDiscountFromPoints(3000))}
+                    disabled={pointsWallet.totalPoints < 3000}
+                    className={`w-full py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                      pointsWallet.totalPoints >= 3000
+                        ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md'
+                        : 'bg-white/10 text-slate-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {pointsWallet.totalPoints >= 3000 ? 'وەرگرتنی کۆپۆن' : 'پۆینتی تەواوت نییە'}
                   </button>
                 </div>
               </div>

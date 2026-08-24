@@ -26,15 +26,32 @@ import {
   Shield,
   Palette,
   Eye,
-  CheckCircle2
+  CheckCircle2,
+  ArrowRight,
+  ArrowLeft,
+  Save,
+  RotateCcw,
+  Gift,
+  HelpCircle,
+  Truck,
+  Heart,
+  Percent,
+  Sliders,
+  X
 } from 'lucide-react';
 import { Product, ProductCategory } from '../../types';
 import { ImageUpload } from '../common/ImageUpload';
 import {
   CATEGORY_FIELD_CONFIGS,
   POPULAR_COLORS,
-  validateProductCategoryFields
+  CAR_BODY_TYPES,
+  CAR_DRIVETRAINS,
+  CAR_PAINT_CONDITIONS,
+  CAR_ACCIDENT_CONDITIONS,
+  validateProductCategoryFields,
+  calculateSuggestedPoints
 } from '../../utils/categoryFields';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface DynamicProductFormProps {
   initialData?: Product | null;
@@ -57,6 +74,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
   onCancel,
   isSubmitting = false
 }) => {
+  const { t, currentLanguage } = useLanguage();
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4 | 5>(1);
+  const [hasDraftLoaded, setHasDraftLoaded] = useState(false);
+  const [draftNotice, setDraftNotice] = useState<string | null>(null);
+
   // Category state
   const [category, setCategory] = useState<ProductCategory>(
     initialData?.category || allowedCategory || 'clothes'
@@ -66,72 +88,183 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
   const [title, setTitle] = useState(initialData?.title || '');
   const [subcategory, setSubcategory] = useState(initialData?.subcategory || '');
   const [description, setDescription] = useState(initialData?.description || '');
+  const [condition, setCondition] = useState<'new' | 'used' | 'refurbished'>(initialData?.condition || 'new');
   const [price, setPrice] = useState<number>(initialData?.price || 15000);
   const [discountPrice, setDiscountPrice] = useState<number | undefined>(initialData?.discountPrice);
   const [stock, setStock] = useState<number>(initialData?.stock ?? 25);
   const [unit, setUnit] = useState<string>(initialData?.unit || 'دانە');
+  const [rewardPoints, setRewardPoints] = useState<number>(
+    initialData?.rewardPoints !== undefined ? initialData.rewardPoints : calculateSuggestedPoints(initialData?.price || 15000)
+  );
   const [images, setImages] = useState<string[]>(
     initialData?.images && initialData.images.length > 0
       ? initialData.images
-      : ['https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600']
+      : ['https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800']
   );
   const [isAvailable, setIsAvailable] = useState<boolean>(initialData?.isAvailable ?? true);
   const [isFeatured, setIsFeatured] = useState<boolean>(initialData?.isFeatured ?? false);
 
-  // Dynamic category fields state
-  // Clothes
+  // Category Specific - Clothes
   const [sizes, setSizes] = useState<string[]>(initialData?.sizes || (category === 'clothes' ? ['S', 'M', 'L', 'XL'] : []));
-  const [colors, setColors] = useState<string[]>(initialData?.colors || (category === 'clothes' ? ['ڕەش / Black', 'سپی / White', 'شین / Blue'] : []));
+  const [colors, setColors] = useState<string[]>(initialData?.colors || (category === 'clothes' ? ['ڕەش / Black', 'سپی / White'] : []));
   const [gender, setGender] = useState<'men' | 'women' | 'kids' | 'unisex'>(initialData?.gender || 'unisex');
   const [material, setMaterial] = useState<string>(initialData?.material || '');
+  const [fit, setFit] = useState<string>(initialData?.fit || 'regular');
+  const [season, setSeason] = useState<string>(initialData?.season || 'all_season');
 
-  // Electronics & Common
+  // Category Specific - Electronics
   const [brand, setBrand] = useState<string>(initialData?.brand || '');
   const [model, setModel] = useState<string>(initialData?.model || '');
+  const [storageCapacity, setStorageCapacity] = useState<string>(initialData?.storageCapacity || '');
+  const [ramSize, setRamSize] = useState<string>(initialData?.ramSize || '');
   const [warrantyMonths, setWarrantyMonths] = useState<number | undefined>(initialData?.warrantyMonths);
   const [specs, setSpecs] = useState<Record<string, string>>(initialData?.specs || {});
   const [newSpecKey, setNewSpecKey] = useState('');
   const [newSpecValue, setNewSpecValue] = useState('');
 
-  // Cars
+  // Category Specific - Cars
   const [year, setYear] = useState<number | undefined>(initialData?.year || (category === 'cars' ? new Date().getFullYear() : undefined));
   const [mileageKm, setMileageKm] = useState<number | undefined>(initialData?.mileageKm || (category === 'cars' ? 35000 : undefined));
   const [transmission, setTransmission] = useState<'automatic' | 'manual'>(initialData?.transmission || 'automatic');
   const [fuelType, setFuelType] = useState<'gasoline' | 'diesel' | 'hybrid' | 'electric'>(initialData?.fuelType || 'gasoline');
+  const [bodyType, setBodyType] = useState<string>('sedan');
+  const [drivetrain, setDrivetrain] = useState<string>('FWD');
+  const [paintStatus, setPaintStatus] = useState<string>('original_paint');
+  const [accidentStatus, setAccidentStatus] = useState<string>('none');
 
-  // Food
+  // Category Specific - Food
   const [prepTimeMinutes, setPrepTimeMinutes] = useState<number | undefined>(initialData?.prepTimeMinutes || (category === 'food' ? 20 : undefined));
   const [ingredients, setIngredients] = useState<string[]>(initialData?.ingredients || []);
   const [newIngredientInput, setNewIngredientInput] = useState('');
   const [isSpicy, setIsSpicy] = useState<boolean>(initialData?.isSpicy ?? false);
   const [isVegetarian, setIsVegetarian] = useState<boolean>(initialData?.isVegetarian ?? false);
 
-  // Meat
+  // Category Specific - Fresh Meat
   const [meatType, setMeatType] = useState<string>(initialData?.meatType || 'lamb');
   const [cutType, setCutType] = useState<string>(initialData?.cutType || '');
 
-  // Fruits & Veg
+  // Category Specific - Fruits & Veg
   const [origin, setOrigin] = useState<string>(initialData?.origin || '');
   const [isOrganic, setIsOrganic] = useState<boolean>(initialData?.isOrganic ?? false);
 
-  // Dairy
+  // Category Specific - Dairy
   const [expiryInfo, setExpiryInfo] = useState<string>(initialData?.expiryInfo || '');
   const [fatPercentage, setFatPercentage] = useState<string>(initialData?.fatPercentage || 'full_fat');
 
-  // Beauty
+  // Category Specific - Beauty
   const [skinType, setSkinType] = useState<string>(initialData?.skinType || 'all');
   const [volume, setVolume] = useState<string>(initialData?.volume || '');
   const [weight, setWeight] = useState<string>(initialData?.weight || '');
 
-  // Custom Tag Input
+  // Tag inputs
   const [customSizeInput, setCustomSizeInput] = useState('');
   const [customColorInput, setCustomColorInput] = useState('');
+  const [customColorHex, setCustomColorHex] = useState('#2563EB');
 
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showPreview, setShowPreview] = useState(false);
 
-  // Reset category-specific defaults on category change if creating new
+  // Draft Key
+  const draftKey = `shakh_draft_product_${sellerId}_${category}`;
+
+  // Check for saved draft on initial mount
+  useEffect(() => {
+    if (!initialData && !hasDraftLoaded) {
+      try {
+        const savedDraft = localStorage.getItem(draftKey);
+        if (savedDraft) {
+          const parsed = JSON.parse(savedDraft);
+          if (parsed.title || parsed.description || parsed.price) {
+            setDraftNotice('ڕەشنووسێکی پاشەکەوتکراوت هەیە. دەتەوێت بگەڕێیتەوە سەری؟');
+          }
+        }
+      } catch (e) {}
+    }
+  }, [draftKey, initialData, hasDraftLoaded]);
+
+  // Restore Draft function
+  const handleRestoreDraft = () => {
+    try {
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        const d = JSON.parse(savedDraft);
+        if (d.title) setTitle(d.title);
+        if (d.subcategory) setSubcategory(d.subcategory);
+        if (d.description) setDescription(d.description);
+        if (d.price) setPrice(d.price);
+        if (d.discountPrice) setDiscountPrice(d.discountPrice);
+        if (d.stock !== undefined) setStock(d.stock);
+        if (d.unit) setUnit(d.unit);
+        if (d.images && d.images.length > 0) setImages(d.images);
+        if (d.sizes) setSizes(d.sizes);
+        if (d.colors) setColors(d.colors);
+        if (d.brand) setBrand(d.brand);
+        if (d.model) setModel(d.model);
+        if (d.rewardPoints) setRewardPoints(d.rewardPoints);
+        setHasDraftLoaded(true);
+        setDraftNotice('ڕەشنووسەکەت بە سەرکەوتوویی بارکرایەوە 📝');
+        setTimeout(() => setDraftNotice(null), 3000);
+      }
+    } catch (e) {}
+  };
+
+  // Save manual draft
+  const handleSaveDraft = () => {
+    try {
+      const draftObj = {
+        title,
+        subcategory,
+        description,
+        condition,
+        category,
+        price,
+        discountPrice,
+        stock,
+        unit,
+        rewardPoints,
+        images,
+        sizes,
+        colors,
+        brand,
+        model,
+        year,
+        mileageKm,
+        transmission,
+        fuelType,
+        prepTimeMinutes,
+        ingredients,
+        meatType,
+        cutType,
+        origin,
+        isOrganic,
+        expiryInfo,
+        fatPercentage,
+        skinType,
+        volume,
+        weight,
+        draftSavedAt: new Date().toISOString()
+      };
+      localStorage.setItem(draftKey, JSON.stringify(draftObj));
+      setDraftNotice('ڕەشنووس بە سەرکەوتوویی پاشەکەوت کرا ✅');
+      setTimeout(() => setDraftNotice(null), 3000);
+    } catch (e) {}
+  };
+
+  // Discard draft
+  const handleDiscardDraft = () => {
+    localStorage.removeItem(draftKey);
+    setDraftNotice(null);
+  };
+
+  // Auto calculate suggested points when price changes
+  const handlePriceChange = (newPrice: number) => {
+    setPrice(newPrice);
+    if (!initialData || rewardPoints === undefined) {
+      setRewardPoints(calculateSuggestedPoints(newPrice));
+    }
+  };
+
+  // Handle Category Change
   const handleCategoryChange = (newCat: ProductCategory) => {
     if (!isSuperAdmin && allowedCategory && newCat !== allowedCategory) return;
     setCategory(newCat);
@@ -158,1141 +291,1491 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
     setNewSpecValue('');
   };
 
-  const handleRemoveSpec = (key: string) => {
+  const handleRemoveSpec = (keyToRemove: string) => {
     setSpecs(prev => {
       const next = { ...prev };
-      delete next[key];
+      delete next[keyToRemove];
       return next;
     });
   };
 
-  // Tag helpers
+  // Tags & Presets Helpers
   const toggleSize = (s: string) => {
-    setSizes(prev => (prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]));
+    if (sizes.includes(s)) {
+      setSizes(sizes.filter(x => x !== s));
+    } else {
+      setSizes([...sizes, s]);
+    }
   };
 
-  const handleAddCustomSize = (e: React.KeyboardEvent | React.MouseEvent) => {
-    if ('key' in e && e.key !== 'Enter') return;
+  const handleAddCustomSize = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customSizeInput.trim()) return;
     if (!sizes.includes(customSizeInput.trim())) {
-      setSizes(prev => [...prev, customSizeInput.trim()]);
+      setSizes([...sizes, customSizeInput.trim()]);
     }
     setCustomSizeInput('');
   };
 
-  const toggleColor = (cName: string) => {
-    setColors(prev => (prev.includes(cName) ? prev.filter(x => x !== cName) : [...prev, cName]));
+  const toggleColor = (c: string) => {
+    if (colors.includes(c)) {
+      setColors(colors.filter(x => x !== c));
+    } else {
+      setColors([...colors, c]);
+    }
   };
 
-  const handleAddCustomColor = (e: React.KeyboardEvent | React.MouseEvent) => {
-    if ('key' in e && e.key !== 'Enter') return;
+  const handleAddCustomColor = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customColorInput.trim()) return;
-    if (!colors.includes(customColorInput.trim())) {
-      setColors(prev => [...prev, customColorInput.trim()]);
+    const formatted = `${customColorInput.trim()}`;
+    if (!colors.includes(formatted)) {
+      setColors([...colors, formatted]);
     }
     setCustomColorInput('');
   };
 
-  const handleAddIngredient = (e?: React.KeyboardEvent | React.MouseEvent, predefined?: string) => {
-    if (e && 'key' in e && e.key !== 'Enter') return;
-    if (e) e.preventDefault();
-    const item = predefined || newIngredientInput.trim();
-    if (!item) return;
-    if (!ingredients.includes(item)) {
-      setIngredients(prev => [...prev, item]);
+  const handleAddIngredient = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newIngredientInput.trim()) return;
+    if (!ingredients.includes(newIngredientInput.trim())) {
+      setIngredients([...ingredients, newIngredientInput.trim()]);
     }
-    if (!predefined) setNewIngredientInput('');
+    setNewIngredientInput('');
   };
 
   const handleRemoveIngredient = (ing: string) => {
-    setIngredients(prev => prev.filter(i => i !== ing));
+    setIngredients(ingredients.filter(x => x !== ing));
   };
 
-  // Form Submit with comprehensive validation
+  // Step Validation & Navigation
+  const validateStep = (stepNum: number): boolean => {
+    const errs: Record<string, string> = {};
+
+    if (stepNum === 1) {
+      if (!title.trim() || title.trim().length < 2) {
+        errs.title = 'تکایە ناوی کاڵا بنووسە (لانیکەم ٢ پیت).';
+      }
+    } else if (stepNum === 2) {
+      const currentCategoryConfig = CATEGORY_FIELD_CONFIGS[category];
+      if (category === 'clothes') {
+        if (sizes.length === 0) errs.sizes = 'تکایە لانیکەم یەک قەبارە (Size) دیاریبکە.';
+        if (colors.length === 0) errs.colors = 'تکایە لانیکەم یەک ڕەنگ (Color) دیاریبکە.';
+      } else if (category === 'electronics') {
+        if (!brand.trim()) errs.brand = 'تکایە براندی ئامێرەکە بنووسە.';
+        if (!model.trim()) errs.model = 'تکایە مۆدێلی ئامێرەکە بنووسە.';
+      } else if (category === 'cars') {
+        if (!brand.trim()) errs.brand = 'تکایە براندی ئۆتۆمبێل بنووسە.';
+        if (!model.trim()) errs.model = 'تکایە مۆدێلی ئۆتۆمبێل بنووسە.';
+      } else if (category === 'fresh_meat') {
+        if (!cutType.trim()) errs.cutType = 'تکایە بەش یان پارچەی گۆشتەکە بنووسە.';
+      }
+    } else if (stepNum === 3) {
+      if (!price || price <= 0) {
+        errs.price = 'تکایە نرخی کاڵا بە دروستی بنووسە.';
+      }
+      if (discountPrice && discountPrice >= price) {
+        errs.discountPrice = 'نرخی داشکاندن دەبێت کەمتر بێت لە نرخی بنەڕەتی.';
+      }
+      if (stock === undefined || stock < 0) {
+        errs.stock = 'ژمارەی کاڵا ناتوانێت کەمتر بێت لە ٠.';
+      }
+    } else if (stepNum === 4) {
+      if (images.length === 0) {
+        errs.images = 'تکایە لانیکەم یەک وێنەی کاڵاکە باربکە.';
+      }
+    }
+
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleNext = () => {
+    if (validateStep(activeStep)) {
+      setActiveStep((prev) => Math.min(5, prev + 1) as any);
+    }
+  };
+
+  const handleBack = () => {
+    setActiveStep((prev) => Math.max(1, prev - 1) as any);
+  };
+
+  // Final Submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const productPayload: Omit<Product, 'id' | 'createdAt'> = {
-      sellerId,
-      sellerName: sellerName || 'فرۆشگای شاخی',
-      category,
-      title: title.trim(),
-      description: description.trim(),
+    // Full validation
+    const candidateData: Partial<Product> = {
+      title,
       price: Number(price),
       discountPrice: discountPrice ? Number(discountPrice) : undefined,
-      subcategory: subcategory.trim() || undefined,
+      stock: Number(stock),
+      sizes,
+      colors,
+      brand,
+      model,
+      year: year ? Number(year) : undefined,
+      mileageKm: mileageKm !== undefined ? Number(mileageKm) : undefined
+    };
+
+    const validation = validateProductCategoryFields(category, candidateData);
+    if (!validation.isValid || images.length === 0) {
+      const mergedErrors = { ...validation.errors };
+      if (images.length === 0) mergedErrors.images = 'تکایە لانیکەم یەک وێنەی کاڵاکە باربکە.';
+      setErrors(mergedErrors);
+      // Jump to first invalid step
+      if (mergedErrors.title) setActiveStep(1);
+      else if (mergedErrors.sizes || mergedErrors.colors || mergedErrors.brand || mergedErrors.model) setActiveStep(2);
+      else if (mergedErrors.price || mergedErrors.stock || mergedErrors.discountPrice) setActiveStep(3);
+      else if (mergedErrors.images) setActiveStep(4);
+      return;
+    }
+
+    const payload: Omit<Product, 'id' | 'createdAt'> = {
+      sellerId,
+      sellerName: sellerName || 'فرۆشگای شاخ',
+      category,
+      subcategory: subcategory || undefined,
+      title: title.trim(),
+      description: description.trim(),
+      condition,
+      price: Number(price),
+      discountPrice: discountPrice ? Number(discountPrice) : undefined,
       stock: Number(stock),
       unit: unit.trim() || 'دانە',
-      images: images.length > 0 ? images : ['https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600'],
+      rewardPoints: Number(rewardPoints || 0),
+      images,
       isAvailable,
       isFeatured,
+      rating: initialData?.rating || 5.0,
+      reviewCount: initialData?.reviewCount || 0,
 
-      // Category Specific Dynamic Fields
+      // Category fields
       sizes: category === 'clothes' ? sizes : undefined,
-      colors: ['clothes', 'electronics', 'cars'].includes(category) ? colors : undefined,
-      brand: ['clothes', 'electronics', 'cars', 'beauty', 'market'].includes(category) ? (brand.trim() || undefined) : undefined,
+      colors: category === 'clothes' || category === 'cars' || category === 'electronics' ? colors : undefined,
       gender: category === 'clothes' ? gender : undefined,
-      material: category === 'clothes' ? (material.trim() || undefined) : undefined,
+      material: category === 'clothes' ? material : undefined,
+      fit: category === 'clothes' ? fit : undefined,
+      season: category === 'clothes' ? season : undefined,
 
-      model: ['electronics', 'cars'].includes(category) ? (model.trim() || undefined) : undefined,
-      specs: category === 'electronics' ? specs : undefined,
-      warrantyMonths: category === 'electronics' && warrantyMonths ? Number(warrantyMonths) : undefined,
+      brand: brand.trim() || undefined,
+      model: model.trim() || undefined,
+      warrantyMonths: warrantyMonths ? Number(warrantyMonths) : undefined,
+      storageCapacity: category === 'electronics' ? storageCapacity : undefined,
+      ramSize: category === 'electronics' ? ramSize : undefined,
+      specs: Object.keys(specs).length > 0 ? specs : undefined,
 
-      year: category === 'cars' && year ? Number(year) : undefined,
-      mileageKm: category === 'cars' && mileageKm !== undefined ? Number(mileageKm) : undefined,
+      year: year ? Number(year) : undefined,
+      mileageKm: mileageKm !== undefined ? Number(mileageKm) : undefined,
       transmission: category === 'cars' ? transmission : undefined,
       fuelType: category === 'cars' ? fuelType : undefined,
 
-      prepTimeMinutes: category === 'food' && prepTimeMinutes ? Number(prepTimeMinutes) : undefined,
+      prepTimeMinutes: prepTimeMinutes ? Number(prepTimeMinutes) : undefined,
       ingredients: category === 'food' ? ingredients : undefined,
       isSpicy: category === 'food' ? isSpicy : undefined,
       isVegetarian: category === 'food' ? isVegetarian : undefined,
 
       meatType: category === 'fresh_meat' ? meatType : undefined,
-      cutType: category === 'fresh_meat' ? (cutType.trim() || undefined) : undefined,
+      cutType: category === 'fresh_meat' ? cutType.trim() : undefined,
 
-      origin: ['fresh_meat', 'fruits_vegetables', 'dairy', 'market'].includes(category) ? (origin.trim() || undefined) : undefined,
+      origin: category === 'fruits_vegetables' || category === 'fresh_meat' || category === 'dairy' || category === 'market' ? origin.trim() : undefined,
       isOrganic: category === 'fruits_vegetables' ? isOrganic : undefined,
 
-      expiryInfo: ['dairy', 'beauty', 'market'].includes(category) ? (expiryInfo.trim() || undefined) : undefined,
+      expiryInfo: category === 'dairy' || category === 'beauty' || category === 'market' ? expiryInfo.trim() : undefined,
       fatPercentage: category === 'dairy' ? fatPercentage : undefined,
 
       skinType: category === 'beauty' ? skinType : undefined,
-      volume: category === 'beauty' ? (volume.trim() || undefined) : undefined,
-      weight: ['fresh_meat', 'market'].includes(category) ? (weight.trim() || undefined) : undefined
+      volume: category === 'beauty' ? volume.trim() : undefined,
+      weight: category === 'fresh_meat' || category === 'market' || category === 'fruits_vegetables' ? weight.trim() : undefined
     };
 
-    const validationResult = validateProductCategoryFields(category, productPayload);
-    if (!validationResult.isValid) {
-      setErrors(validationResult.errors);
-      // Scroll to first error
-      window.scrollTo({ top: 100, behavior: 'smooth' });
-      return;
-    }
+    // Clean up draft after successful save
+    try {
+      localStorage.removeItem(draftKey);
+    } catch (e) {}
 
-    setErrors({});
-    await onSave(productPayload);
+    await onSave(payload);
   };
 
   const currentCategoryConfig = CATEGORY_FIELD_CONFIGS[category];
-
-  const getCategoryIcon = (cat: ProductCategory) => {
-    switch (cat) {
-      case 'clothes': return <Shirt className="w-4 h-4" />;
-      case 'electronics': return <Smartphone className="w-4 h-4" />;
-      case 'cars': return <Car className="w-4 h-4" />;
-      case 'food': return <Utensils className="w-4 h-4" />;
-      case 'fresh_meat': return <Beef className="w-4 h-4" />;
-      case 'fruits_vegetables': return <Apple className="w-4 h-4" />;
-      case 'dairy': return <Milk className="w-4 h-4" />;
-      case 'beauty': return <Sparkles className="w-4 h-4" />;
-      default: return <ShoppingBag className="w-4 h-4" />;
-    }
-  };
+  const discountPercentage = discountPrice && discountPrice < price ? Math.round(((price - discountPrice) / price) * 100) : 0;
+  const approxUsd = Math.round(price / 1500);
 
   return (
-    <div className="space-y-6 text-right" dir="rtl">
+    <div className="space-y-6 text-right pb-10" dir="rtl">
       
-      {/* Top Header & Preview Toggle */}
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
-          <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-orange-500" />
-            <span>{initialData ? 'دەستکاری کاڵا بەپێی بەش' : 'زیادکردنی کاڵای نوێ (سیستەمی داینامیک)'}</span>
-          </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            خانە و تایبەتمەندییەکان بە شێوەی ئۆتۆماتیکی لەگەڵ بەشی دیاریکراو دەگونجێن.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setShowPreview(!showPreview)}
-          className="px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-100 flex items-center gap-1.5 cursor-pointer transition-colors"
-        >
-          <Eye className="w-4 h-4 text-blue-600" />
-          <span>{showPreview ? 'شاردنەوەی پێشبینین' : 'پێشبینینی کاڵا (Live Preview)'}</span>
-        </button>
-      </div>
-
-      {/* Global Form Validation Error Alert */}
-      {Object.keys(errors).length > 0 && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-1 animate-shake">
-          <div className="flex items-center gap-2 font-bold text-rose-900">
-            <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-            <span>تکایە ئەم هەڵانەی خوارەوە چاک بکە پێش پاشەکەوتکردن:</span>
+      {/* Draft Notification Toast */}
+      {draftNotice && (
+        <div className="bg-blue-600 text-white p-3.5 rounded-2xl shadow-lg flex items-center justify-between gap-3 text-xs animate-fade-in">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-yellow-300" />
+            <span className="font-bold">{draftNotice}</span>
           </div>
-          <ul className="list-disc list-inside space-y-0.5 pr-2 pt-1 text-[11px]">
-            {Object.values(errors).map((err, idx) => (
-              <li key={idx}>{err}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Live Preview Card */}
-      {showPreview && (
-        <div className="p-4 rounded-3xl bg-slate-50 border-2 border-dashed border-orange-300 space-y-3">
-          <span className="text-xs font-black text-orange-700 flex items-center gap-1.5">
-            <Eye className="w-4 h-4" />
-            <span>پێشبینینی ڕاستەوخۆ (پێش پاشەکەوتکردن):</span>
-          </span>
-          <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row gap-4 items-start">
-            <img
-              src={images[0] || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=600'}
-              alt={title || 'پێشبینین'}
-              className="w-full sm:w-28 h-28 rounded-xl object-cover border border-slate-100 flex-shrink-0"
-            />
-            <div className="space-y-1.5 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="px-2 py-0.5 rounded-md bg-orange-100 text-orange-800 font-bold text-[10px]">
-                  {currentCategoryConfig.labelKurdish}
-                </span>
-                {subcategory && (
-                  <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-bold text-[10px]">
-                    {subcategory}
-                  </span>
-                )}
-                {brand && (
-                  <span className="px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 font-bold text-[10px] font-latin">
-                    {brand}
-                  </span>
-                )}
-              </div>
-              <h4 className="text-sm font-black text-slate-900">{title || 'ناوی کاڵا لێرە دەردەکەوێت'}</h4>
-              <p className="text-xs text-slate-500 line-clamp-1">{description || 'ڕوونکردنەوەی کاڵا...'}</p>
-              
-              <div className="flex items-center gap-3 pt-1">
-                <span className="text-sm font-black text-orange-600 font-latin">
-                  {(discountPrice || price || 0).toLocaleString()} د.ع
-                </span>
-                {discountPrice && (
-                  <span className="text-xs text-slate-400 line-through font-latin">
-                    {(price || 0).toLocaleString()} د.ع
-                  </span>
-                )}
-              </div>
-
-              {/* Preview category attributes */}
-              <div className="pt-1.5 flex flex-wrap gap-1.5 text-[10px]">
-                {category === 'clothes' && sizes.length > 0 && (
-                  <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-bold">
-                    قەبارەکان: {sizes.join(', ')}
-                  </span>
-                )}
-                {category === 'clothes' && colors.length > 0 && (
-                  <span className="bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-bold">
-                    ڕەنگەکان: {colors.length} ڕەنگ
-                  </span>
-                )}
-                {category === 'electronics' && model && (
-                  <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-bold font-latin">
-                    مۆدێل: {model}
-                  </span>
-                )}
-                {category === 'cars' && (
-                  <span className="bg-amber-50 text-amber-800 px-2 py-0.5 rounded font-bold font-latin">
-                    ساڵ: {year} • ڕۆیشتوو: {mileageKm?.toLocaleString()} کم • گێڕ: {transmission === 'automatic' ? 'ئۆتۆماتیک' : 'دەستی'}
-                  </span>
-                )}
-                {category === 'food' && prepTimeMinutes && (
-                  <span className="bg-orange-50 text-orange-700 px-2 py-0.5 rounded font-bold font-latin">
-                    ئامادەکردن: {prepTimeMinutes} خولەک
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        
-        {/* Step 1: Category Selector */}
-        <div className="space-y-2 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-              <Layers className="w-4 h-4 text-orange-500" />
-              <span>بەشی کاڵا (Category Selection) *</span>
-            </label>
-            {!isSuperAdmin && allowedCategory && (
-              <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">
-                تایبەت بە فرۆشگاکەت ({allowedCategory})
-              </span>
+          <div className="flex items-center gap-2">
+            {!hasDraftLoaded && (
+              <button
+                type="button"
+                onClick={handleRestoreDraft}
+                className="px-3 py-1 bg-white text-blue-700 font-black rounded-xl hover:bg-blue-50 cursor-pointer shadow-xs"
+              >
+                بەردەوامبوون لە ڕەشنووس
+              </button>
             )}
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              className="p-1 hover:bg-blue-700 rounded-lg text-blue-200 cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Header & Step Wizard Bar */}
+      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+              <span className="p-2 rounded-2xl bg-orange-100 text-orange-600">
+                <Package className="w-5 h-5" />
+              </span>
+              <span>{initialData ? 'دەستکاریکردنی کاڵا' : 'زیادکردنی کاڵای نوێ (Professional Posting)'}</span>
+            </h2>
+            <p className="text-xs text-slate-500 mt-1">
+              سیستەمی فەرمی شاخ بۆ تۆمارکردنی کاڵا بە وردەکاری پێشکەوتوو بەپێی بەشەکان
+            </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {(Object.keys(CATEGORY_FIELD_CONFIGS) as ProductCategory[]).map((catKey) => {
-              const cfg = CATEGORY_FIELD_CONFIGS[catKey];
-              const isSelected = category === catKey;
-              const isDisabled = !isSuperAdmin && !!allowedCategory && allowedCategory !== catKey;
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <Save className="w-3.5 h-3.5 text-slate-500" />
+              <span>پاشەکەوتکردنی ڕەشنووس</span>
+            </button>
+          </div>
+        </div>
 
-              return (
-                <button
-                  key={catKey}
-                  type="button"
-                  disabled={isDisabled}
-                  onClick={() => handleCategoryChange(catKey)}
-                  className={`p-2.5 rounded-xl border text-right transition-all flex items-center gap-2 cursor-pointer ${
-                    isSelected
-                      ? 'border-orange-500 bg-orange-500 text-white font-bold shadow-md shadow-orange-500/20'
-                      : isDisabled
-                      ? 'border-slate-200 bg-slate-100 text-slate-400 opacity-50 cursor-not-allowed'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+        {/* 5-Step Progress Indicators */}
+        <div className="grid grid-cols-5 gap-2 pt-2 border-t border-slate-100">
+          {[
+            { num: 1, label: 'زانیاری سەرەکی', icon: Info },
+            { num: 2, label: 'تایبەتمەندییەکان', icon: Sliders },
+            { num: 3, label: 'نرخ و پۆینت', icon: DollarSign },
+            { num: 4, label: 'وێنەکان (تا ٨)', icon: ImageIcon },
+            { num: 5, label: 'پێداچوونەوە', icon: Eye }
+          ].map((s) => {
+            const Icon = s.icon;
+            const isPassed = activeStep >= s.num;
+            const isCurrent = activeStep === s.num;
+            return (
+              <button
+                key={s.num}
+                type="button"
+                onClick={() => {
+                  if (activeStep > s.num || validateStep(activeStep)) {
+                    setActiveStep(s.num as any);
+                  }
+                }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl text-center transition-all cursor-pointer ${
+                  isCurrent
+                    ? 'bg-orange-50 text-orange-600 ring-2 ring-orange-500/20 font-black'
+                    : isPassed
+                    ? 'bg-slate-50 text-slate-700 hover:bg-slate-100 font-bold'
+                    : 'bg-transparent text-slate-400 opacity-60'
+                }`}
+              >
+                <div
+                  className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-black ${
+                    isCurrent
+                      ? 'bg-orange-500 text-white shadow-xs'
+                      : isPassed
+                      ? 'bg-slate-200 text-slate-700'
+                      : 'bg-slate-100 text-slate-400'
                   }`}
                 >
-                  <div className={`p-1.5 rounded-lg ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'}`}>
-                    {getCategoryIcon(catKey)}
-                  </div>
-                  <div className="overflow-hidden">
-                    <p className="text-xs font-bold truncate">{cfg.labelKurdish}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <p className="text-[11px] text-slate-500 pt-1">
-            {currentCategoryConfig.description}
-          </p>
+                  {isPassed && activeStep > s.num ? <Check className="w-4 h-4" /> : s.num}
+                </div>
+                <span className="text-[11px] truncate max-w-full hidden sm:inline">{s.label}</span>
+              </button>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Step 2: Core Product Information */}
-        <div className="space-y-4 bg-white p-5 rounded-2xl border border-slate-200">
-          <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
-            <Tag className="w-4 h-4 text-orange-500" />
-            <span>زانیارییە سەرەکییەکان (Core Details)</span>
-          </h4>
+      {/* Main Form Body */}
+      <form onSubmit={handleSubmit} className="space-y-6">
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">ناوی کاڵا *</label>
+        {/* STEP 1: BASIC INFORMATION */}
+        {activeStep === 1 && (
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-6 animate-fade-in">
+            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Info className="w-4 h-4 text-orange-500" />
+              <span>هەنگاوی ١: زانیارییە سەرەکییەکانی کاڵا</span>
+            </h3>
+
+            {/* Category Selector */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700">بەشی سەرەکی (Category) *</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {(Object.keys(CATEGORY_FIELD_CONFIGS) as ProductCategory[]).map((catKey) => {
+                  const cfg = CATEGORY_FIELD_CONFIGS[catKey];
+                  const isSelected = category === catKey;
+                  const isDisabled = !isSuperAdmin && Boolean(allowedCategory && catKey !== allowedCategory);
+
+                  return (
+                    <button
+                      key={catKey}
+                      type="button"
+                      disabled={isDisabled}
+                      onClick={() => handleCategoryChange(catKey)}
+                      className={`p-3.5 rounded-2xl border text-right transition-all flex flex-col justify-between gap-2 ${
+                        isSelected
+                          ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/20 shadow-xs'
+                          : 'border-slate-200 bg-white hover:border-slate-300'
+                      } ${isDisabled ? 'opacity-40 cursor-not-allowed bg-slate-50' : 'cursor-pointer'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-slate-800">{cfg.labelKurdish}</span>
+                        {isSelected && <CheckCircle2 className="w-4 h-4 text-orange-500" />}
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-latin truncate">{cfg.labelEn}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Subcategory Selector */}
+            {currentCategoryConfig.subcategories && currentCategoryConfig.subcategories.length > 0 && (
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700">بەشی لاوەکی / پۆلێن (Subcategory)</label>
+                <div className="flex flex-wrap gap-2">
+                  {currentCategoryConfig.subcategories.map((sub) => {
+                    const isSelected = subcategory === sub.label || subcategory === sub.id;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => setSubcategory(sub.label)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-orange-500 text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                        }`}
+                      >
+                        {sub.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Product Title */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-700">ناوی کاڵا یان خواردن (Product Title) *</label>
+                <span className="text-[10px] text-slate-400 font-latin">{title.length}/100</span>
+              </div>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="وەک: قەمیسی مارکەی زارا، ئایفۆن ١٥ پڕۆ ماکس..."
-                required
-                className={`w-full bg-slate-50 border rounded-xl p-3 text-xs focus:bg-white focus:outline-hidden ${
-                  errors.title ? 'border-rose-500 focus:border-rose-500' : 'border-slate-200 focus:border-orange-500'
+                maxLength={100}
+                placeholder="نموونە: تیشێرتی لۆکەی زارا، مۆبایلی ئایفۆن ١٥ پرۆ ماکس، کەبابی بەرخی تایبەت..."
+                className={`w-full px-4 py-3 rounded-2xl border text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none transition-all ${
+                  errors.title ? 'border-red-400 ring-2 ring-red-100 bg-red-50/20' : 'border-slate-200 focus:border-orange-500'
                 }`}
               />
-              {errors.title && <p className="text-[10px] text-rose-600 font-bold">{errors.title}</p>}
+              {errors.title && <p className="text-[11px] text-red-500 font-bold">{errors.title}</p>}
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">پۆلی لاوەکی (Subcategory)</label>
-              <input
-                type="text"
-                value={subcategory}
-                onChange={(e) => setSubcategory(e.target.value)}
-                placeholder="وەک: قەمیس، کەباب، مۆبایل، پێڵاو..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:bg-white focus:outline-hidden focus:border-orange-500"
-              />
-            </div>
-          </div>
-
-          {/* Pricing & Stock */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">نرخ بە دینار (IQD) *</label>
-              <input
-                type="number"
-                min="0"
-                step="250"
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-                required
-                className={`w-full bg-slate-50 border rounded-xl p-3 text-xs font-latin ${
-                  errors.price ? 'border-rose-500' : 'border-slate-200 focus:border-orange-500'
-                }`}
-              />
-              {errors.price && <p className="text-[10px] text-rose-600 font-bold">{errors.price}</p>}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">نرخی داشکاندن (ئارەزوومەندانە)</label>
-              <input
-                type="number"
-                min="0"
-                step="250"
-                value={discountPrice || ''}
-                onChange={(e) => setDiscountPrice(e.target.value ? Number(e.target.value) : undefined)}
-                placeholder="داشکاندن بە دینار"
-                className={`w-full bg-slate-50 border rounded-xl p-3 text-xs font-latin ${
-                  errors.discountPrice ? 'border-rose-500' : 'border-slate-200 focus:border-orange-500'
-                }`}
-              />
-              {errors.discountPrice && <p className="text-[10px] text-rose-600 font-bold">{errors.discountPrice}</p>}
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">ژمارە لە کۆگا (Stock) *</label>
-              <input
-                type="number"
-                min="0"
-                value={stock}
-                onChange={(e) => setStock(Number(e.target.value))}
-                required
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin focus:border-orange-500"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">ڕوونکردنەوە و وەسفی کاڵا</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={3}
-              placeholder="وەسفی وردی کاڵاکە بۆ کڕیاران..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:bg-white focus:outline-hidden focus:border-orange-500"
-            />
-          </div>
-        </div>
-
-        {/* Step 3: DYNAMIC Category Specific Fields */}
-        <div className="space-y-5 bg-orange-50/40 p-5 sm:p-6 rounded-2xl border-2 border-orange-200/80 shadow-xs">
-          
-          <div className="flex items-center justify-between border-b border-orange-200 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-orange-500 text-white">
-                {getCategoryIcon(category)}
-              </div>
-              <div>
-                <h4 className="text-xs font-black text-slate-900">
-                  تایبەتمەندییە داینامیکییەکانی بەشی ({currentCategoryConfig.labelKurdish})
-                </h4>
-                <p className="text-[11px] text-slate-500">
-                  ئەم خانانە تایبەتن بەم بەشە و یارمەتی کڕیار دەدەن بە باشترین شێوە کاڵاکە هەڵبژێرێت.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* CLOTHES DYNAMIC FIELDS */}
-          {category === 'clothes' && (
-            <div className="space-y-5">
-              
-              {/* Sizes */}
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800 flex items-center gap-1.5">
-                  <span>قەبارەکانی بەردەست (Sizes) *</span>
-                </label>
-                
-                <div className="flex flex-wrap gap-1.5">
-                  {['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', '30', '32', '34', '36', '38', '40', '42'].map(s => {
-                    const isSelected = sizes.includes(s);
-                    return (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => toggleSize(s)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold font-latin transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-purple-600 text-white shadow-xs scale-105'
-                            : 'bg-white text-slate-700 border border-slate-200 hover:border-purple-300'
-                        }`}
-                      >
-                        {s} {isSelected && '✓'}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Custom size input */}
-                <div className="flex items-center gap-2 max-w-sm pt-1">
-                  <input
-                    type="text"
-                    value={customSizeInput}
-                    onChange={(e) => setCustomSizeInput(e.target.value)}
-                    onKeyDown={handleAddCustomSize}
-                    placeholder="قەبارەی تایبەت زیادبکە..."
-                    className="flex-1 bg-white border border-slate-200 rounded-xl p-2 text-xs"
-                  />
+            {/* Condition: New / Used / Refurbished */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">دۆخی کاڵا (Condition)</label>
+              <div className="grid grid-cols-3 gap-2.5">
+                {[
+                  { value: 'new', label: 'نوێ (Brand New)' },
+                  { value: 'used', label: 'بەکارهاتوو (Used)' },
+                  { value: 'refurbished', label: 'نوێکراوەتەوە (Refurbished)' }
+                ].map((c) => (
                   <button
+                    key={c.value}
                     type="button"
-                    onClick={handleAddCustomSize}
-                    className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-xl cursor-pointer"
+                    onClick={() => setCondition(c.value as any)}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
+                      condition === c.value
+                        ? 'bg-orange-50 border-orange-500 text-orange-700 shadow-xs ring-2 ring-orange-500/20'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
                   >
-                    زیادکردن
+                    {c.label}
                   </button>
-                </div>
-                {errors.sizes && <p className="text-[10px] text-rose-600 font-bold">{errors.sizes}</p>}
+                ))}
               </div>
-
-              {/* Colors */}
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-800">ڕەنگەکانی بەردەست (Colors) *</label>
-                <div className="flex flex-wrap gap-2">
-                  {POPULAR_COLORS.map(c => {
-                    const isSelected = colors.includes(c.value);
-                    return (
-                      <button
-                        key={c.name}
-                        type="button"
-                        onClick={() => toggleColor(c.value)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
-                          isSelected
-                            ? 'bg-slate-900 text-white shadow-xs ring-2 ring-purple-500'
-                            : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        <span
-                          className="w-3.5 h-3.5 rounded-full border border-slate-300 flex-shrink-0"
-                          style={{ backgroundColor: c.hex }}
-                        />
-                        <span>{c.name}</span>
-                        {isSelected && <Check className="w-3 h-3 text-purple-400" />}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Custom color input */}
-                <div className="flex items-center gap-2 max-w-sm pt-1">
-                  <input
-                    type="text"
-                    value={customColorInput}
-                    onChange={(e) => setCustomColorInput(e.target.value)}
-                    onKeyDown={handleAddCustomColor}
-                    placeholder="ڕەنگی تر (وەک: زیوی، بڕۆنزی...)"
-                    className="flex-1 bg-white border border-slate-200 rounded-xl p-2 text-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddCustomColor}
-                    className="px-3 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl cursor-pointer"
-                  >
-                    زیادکردن
-                  </button>
-                </div>
-                {errors.colors && <p className="text-[10px] text-rose-600 font-bold">{errors.colors}</p>}
-              </div>
-
-              {/* Brand, Gender, Material */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-orange-200/60">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">براند (Brand)</label>
-                  <input
-                    type="text"
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    placeholder="وەک: Zara, LC Waikiki, Nike, Mango..."
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">ڕەگەز (Target Gender)</label>
-                  <select
-                    value={gender}
-                    onChange={(e) => setGender(e.target.value as any)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold"
-                  >
-                    <option value="unisex">هاوبەش (Unisex)</option>
-                    <option value="men">پیاوان (Men)</option>
-                    <option value="women">ئافرەتان (Women)</option>
-                    <option value="kids">منداڵان (Kids)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">جۆری قوماش (Material)</label>
-                  <input
-                    type="text"
-                    value={material}
-                    onChange={(e) => setMaterial(e.target.value)}
-                    placeholder="وەک: ١٠٠٪ لۆکە، جینز، کەتان..."
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs"
-                  />
-                </div>
-              </div>
-
             </div>
-          )}
 
-          {/* ELECTRONICS DYNAMIC FIELDS */}
-          {category === 'electronics' && (
-            <div className="space-y-5">
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-800">براند (Brand) *</label>
-                  <input
-                    type="text"
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    placeholder="وەک: Apple, Samsung, Sony, Xiaomi..."
-                    required
-                    className={`w-full bg-white border rounded-xl p-2.5 text-xs font-latin ${
-                      errors.brand ? 'border-rose-500' : 'border-slate-200'
-                    }`}
-                  />
-                  {errors.brand && <p className="text-[10px] text-rose-600 font-bold">{errors.brand}</p>}
-                </div>
+            {/* Description */}
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-slate-700">وەسف و ڕوونکردنەوەی تەواو (Description)</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                placeholder="تایبەتمەندی، دۆخ، شێوازی بەکارهێنان و گرنگترین خاڵەکانی کاڵاکەت بنووسە بۆ کڕیار..."
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-orange-500 focus:outline-none text-xs sm:text-sm leading-relaxed"
+              />
+            </div>
+          </div>
+        )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-800">مۆدێلی ئامێر (Model) *</label>
-                  <input
-                    type="text"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    placeholder="وەک: iPhone 15 Pro Max, Galaxy S24 Ultra..."
-                    required
-                    className={`w-full bg-white border rounded-xl p-2.5 text-xs font-latin ${
-                      errors.model ? 'border-rose-500' : 'border-slate-200'
-                    }`}
-                  />
-                  {errors.model && <p className="text-[10px] text-rose-600 font-bold">{errors.model}</p>}
-                </div>
+        {/* STEP 2: CATEGORY SPECIFICATIONS */}
+        {activeStep === 2 && (
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-6 animate-fade-in">
+            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <Sliders className="w-4 h-4 text-orange-500" />
+              <span>هەنگاوی ٢: تایبەتمەندییە تایبەتەکانی ({currentCategoryConfig.labelKurdish})</span>
+            </h3>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">ماوەی گارانتی (بە مانگ)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="60"
-                    value={warrantyMonths || ''}
-                    onChange={(e) => setWarrantyMonths(e.target.value ? Number(e.target.value) : undefined)}
-                    placeholder="١٢ مانگ"
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-                  />
-                </div>
-              </div>
-
-              {/* Key-Value Technical Specs */}
-              <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-black text-slate-800">
-                    تایبەتمەندییە تەکنیکییەکان (Technical Specifications)
-                  </label>
-                  <span className="text-[10px] text-slate-400">وەک میمۆری، ڕام، باتری، شاشە...</span>
-                </div>
-
-                {/* Existing Specs */}
-                {Object.keys(specs).length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {Object.entries(specs).map(([k, v]) => (
-                      <div key={k} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                        <div>
-                          <span className="font-bold text-slate-500 ml-1.5">{k}:</span>
-                          <span className="font-black text-slate-900 font-latin">{v}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveSpec(k)}
-                          className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
+            {/* CLOTHES SPECIFIC FIELDS */}
+            {category === 'clothes' && (
+              <div className="space-y-5">
+                {/* Sizes */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700">قەبارە بەردەستەکان (Available Sizes) *</label>
+                    <span className="text-[11px] text-orange-600 font-bold">{sizes.length} قەبارە دیاریکراوە</span>
                   </div>
-                )}
 
-                {/* Add new spec */}
-                <div className="flex flex-col sm:flex-row items-center gap-2 pt-2 border-t border-slate-100">
-                  <input
-                    type="text"
-                    value={newSpecKey}
-                    onChange={(e) => setNewSpecKey(e.target.value)}
-                    placeholder="ناوی تایبەتمەندی (وەک: Storage, RAM, Battery)"
-                    className="w-full sm:w-1/2 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-latin"
-                  />
-                  <input
-                    type="text"
-                    value={newSpecValue}
-                    onChange={(e) => setNewSpecValue(e.target.value)}
-                    placeholder="بڕ / وەسف (وەک: 256GB, 8GB RAM, 5000mAh)"
-                    className="w-full sm:w-1/2 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs font-latin"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddSpec}
-                    className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1 cursor-pointer whitespace-nowrap"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>زیادکردن</span>
-                  </button>
-                </div>
-              </div>
+                  <div className="flex flex-wrap gap-2">
+                    {currentCategoryConfig.fields.find(f => f.name === 'sizes')?.presets?.map((sz) => {
+                      const isSelected = sizes.includes(sz);
+                      return (
+                        <button
+                          key={sz}
+                          type="button"
+                          onClick={() => toggleSize(sz)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold font-latin transition-all cursor-pointer ${
+                            isSelected
+                              ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-600/30'
+                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          {sz}
+                        </button>
+                      );
+                    })}
+                  </div>
 
-            </div>
-          )}
-
-          {/* CARS DYNAMIC FIELDS */}
-          {category === 'cars' && (
-            <div className="space-y-5">
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-800">کۆمپانیا / براند (Make) *</label>
-                  <input
-                    type="text"
-                    value={brand}
-                    onChange={(e) => setBrand(e.target.value)}
-                    placeholder="Toyota, Mercedes, BMW, Hyundai..."
-                    required
-                    className={`w-full bg-white border rounded-xl p-2.5 text-xs font-latin ${
-                      errors.brand ? 'border-rose-500' : 'border-slate-200'
-                    }`}
-                  />
-                  {errors.brand && <p className="text-[10px] text-rose-600 font-bold">{errors.brand}</p>}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-800">مۆدێل (Model) *</label>
-                  <input
-                    type="text"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    placeholder="Camry, Land Cruiser, Tucson, C-Class..."
-                    required
-                    className={`w-full bg-white border rounded-xl p-2.5 text-xs font-latin ${
-                      errors.model ? 'border-rose-500' : 'border-slate-200'
-                    }`}
-                  />
-                  {errors.model && <p className="text-[10px] text-rose-600 font-bold">{errors.model}</p>}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-800">ساڵی دروستکردن (Year) *</label>
-                  <input
-                    type="number"
-                    min="1980"
-                    max={new Date().getFullYear() + 1}
-                    value={year || ''}
-                    onChange={(e) => setYear(e.target.value ? Number(e.target.value) : undefined)}
-                    placeholder={`${new Date().getFullYear()}`}
-                    required
-                    className={`w-full bg-white border rounded-xl p-2.5 text-xs font-latin ${
-                      errors.year ? 'border-rose-500' : 'border-slate-200'
-                    }`}
-                  />
-                  {errors.year && <p className="text-[10px] text-rose-600 font-bold">{errors.year}</p>}
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-800">ڕۆیشتوو بە کیلۆمەتر (Mileage) *</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={mileageKm ?? ''}
-                    onChange={(e) => setMileageKm(e.target.value !== '' ? Number(e.target.value) : undefined)}
-                    placeholder="٤٥٠٠٠"
-                    required
-                    className={`w-full bg-white border rounded-xl p-2.5 text-xs font-latin ${
-                      errors.mileageKm ? 'border-rose-500' : 'border-slate-200'
-                    }`}
-                  />
-                  {errors.mileageKm && <p className="text-[10px] text-rose-600 font-bold">{errors.mileageKm}</p>}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">جۆری گێڕ (Transmission) *</label>
-                  <select
-                    value={transmission}
-                    onChange={(e) => setTransmission(e.target.value as any)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold"
-                  >
-                    <option value="automatic">ئۆتۆماتیک (Automatic)</option>
-                    <option value="manual">عادی / دەستی (Manual)</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">جۆری سووتەمەنی (Fuel Type)</label>
-                  <select
-                    value={fuelType}
-                    onChange={(e) => setFuelType(e.target.value as any)}
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold"
-                  >
-                    <option value="gasoline">بەنزین (Gasoline)</option>
-                    <option value="hybrid">هایبرید / تێکەڵە (Hybrid)</option>
-                    <option value="electric">کارەبایی (Electric)</option>
-                    <option value="diesel">گاز / دیزڵ (Diesel)</option>
-                  </select>
-                </div>
-              </div>
-
-            </div>
-          )}
-
-          {/* FOOD DYNAMIC FIELDS */}
-          {category === 'food' && (
-            <div className="space-y-4">
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-xs font-black text-slate-800">کاتی ئامادەکردن (بە خولەک)</label>
-                  <input
-                    type="number"
-                    min="5"
-                    max="180"
-                    value={prepTimeMinutes || ''}
-                    onChange={(e) => setPrepTimeMinutes(e.target.value ? Number(e.target.value) : undefined)}
-                    placeholder="٢٠ خولەک"
-                    className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-                  />
-                </div>
-
-                <div className="flex items-center gap-6 pt-5">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  {/* Add Custom Size */}
+                  <div className="flex gap-2 pt-1">
                     <input
-                      type="checkbox"
-                      checked={isSpicy}
-                      onChange={(e) => setIsSpicy(e.target.checked)}
-                      className="w-4 h-4 text-orange-500 rounded border-slate-300"
+                      type="text"
+                      value={customSizeInput}
+                      onChange={(e) => setCustomSizeInput(e.target.value)}
+                      placeholder="قەبارەی تایبەت (وەک: 38/32, 4X, منداڵان ٣ ساڵ)..."
+                      className="flex-1 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-500"
                     />
-                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                      <Flame className="w-4 h-4 text-rose-500" />
-                      <span>تیژە (Spicy)</span>
-                    </span>
-                  </label>
+                    <button
+                      type="button"
+                      onClick={handleAddCustomSize}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 cursor-pointer"
+                    >
+                      زیادکردن
+                    </button>
+                  </div>
+                  {errors.sizes && <p className="text-[11px] text-red-500 font-bold">{errors.sizes}</p>}
+                </div>
 
-                  <label className="flex items-center gap-2 cursor-pointer">
+                {/* Colors */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700">ڕەنگە بەردەستەکان (Colors) *</label>
+                    <span className="text-[11px] text-purple-600 font-bold">{colors.length} ڕەنگ دیاریکراوە</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                    {POPULAR_COLORS.map((c) => {
+                      const isSelected = colors.includes(c.value);
+                      return (
+                        <button
+                          key={c.value}
+                          type="button"
+                          onClick={() => toggleColor(c.value)}
+                          className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-xs ring-2 ring-purple-500/20'
+                              : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                          }`}
+                        >
+                          <span
+                            className="w-4 h-4 rounded-full border border-slate-300 shadow-xs flex-shrink-0"
+                            style={{ backgroundColor: c.hex }}
+                          />
+                          <span className="truncate text-[11px]">{c.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Add Custom Color */}
+                  <div className="flex gap-2 pt-1 items-center">
                     <input
-                      type="checkbox"
-                      checked={isVegetarian}
-                      onChange={(e) => setIsVegetarian(e.target.checked)}
-                      className="w-4 h-4 text-emerald-500 rounded border-slate-300"
+                      type="color"
+                      value={customColorHex}
+                      onChange={(e) => setCustomColorHex(e.target.value)}
+                      className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5"
                     />
-                    <span className="text-xs font-bold text-slate-800">
-                      🥗 گیاخۆرییە (Vegetarian)
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Ingredients tag manager */}
-              <div className="space-y-2 bg-white p-4 rounded-2xl border border-slate-200">
-                <label className="text-xs font-black text-slate-800">پێکهاتەکان (Ingredients)</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {ingredients.map(ing => (
-                    <span key={ing} className="bg-orange-50 border border-orange-200 text-orange-800 text-xs px-2.5 py-1 rounded-xl flex items-center gap-1.5 font-bold">
-                      <span>{ing}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveIngredient(ing)}
-                        className="text-rose-500 hover:text-rose-700 cursor-pointer"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                    <input
+                      type="text"
+                      value={customColorInput}
+                      onChange={(e) => setCustomColorInput(e.target.value)}
+                      placeholder="ناوی ڕەنگ (وەک: شینی ئاسمانی، زەیتوونی، برۆنزی)..."
+                      className="flex-1 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomColor}
+                      className="px-4 py-2 bg-purple-600 text-white rounded-xl text-xs font-bold hover:bg-purple-700 cursor-pointer"
+                    >
+                      زیادکردن
+                    </button>
+                  </div>
+                  {errors.colors && <p className="text-[11px] text-red-500 font-bold">{errors.colors}</p>}
                 </div>
 
-                <div className="flex items-center gap-2 pt-1 max-w-md">
-                  <input
-                    type="text"
-                    value={newIngredientInput}
-                    onChange={(e) => setNewIngredientInput(e.target.value)}
-                    onKeyDown={(e) => handleAddIngredient(e)}
-                    placeholder="پێکهاتەی تر زیادبکە..."
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl p-2 text-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={(e) => handleAddIngredient(e)}
-                    className="px-3 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold cursor-pointer"
-                  >
-                    زیادکردن
-                  </button>
+                {/* Gender, Brand & Material */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">ڕەگەز (Target Gender)</label>
+                    <select
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value as any)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-purple-500"
+                    >
+                      <option value="men">پیاوان (Men)</option>
+                      <option value="women">ئافرەتان (Women)</option>
+                      <option value="kids">منداڵان (Kids)</option>
+                      <option value="unisex">هاوبەش (Unisex)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">براند (Brand)</label>
+                    <input
+                      type="text"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      placeholder="وەک: Zara, Nike, Adidas, Mango..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">قوماش و کەرەستە (Material)</label>
+                    <input
+                      type="text"
+                      value={material}
+                      onChange={(e) => setMaterial(e.target.value)}
+                      placeholder="وەک: ١٠٠٪ لۆکە، جینز، کەتان..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
                 </div>
               </div>
+            )}
 
-            </div>
-          )}
+            {/* ELECTRONICS SPECIFIC FIELDS */}
+            {category === 'electronics' && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">کۆمپانیا / براند (Brand) *</label>
+                    <input
+                      type="text"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      placeholder="وەک: Apple, Samsung, Sony, Xiaomi, Asus..."
+                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
+                        errors.brand ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-blue-500'
+                      }`}
+                    />
+                    {errors.brand && <p className="text-[11px] text-red-500 font-bold">{errors.brand}</p>}
+                  </div>
 
-          {/* FRESH MEAT DYNAMIC FIELDS */}
-          {category === 'fresh_meat' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-black text-slate-800">جۆری گۆشت (Meat Type) *</label>
-                <select
-                  value={meatType}
-                  onChange={(e) => setMeatType(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold"
-                >
-                  <option value="lamb">گۆشتی بەرخی خۆماڵی (Lamb)</option>
-                  <option value="beef">گۆشتی گوێرەکە / مانگا (Beef)</option>
-                  <option value="chicken">مریشکی تازەی سەربڕاو (Fresh Chicken)</option>
-                  <option value="turkey">قەل و پەلەوەر (Turkey)</option>
-                  <option value="fish">ماسی تازەی ناوخۆ (Fresh Fish)</option>
-                </select>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">مۆدێلی تەواو (Model) *</label>
+                    <input
+                      type="text"
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      placeholder="وەک: iPhone 15 Pro Max 256GB, Galaxy S24..."
+                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
+                        errors.model ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-blue-500'
+                      }`}
+                    />
+                    {errors.model && <p className="text-[11px] text-red-500 font-bold">{errors.model}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">قەبارەی بیرگە (Storage)</label>
+                    <select
+                      value={storageCapacity}
+                      onChange={(e) => setStorageCapacity(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold font-latin focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="">هەڵبژێرە (یان بنووسە)</option>
+                      <option value="128GB">128 GB</option>
+                      <option value="256GB">256 GB</option>
+                      <option value="512GB">512 GB</option>
+                      <option value="1TB">1 TB</option>
+                      <option value="2TB">2 TB</option>
+                      <option value="64GB">64 GB</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">ڕام (RAM)</label>
+                    <select
+                      value={ramSize}
+                      onChange={(e) => setRamSize(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold font-latin focus:outline-none focus:border-blue-500"
+                    >
+                      <option value="">هەڵبژێرە</option>
+                      <option value="8GB">8 GB</option>
+                      <option value="12GB">12 GB</option>
+                      <option value="16GB">16 GB</option>
+                      <option value="32GB">32 GB</option>
+                      <option value="6GB">6 GB</option>
+                      <option value="4GB">4 GB</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">گارانتی (بە مانگ)</label>
+                    <input
+                      type="number"
+                      value={warrantyMonths || ''}
+                      onChange={(e) => setWarrantyMonths(e.target.value ? Number(e.target.value) : undefined)}
+                      placeholder="١٢ مانگ"
+                      min={0}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-latin focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Custom Specs Table */}
+                <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                  <label className="block text-xs font-bold text-slate-800">تایبەتمەندییە وردەکان (Specs Key/Value)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newSpecKey}
+                      onChange={(e) => setNewSpecKey(e.target.value)}
+                      placeholder="تایبەتمەندی (وەک: پاتری، کامێرا)..."
+                      className="flex-1 px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                    />
+                    <input
+                      type="text"
+                      value={newSpecValue}
+                      onChange={(e) => setNewSpecValue(e.target.value)}
+                      placeholder="بها (وەک: 5000 mAh, 200MP)..."
+                      className="flex-1 px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddSpec}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 cursor-pointer"
+                    >
+                      زیادکردن
+                    </button>
+                  </div>
+
+                  {Object.keys(specs).length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                      {Object.entries(specs).map(([k, v]) => (
+                        <div key={k} className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-200 text-xs">
+                          <span className="font-bold text-slate-700">{k}: {v}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSpec(k)}
+                            className="text-red-500 hover:text-red-700 p-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
 
-              <div className="space-y-1">
-                <label className="text-xs font-black text-slate-800">بەش یان پارچەی گۆشت (Cut) *</label>
-                <input
-                  type="text"
-                  value={cutType}
-                  onChange={(e) => setCutType(e.target.value)}
-                  placeholder="وەک: ڕان، پەراسو، فیلیە، دەست، هاڕاو..."
-                  required
-                  className={`w-full bg-white border rounded-xl p-2.5 text-xs ${
-                    errors.cutType ? 'border-rose-500' : 'border-slate-200'
-                  }`}
-                />
-                {errors.cutType && <p className="text-[10px] text-rose-600 font-bold">{errors.cutType}</p>}
+            {/* CARS SPECIFIC FIELDS */}
+            {category === 'cars' && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">کۆمپانیا / براند (Make) *</label>
+                    <input
+                      type="text"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      placeholder="وەک: Toyota, Mercedes-Benz, BMW, Kia..."
+                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
+                        errors.brand ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-amber-500'
+                      }`}
+                    />
+                    {errors.brand && <p className="text-[11px] text-red-500 font-bold">{errors.brand}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">مۆدێل (Model) *</label>
+                    <input
+                      type="text"
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                      placeholder="وەک: Land Cruiser, Camry, Tucson..."
+                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
+                        errors.model ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-amber-500'
+                      }`}
+                    />
+                    {errors.model && <p className="text-[11px] text-red-500 font-bold">{errors.model}</p>}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">ساڵی دروستکردن (Year) *</label>
+                    <input
+                      type="number"
+                      value={year || ''}
+                      onChange={(e) => setYear(Number(e.target.value))}
+                      min={1980}
+                      max={new Date().getFullYear() + 1}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-latin focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">ڕۆیشتن (کیلۆمەتر)</label>
+                    <input
+                      type="number"
+                      value={mileageKm !== undefined ? mileageKm : ''}
+                      onChange={(e) => setMileageKm(Number(e.target.value))}
+                      min={0}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-latin focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">گێڕ (Transmission)</label>
+                    <select
+                      value={transmission}
+                      onChange={(e) => setTransmission(e.target.value as any)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="automatic">ئۆتۆماتیک (Automatic)</option>
+                      <option value="manual">عادی / دەستی (Manual)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">سووتەمەنی (Fuel)</label>
+                    <select
+                      value={fuelType}
+                      onChange={(e) => setFuelType(e.target.value as any)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                    >
+                      <option value="gasoline">بەنزین (Gasoline)</option>
+                      <option value="hybrid">هایبرید (Hybrid)</option>
+                      <option value="electric">کارەبایی (Electric)</option>
+                      <option value="diesel">گاز / دیزڵ (Diesel)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">دەبڵ ئەکسل (Drivetrain)</label>
+                    <select
+                      value={drivetrain}
+                      onChange={(e) => setDrivetrain(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                    >
+                      {CAR_DRIVETRAINS.map((d) => (
+                        <option key={d.value} value={d.value}>{d.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">دۆخی بۆیاخ (Paint Condition)</label>
+                    <select
+                      value={paintStatus}
+                      onChange={(e) => setPaintStatus(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                    >
+                      {CAR_PAINT_CONDITIONS.map((p) => (
+                        <option key={p.value} value={p.value}>{p.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">دۆخی لێدران و ڕووداو (Accident)</label>
+                    <select
+                      value={accidentStatus}
+                      onChange={(e) => setAccidentStatus(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                    >
+                      {CAR_ACCIDENT_CONDITIONS.map((a) => (
+                        <option key={a.value} value={a.value}>{a.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
+            )}
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">سەرچاوە و سەربڕین</label>
-                <input
-                  type="text"
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
-                  placeholder="سەربڕاوی تازەی بەردەڕەش / هەولێر (حەڵاڵ)"
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs"
-                />
+            {/* RESTAURANT / FOOD SPECIFIC FIELDS */}
+            {category === 'food' && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">کاتی ئامادەکردن (بە خولەک)</label>
+                    <input
+                      type="number"
+                      value={prepTimeMinutes || ''}
+                      onChange={(e) => setPrepTimeMinutes(Number(e.target.value))}
+                      placeholder="٢٠ خولەک"
+                      min={5}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-latin focus:outline-none focus:border-orange-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">تیژی خواردن (Spicy)</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsSpicy(!isSpicy)}
+                      className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        isSpicy ? 'bg-red-50 border-red-500 text-red-700 ring-2 ring-red-500/20' : 'bg-slate-50 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <Flame className={`w-4 h-4 ${isSpicy ? 'text-red-600 fill-red-600' : 'text-slate-400'}`} />
+                      <span>{isSpicy ? 'تیژە (Spicy)' : 'تیژ نییە (Mild)'}</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">گیاخۆری (Vegetarian)</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsVegetarian(!isVegetarian)}
+                      className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        isVegetarian ? 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-500/20' : 'bg-slate-50 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <span>{isVegetarian ? 'گیاخۆرییە (Vegetarian)' : 'ئاسایی / گۆشتخۆر'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ingredients */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700">پێکهاتەکان (Ingredients)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newIngredientInput}
+                      onChange={(e) => setNewIngredientInput(e.target.value)}
+                      placeholder="پێکهاتە بنووسە (وەک: پەنیری مۆزارێلا، قارچک، سنگی مریشک)..."
+                      className="flex-1 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-orange-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddIngredient}
+                      className="px-4 py-2 bg-orange-600 text-white rounded-xl text-xs font-bold hover:bg-orange-700 cursor-pointer"
+                    >
+                      زیادکردن
+                    </button>
+                  </div>
+
+                  {ingredients.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {ingredients.map((ing) => (
+                        <span key={ing} className="px-3 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                          <span>{ing}</span>
+                          <button type="button" onClick={() => handleRemoveIngredient(ing)} className="hover:text-red-600">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* FRUITS & VEGETABLES DYNAMIC FIELDS */}
-          {category === 'fruits_vegetables' && (
+            {/* FRESH MEAT SPECIFIC FIELDS */}
+            {category === 'fresh_meat' && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">جۆری گۆشت (Meat Type) *</label>
+                    <select
+                      value={meatType}
+                      onChange={(e) => setMeatType(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-rose-500"
+                    >
+                      <option value="lamb">گۆشتی بەرخی خۆماڵی (Lamb)</option>
+                      <option value="beef">گۆشتی گوێرەکە و مانگا (Beef)</option>
+                      <option value="chicken">مریشکی تازەی سەربڕاو (Fresh Chicken)</option>
+                      <option value="fish">ماسی تازەی روبار (Fresh Fish)</option>
+                      <option value="turkey">گۆشتی قەل و پەلەوەر (Turkey)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">پارچە / بڕینی گۆشت (Cut) *</label>
+                    <input
+                      type="text"
+                      value={cutType}
+                      onChange={(e) => setCutType(e.target.value)}
+                      placeholder="وەک: ڕان، پەراسو، فیلیە، دەست، هاڕاو، تیکە بۆ کەباب..."
+                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
+                        errors.cutType ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-rose-500'
+                      }`}
+                    />
+                    {errors.cutType && <p className="text-[11px] text-red-500 font-bold">{errors.cutType}</p>}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">سەرچاوەی سەربڕین (Origin & Halal)</label>
+                    <input
+                      type="text"
+                      value={origin}
+                      onChange={(e) => setOrigin(e.target.value)}
+                      placeholder="وەک: سەربڕاوی ناوخۆی کوردستان (١٠٠٪ حەڵاڵ)..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">کێش یان قەبارەی پاکێج (Weight)</label>
+                    <input
+                      type="text"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      placeholder="وەک: ١ کیلۆگرام، ٥٠٠ گرام، نیو لاشە..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-rose-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* FRUITS & VEGETABLES */}
+            {category === 'fruits_vegetables' && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">سەرچاوە و ناوچەی بەرهەمهێنان (Origin)</label>
+                    <input
+                      type="text"
+                      value={origin}
+                      onChange={(e) => setOrigin(e.target.value)}
+                      placeholder="وەک: باخچەکانی پێنجوێن، شارەزوور، بەردەڕەش..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">١٠٠٪ ئۆرگانیک و سروشتی</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsOrganic(!isOrganic)}
+                      className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        isOrganic ? 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-500/20' : 'bg-slate-50 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <Sparkles className={`w-4 h-4 ${isOrganic ? 'text-emerald-600' : 'text-slate-400'}`} />
+                      <span>{isOrganic ? 'بەرهەمی ئۆرگانیکی مسۆگەر' : 'بەرهەمی ئاسایی'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DAIRY SPECIFIC FIELDS */}
+            {category === 'dairy' && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">ڕێژەی چەوری (Fat Content)</label>
+                    <select
+                      value={fatPercentage}
+                      onChange={(e) => setFatPercentage(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-cyan-500"
+                    >
+                      <option value="full_fat">چەوری تەواو و سروشتی (Full Fat)</option>
+                      <option value="medium_fat">نیوە چەوری (Medium Fat)</option>
+                      <option value="low_fat">کەم چەوری (Low Fat)</option>
+                      <option value="skimmed">بێ چەوری (Skimmed)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">ماوەی بەسەرچوون و پاراستن (Shelf Life)</label>
+                    <input
+                      type="text"
+                      value={expiryInfo}
+                      onChange={(e) => setExpiryInfo(e.target.value)}
+                      placeholder="وەک: ٥ ڕۆژ لە ساردکەرەوە..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">سەرچاوەی شیرەمەنی (Origin)</label>
+                    <input
+                      type="text"
+                      value={origin}
+                      onChange={(e) => setOrigin(e.target.value)}
+                      placeholder="وەک: ماستی مەڕی بەردەڕەش..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* BEAUTY & COSMETICS */}
+            {category === 'beauty' && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">براند (Brand) *</label>
+                    <input
+                      type="text"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      placeholder="وەک: The Ordinary, CeraVe, Maybelline..."
+                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
+                        errors.brand ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-pink-500'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">گونجاو بۆ پێست (Skin Type)</label>
+                    <select
+                      value={skinType}
+                      onChange={(e) => setSkinType(e.target.value)}
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-pink-500"
+                    >
+                      <option value="all">سەرجەم جۆرەکان (All Skin Types)</option>
+                      <option value="oily">پێستی چەور (Oily Skin)</option>
+                      <option value="dry">پێستی وشک (Dry Skin)</option>
+                      <option value="sensitive">پێستی هەستیار (Sensitive)</option>
+                      <option value="combination">پێستی تێکەڵ (Combination)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">قەبارە / کێش (Volume/Weight)</label>
+                    <input
+                      type="text"
+                      value={volume}
+                      onChange={(e) => setVolume(e.target.value)}
+                      placeholder="وەک: 30ml, 50ml, 100g..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-pink-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* MARKET / GROCERY */}
+            {category === 'market' && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">براند (Brand)</label>
+                    <input
+                      type="text"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      placeholder="وەک: Nestle, Dano, Almarai..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">کێش یان قەبارەی پاکێج</label>
+                    <input
+                      type="text"
+                      value={weight}
+                      onChange={(e) => setWeight(e.target.value)}
+                      placeholder="وەک: 800g, 1 Liter, 5 Kg..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-slate-700">بەرواری بەسەرچوون (Expiry)</label>
+                    <input
+                      type="text"
+                      value={expiryInfo}
+                      onChange={(e) => setExpiryInfo(e.target.value)}
+                      placeholder="وەک: 2026/12..."
+                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* STEP 3: PRICE, STOCK, DELIVERY & REWARD POINTS */}
+        {activeStep === 3 && (
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-6 animate-fade-in">
+            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <DollarSign className="w-4 h-4 text-orange-500" />
+              <span>هەنگاوی ٣: نرخ، داشکاندن، کۆگا و پۆینتی شڕینی</span>
+            </h3>
+
+            {/* Pricing Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">سەرچاوە و وڵات (Origin)</label>
-                <input
-                  type="text"
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
-                  placeholder="خۆماڵی کوردستانی (پێنجوێن، بەردەڕەش...)"
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs"
-                />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">نرخی بنەڕەتی (دیناری عێراقی) *</label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={price}
+                    onChange={(e) => handlePriceChange(Number(e.target.value))}
+                    min={250}
+                    step={250}
+                    className={`w-full px-4 py-3 rounded-2xl border text-sm font-black font-latin bg-slate-50/50 focus:bg-white focus:outline-none ${
+                      errors.price ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-orange-500'
+                    }`}
+                  />
+                  <span className="absolute left-3 top-3 text-xs font-bold text-slate-400">د.ع</span>
+                </div>
+                {errors.price && <p className="text-[11px] text-red-500 font-bold">{errors.price}</p>}
+                <p className="text-[11px] text-slate-400 font-latin">≈ ${approxUsd.toLocaleString()} USD</p>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">یەکەی پێوانە</label>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-700">نرخی داشکاندن (داشکاو)</label>
+                  {discountPercentage > 0 && (
+                    <span className="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-lg flex items-center gap-0.5">
+                      <Percent className="w-3 h-3" />
+                      <span>{discountPercentage}٪ داشکاندن</span>
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="number"
+                    value={discountPrice || ''}
+                    onChange={(e) => setDiscountPrice(e.target.value ? Number(e.target.value) : undefined)}
+                    placeholder="ئارەزوومەندانە"
+                    min={250}
+                    step={250}
+                    className={`w-full px-4 py-3 rounded-2xl border text-sm font-black font-latin bg-slate-50/50 focus:bg-white focus:outline-none ${
+                      errors.discountPrice ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-orange-500'
+                    }`}
+                  />
+                  <span className="absolute left-3 top-3 text-xs font-bold text-slate-400">د.ع</span>
+                </div>
+                {errors.discountPrice && <p className="text-[11px] text-red-500 font-bold">{errors.discountPrice}</p>}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">ژمارەی بەردەست لە کۆگا (Stock) *</label>
+                <input
+                  type="number"
+                  value={stock}
+                  onChange={(e) => setStock(Number(e.target.value))}
+                  min={0}
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm font-black font-latin bg-slate-50/50 focus:bg-white focus:border-orange-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Unit & Availability */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">یەکەی فرۆشتن (Unit of Sale)</label>
                 <select
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-xs sm:text-sm font-bold bg-slate-50/50 focus:bg-white focus:border-orange-500 focus:outline-none"
                 >
+                  <option value="دانە">دانە (Piece)</option>
                   <option value="کیلۆگرام">کیلۆگرام (Kg)</option>
                   <option value="سندووق">سندووق / کارتۆن (Box)</option>
+                  <option value="پاکێج">پاکێج / سێت (Pack)</option>
                   <option value="دەسک">دەسک (Bundle)</option>
-                  <option value="دانە">دانە (Piece)</option>
+                  <option value="مەتر">مەتر (Meter)</option>
+                  <option value="لیتر">لیتر (Liter)</option>
+                  <option value="دەرزەن">دەرزەن (Dozen)</option>
                 </select>
               </div>
 
-              <div className="flex items-center gap-2 pt-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={isOrganic}
-                    onChange={(e) => setIsOrganic(e.target.checked)}
-                    className="w-4 h-4 text-emerald-500 rounded border-slate-300"
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700">دۆخی بەردەستبوون لە فرۆشگا</label>
+                <button
+                  type="button"
+                  onClick={() => setIsAvailable(!isAvailable)}
+                  className={`w-full py-3 px-4 rounded-2xl border text-xs sm:text-sm font-bold flex items-center justify-between transition-all cursor-pointer ${
+                    isAvailable
+                      ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/20'
+                      : 'bg-red-50 border-red-300 text-red-700'
+                  }`}
+                >
+                  <span>{isAvailable ? 'بەردەستە بۆ کڕین (Available)' : 'تەواوبووە / ناچالاکە (Out of Stock)'}</span>
+                  <div className={`w-3.5 h-3.5 rounded-full ${isAvailable ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                </button>
+              </div>
+            </div>
+
+            {/* Shakh Reward Points System Integration */}
+            <div className="bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 p-5 rounded-3xl border border-amber-200/80 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-amber-500 text-white rounded-xl shadow-xs">
+                    <Gift className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-slate-900">پۆینتی خەڵاتی شاخ بۆ کڕیار (Reward Points)</h4>
+                    <p className="text-[11px] text-slate-600">
+                      پۆینت دەدرێتە کڕیار لە کاتی کڕینی ئەم کاڵایە (١٥٠ پۆینت = ١ دیناری عێراقی)
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setRewardPoints(calculateSuggestedPoints(price))}
+                  className="text-[11px] font-bold text-amber-700 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>پێشنیاری خۆکار</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  value={rewardPoints}
+                  onChange={(e) => setRewardPoints(Number(e.target.value))}
+                  min={0}
+                  step={50}
+                  className="w-40 px-4 py-2.5 bg-white rounded-xl border border-amber-300 text-sm font-black font-latin focus:outline-none focus:border-amber-500"
+                />
+                <span className="text-xs font-bold text-amber-900">
+                  پۆینت (بەرامبەر بە {Math.round(rewardPoints / 150)} دینار داشکاندن لە داهاتوودا)
+                </span>
+              </div>
+            </div>
+
+            {/* Featured Product Toggle */}
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-orange-500" />
+                <div>
+                  <h4 className="text-xs font-black text-slate-800">پیشاندان لە بەشی سەرەکی و تایبەتەکان (Featured)</h4>
+                  <p className="text-[11px] text-slate-500">کاڵاکەت لە سەرەوەی ئەپ و بەشی VIP دەردەکەوێت</p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsFeatured(!isFeatured)}
+                className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
+                  isFeatured ? 'bg-orange-500' : 'bg-slate-300'
+                }`}
+              >
+                <div
+                  className={`w-4 h-4 rounded-full bg-white transition-transform absolute top-1 ${
+                    isFeatured ? 'right-7' : 'right-1'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: IMAGES & MEDIA */}
+        {activeStep === 4 && (
+          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-6 animate-fade-in">
+            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+              <ImageIcon className="w-4 h-4 text-orange-500" />
+              <span>هەنگاوی ٤: وێنە و میدیای کاڵا (تا ٨ وێنەی کوالیتی بەرز)</span>
+            </h3>
+
+            <ImageUpload
+              images={images}
+              onChange={setImages}
+              maxImages={8}
+              label="وێنەکانی کاڵا یان ئۆتۆمبێل (تا ٨ وێنە)"
+              helperText="وێنەی ڕوون و جوان دابنێ. دەتوانیت لە ڕێگەی تیرەکان وێنەکان پێش و پاش بکەیت و یەکەم وێنە وەک وێنەی سەرەکی دادەنرێت."
+            />
+            {errors.images && <p className="text-[11px] text-red-500 font-bold">{errors.images}</p>}
+          </div>
+        )}
+
+        {/* STEP 5: PREVIEW & PUBLISH */}
+        {activeStep === 5 && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <Eye className="w-4 h-4 text-orange-500" />
+                <span>هەنگاوی ٥: پێداچوونەوە و بڵاوکردنەوە (Live Preview)</span>
+              </h3>
+              <p className="text-xs text-slate-500">
+                ئەمە ئەو شێوازەیە کە کڕیار لە ئەپ و وێبسایتدا کاڵاکەت دەبینێت:
+              </p>
+
+              {/* Product Preview Card */}
+              <div className="max-w-md mx-auto bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden p-4 space-y-4">
+                <div className="relative aspect-4/3 rounded-2xl overflow-hidden bg-slate-100">
+                  <img
+                    src={images[0] || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800'}
+                    alt={title || 'Product'}
+                    className="w-full h-full object-cover"
                   />
-                  <span className="text-xs font-bold text-slate-800">
-                    🌿 ١٠٠٪ ئۆرگانیک و سروشتی
-                  </span>
-                </label>
+                  {discountPercentage > 0 && (
+                    <span className="absolute top-3 right-3 bg-red-600 text-white text-xs font-black px-2.5 py-1 rounded-xl shadow-xs">
+                      {discountPercentage}٪ داشکاندن
+                    </span>
+                  )}
+                  {rewardPoints > 0 && (
+                    <span className="absolute bottom-3 right-3 bg-amber-500 text-white text-[11px] font-black px-2 py-0.5 rounded-lg shadow-xs flex items-center gap-1">
+                      <Gift className="w-3 h-3" />
+                      <span>+{rewardPoints} پۆینت</span>
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400">{currentCategoryConfig.labelKurdish}</span>
+                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">
+                      {isAvailable ? 'بەردەستە لە کۆگا' : 'تەواوبووە'}
+                    </span>
+                  </div>
+
+                  <h4 className="text-base font-black text-slate-900">{title || 'ناوی کاڵا'}</h4>
+                  
+                  {description && (
+                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{description}</p>
+                  )}
+
+                  {/* Dynamic Badges in Preview */}
+                  {category === 'clothes' && sizes.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      <span className="text-[11px] text-slate-500 font-bold ml-1">قەبارە:</span>
+                      {sizes.slice(0, 5).map(s => (
+                        <span key={s} className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded">
+                          {s}
+                        </span>
+                      ))}
+                      {sizes.length > 5 && <span className="text-[10px] text-slate-400">+{sizes.length - 5} تر</span>}
+                    </div>
+                  )}
+
+                  {category === 'cars' && (
+                    <div className="flex flex-wrap gap-2 text-[11px] text-slate-600 font-bold pt-1">
+                      {year && <span>ساڵ: {year}</span>}
+                      {mileageKm !== undefined && <span>• {mileageKm.toLocaleString()} کم</span>}
+                      {transmission && <span>• {transmission === 'automatic' ? 'ئۆتۆماتیک' : 'عادی'}</span>}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <div>
+                      {discountPrice && discountPrice < price ? (
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-lg font-black text-orange-600 font-latin">
+                            {discountPrice.toLocaleString()} د.ع
+                          </span>
+                          <span className="text-xs text-slate-400 line-through font-latin">
+                            {price.toLocaleString()}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-lg font-black text-orange-600 font-latin">
+                          {price.toLocaleString()} د.ع
+                        </span>
+                      )}
+                    </div>
+
+                    <span className="text-xs font-bold text-slate-500">فرۆشیار: {sellerName || 'فرۆشگای شاخ'}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* DAIRY DYNAMIC FIELDS */}
-          {category === 'dairy' && (
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-black text-slate-800">ماوەی بەسەرچوون (Expiry Info) *</label>
-                <input
-                  type="text"
-                  value={expiryInfo}
-                  onChange={(e) => setExpiryInfo(e.target.value)}
-                  placeholder="وەک: ٥ ڕۆژ لە ساردکەرەوە..."
-                  required
-                  className={`w-full bg-white border rounded-xl p-2.5 text-xs ${
-                    errors.expiryInfo ? 'border-rose-500' : 'border-slate-200'
-                  }`}
-                />
-                {errors.expiryInfo && <p className="text-[10px] text-rose-600 font-bold">{errors.expiryInfo}</p>}
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">ڕێژەی چەوری</label>
-                <select
-                  value={fatPercentage}
-                  onChange={(e) => setFatPercentage(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold"
-                >
-                  <option value="full_fat">چەوری تەواو (Full Fat)</option>
-                  <option value="medium_fat">نیوە چەوری (Medium Fat)</option>
-                  <option value="low_fat">کەم چەوری (Low Fat)</option>
-                  <option value="skimmed">بێ چەوری (Skimmed)</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">سەرچاوەی ماست و شیر</label>
-                <input
-                  type="text"
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
-                  placeholder="خۆماڵی گوندەکانی بەردەڕەش / هەولێر"
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* BEAUTY DYNAMIC FIELDS */}
-          {category === 'beauty' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-black text-slate-800">براند (Brand) *</label>
-                <input
-                  type="text"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  placeholder="The Ordinary, CeraVe, Maybelline..."
-                  required
-                  className={`w-full bg-white border rounded-xl p-2.5 text-xs font-latin ${
-                    errors.brand ? 'border-rose-500' : 'border-slate-200'
-                  }`}
-                />
-                {errors.brand && <p className="text-[10px] text-rose-600 font-bold">{errors.brand}</p>}
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">گونجاو بۆ پێستی</label>
-                <select
-                  value={skinType}
-                  onChange={(e) => setSkinType(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-bold"
-                >
-                  <option value="all">تەواوی جۆرەکان (All)</option>
-                  <option value="oily">پێستی چەور (Oily)</option>
-                  <option value="dry">پێستی وشک (Dry)</option>
-                  <option value="sensitive">پێستی هەستیار (Sensitive)</option>
-                  <option value="combination">تێکەڵ (Combination)</option>
-                </select>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">قەبارە / کێش</label>
-                <input
-                  type="text"
-                  value={volume}
-                  onChange={(e) => setVolume(e.target.value)}
-                  placeholder="وەک: 50ml, 100ml, 30g..."
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">بەسەرچوون دوای کردنەوە</label>
-                <input
-                  type="text"
-                  value={expiryInfo}
-                  onChange={(e) => setExpiryInfo(e.target.value)}
-                  placeholder="12M دوای کردنەوە"
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* MARKET DYNAMIC FIELDS */}
-          {category === 'market' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">براند (Brand)</label>
-                <input
-                  type="text"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  placeholder="Nestle, Dano, Almarai, Lipton..."
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">کێش / قەبارە (Weight)</label>
-                <input
-                  type="text"
-                  value={weight}
-                  onChange={(e) => setWeight(e.target.value)}
-                  placeholder="800g, 1 Liter, 500ml..."
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">بەرواری بەسەرچوون</label>
-                <input
-                  type="text"
-                  value={expiryInfo}
-                  onChange={(e) => setExpiryInfo(e.target.value)}
-                  placeholder="2026/12"
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs font-latin"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">وڵاتی بەرهەمهێنەر</label>
-                <input
-                  type="text"
-                  value={origin}
-                  onChange={(e) => setOrigin(e.target.value)}
-                  placeholder="تورکیا، ئەڵمانیا، ئیمارات..."
-                  className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs"
-                />
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* Step 4: Images & Media */}
-        <div className="space-y-3 bg-white p-5 rounded-2xl border border-slate-200">
-          <h4 className="text-xs font-black text-slate-900 flex items-center gap-1.5 border-b border-slate-100 pb-2.5">
-            <ImageIcon className="w-4 h-4 text-orange-500" />
-            <span>وێنەکانی کاڵا (Images)</span>
-          </h4>
-
-          <ImageUpload
-            images={images}
-            onChange={setImages}
-            maxImages={4}
-            label="وێنەی کاڵا باربکە یان لە پێشنیارەکان هەڵبژێرە:"
-          />
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={isSubmitting}
-            className="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer transition-colors"
-          >
-            پاشگەزبوونەوە
-          </button>
-          
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-black shadow-md shadow-orange-500/20 flex items-center gap-2 cursor-pointer transition-transform active:scale-95 disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <span>خەریکی پاشەکەوتکردنە...</span>
+        {/* Bottom Actions Bar */}
+        <div className="flex items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs">
+          <div>
+            {activeStep > 1 ? (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="px-4 sm:px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <ArrowRight className="w-4 h-4" />
+                <span>هەنگاوی پێشوو</span>
+              </button>
             ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                <span>{initialData ? 'پاشەکەوتکردنی گۆڕانکارییەکان' : 'بڵاوکردنەوەی کاڵا'}</span>
-              </>
+              <button
+                type="button"
+                onClick={onCancel}
+                className="px-4 sm:px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs sm:text-sm font-bold cursor-pointer transition-colors"
+              >
+                پاشگەزبوونەوە
+              </button>
             )}
-          </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {activeStep < 5 ? (
+              <button
+                type="button"
+                onClick={handleNext}
+                className="px-6 sm:px-8 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-md hover:shadow-lg cursor-pointer transition-all active:scale-95"
+              >
+                <span>هەنگاوی دواتر</span>
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="px-8 sm:px-10 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center gap-2 shadow-lg hover:shadow-xl cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+              >
+                <CheckCircle2 className="w-5 h-5" />
+                <span>{isSubmitting ? 'پاشەکەوت دەکرێت...' : initialData ? 'نوێکردنەوەی کاڵا' : 'بڵاوکردنەوەی کاڵا لە شاخ'}</span>
+              </button>
+            )}
+          </div>
         </div>
 
       </form>

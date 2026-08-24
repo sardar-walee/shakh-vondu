@@ -178,62 +178,49 @@ export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ isOpen, onCl
 
         {/* Tab Content */}
         {activeTab === 'android' && (
-          <div className="space-y-4 text-center">
+          <div className="space-y-4 text-right">
             <div className="bg-orange-50 border border-orange-200/80 p-4 rounded-2xl text-right space-y-2">
               <div className="flex items-center gap-2 text-[#F97316] font-bold text-xs">
                 <Zap className="w-4 h-4" />
-                <span>تایبەتمەندیەکانی ئەپی ئەندرۆید:</span>
+                <span>شێوازی پێشنیارکراوی دامەزراندن لەسەر ئەندرۆید:</span>
               </div>
-              <ul className="text-xs text-slate-700 space-y-1.5 pr-4 list-disc">
-                <li>ئاگادارکردنەوەی خێرا بۆ گەیشتنی داواکاری و فرۆش</li>
-                <li>داگرتنی ڕاستەوخۆی وەشانی نوێ بەبێ پێویستی بە گووگڵ پلەی</li>
-                <li>خێرایی باڵا لە بارکردنی کاڵا و ئۆتۆمبێلەکان</li>
-              </ul>
+              <p className="text-[11px] text-slate-600">
+                ئەپی شاخ وەک <strong>Progressive Web App (PWA)</strong> دروستکراوە. بەبێ پێویستی بە فایلی APK ڕاستەوخۆ دەچێتە سەر شاشەی مۆبایلەکەت و کار دەکات.
+              </p>
             </div>
 
-            {isDownloading ? (
-              <div className="space-y-2 py-3">
-                <div className="flex justify-between text-xs font-bold text-slate-700">
-                  <span>داگرتنی فایلی APK...</span>
-                  <span className="font-latin">{downloadProgress}%</span>
-                </div>
-                <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                  <div
-                    className="bg-[#F97316] h-full transition-all duration-300 rounded-full"
-                    style={{ width: `${downloadProgress}%` }}
-                  />
-                </div>
-              </div>
-            ) : downloadComplete ? (
-              <div className="p-4 bg-[#FF5500]/10 border border-[#FF5500]/30 rounded-2xl flex flex-col items-center justify-center gap-2 text-[#E64A00] font-bold text-xs text-center animate-bounceIn">
-                <div className="flex items-center gap-2 text-emerald-700">
-                  <CheckCircle className="w-5 h-5 text-emerald-600" />
-                  <span>فایلەکە بە سەرکەوتوویی دابەزی!</span>
-                </div>
-                <div className="text-sm font-black text-[#FF5500] tracking-wide pt-1">
-                  🏔️ لەگەڵ شاخ دەگەیتە لوتکە
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                <button
-                  onClick={handleSimulateApkDownload}
-                  className="w-full py-3.5 px-6 rounded-2xl bg-[#F97316] hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>داگرتنی ڕاستەوخۆ (Download APK v2.4)</span>
-                </button>
+            {/* Clear Step-by-step for Android Browser */}
+            <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2.5">
+              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                <Smartphone className="w-4 h-4 text-orange-500" />
+                <span>هەنگاوەکانی زیادکردن بۆ شاشە لە گۆگڵ کرۆم (Chrome):</span>
+              </h4>
+              <ol className="text-xs text-slate-700 space-y-2 pr-4 list-decimal leading-relaxed">
+                <li>لە ناو براوسەری کرۆم (Chrome)، سێ خاڵەکەی سەرەوە لە لای ڕاست <span className="font-bold text-slate-900">⋮</span> دابگرە.</li>
+                <li>هەڵبژاردەی <strong>"Install app"</strong> یان <strong>"زیادکردن بۆ شاشەی سەرەکی / Add to Home screen"</strong> دابگرە.</li>
+                <li>دوگمەی <strong>"Install / دامەزراندن"</strong> دابگرە. ئایکۆنی شاخ دەکەوێتە سەر شاشە بەبێ هیچ هەڵەیەک!</li>
+              </ol>
+            </div>
 
-                {deferredPrompt && (
-                  <button
-                    onClick={handleInstallPwa}
-                    className="w-full py-3 px-6 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                  >
-                    <Smartphone className="w-4 h-4 text-orange-400" />
-                    <span>دامەزراندن لەسەر شاشەی مۆبایل (PWA Install)</span>
-                  </button>
-                )}
-              </div>
+            {/* Note about "غير مدعوم" / Unknown sources error */}
+            <div className="bg-amber-50 border border-amber-200/90 p-3.5 rounded-2xl text-[11px] text-amber-900 space-y-1">
+              <span className="font-bold block flex items-center gap-1">
+                ⚠️ ئەگەر لە کاتی دابەزاندن نوسرا «غير مدعوم» یان «فایلەکە ناکرێتەوە»:
+              </span>
+              <p className="text-amber-800 leading-relaxed">
+                ئەم پەیامە کاتێک دەردەکەوێت کە ڕاستەوخۆ دەتەوێت فایلی APK دابەزێنیت لە کاتێکدا سیستەمی مۆبایلەکەت پارێزراوە. 
+                باشترین چارەسەر ئەوەیە لە ڕێگەی گۆگڵ کرۆم هەڵبژاردەی <strong>Install app (دامەزراندنی ئەپ)</strong> بەکاربهێنیت.
+              </p>
+            </div>
+
+            {deferredPrompt && (
+              <button
+                onClick={handleInstallPwa}
+                className="w-full py-3.5 px-6 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer"
+              >
+                <Smartphone className="w-4 h-4" />
+                <span>دامەزراندنی دەستبەجێ (Install App Now)</span>
+              </button>
             )}
           </div>
         )}

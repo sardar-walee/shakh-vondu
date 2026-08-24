@@ -1,18 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { useNotification } from '../context/NotificationContext';
+import { useMarketplace } from '../context/MarketplaceContext';
+import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { NotificationType, NotificationStatus } from '../types';
+import { NotificationItem, NotificationType, OrderStatus } from '../types';
 import {
   Bell,
   CheckCheck,
   Trash2,
-  Filter,
   Search,
   ShoppingCart,
   CreditCard,
   Car,
   Store,
-  Sparkles,
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
@@ -21,9 +21,21 @@ import {
   Info,
   Clock,
   ExternalLink,
-  ChevronDown,
-  RotateCcw,
-  Zap
+  ChevronRight,
+  ChevronLeft,
+  MapPin,
+  Phone,
+  Truck,
+  ShieldCheck,
+  UserCheck,
+  Flame,
+  Check,
+  X,
+  Package,
+  Layers,
+  Sparkles,
+  Award,
+  Filter
 } from 'lucide-react';
 
 interface NotificationCenterViewProps {
@@ -34,504 +46,674 @@ export const NotificationCenterView: React.FC<NotificationCenterViewProps> = ({ 
   const {
     userNotifications,
     unreadCount,
+    actionableCount,
     markAsRead,
     markAllAsRead,
     deleteNotification,
     clearNotifications,
-    simulateNotification
+    markActionDone
   } = useNotification();
 
+  const {
+    orders,
+    updateOrderStatus,
+    assignDriverToOrder,
+    assignStoreDriverToOrder
+  } = useMarketplace();
+
+  const { currentUser, isSuperAdmin, isSeller, isDeliveryAgent, isStoreDriver, sellerProfile } = useAuth();
   const { dir, t } = useLanguage();
   const isRtl = dir === 'rtl';
 
-  const [activeTab, setActiveTab] = useState<NotificationType | 'all'>('all');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'unread' | 'read'>('all');
+  // 3 Clear Tabs
+  const [activeTab, setActiveTab] = useState<'requests' | 'updates' | 'history'>('requests');
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSimulator, setShowSimulator] = useState(true);
+  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null);
+  const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
-  // Tab counts
-  const tabCounts = useMemo(() => {
-    return {
-      all: userNotifications.length,
-      order: userNotifications.filter(n => n.type === 'order').length,
-      payment: userNotifications.filter(n => n.type === 'payment').length,
-      car: userNotifications.filter(n => n.type === 'car').length,
-      seller: userNotifications.filter(n => n.type === 'seller').length,
-      system: userNotifications.filter(n => n.type === 'system' || n.type === 'commission').length
-    };
-  }, [userNotifications]);
+  // Tab categorization
+  const categorized = useMemo(() => {
+    const requests: NotificationItem[] = [];
+    const updates: NotificationItem[] = [];
+    const history: NotificationItem[] = [];
 
-  // Filtered list
-  const filteredNotifications = useMemo(() => {
-    return userNotifications.filter(n => {
-      // Type Tab filter
-      if (activeTab !== 'all') {
-        if (activeTab === 'system') {
-          if (n.type !== 'system' && n.type !== 'commission') return false;
-        } else if (n.type !== activeTab) {
-          return false;
+    userNotifications.forEach(n => {
+      if (n.actionRequired) {
+        requests.push(n);
+      } else if (n.category === 'request' || n.type === 'order' || n.type === 'delivery') {
+        if (n.status === 'success' || n.metadata?.orderId && orders.find(o => o.id === n.metadata?.orderId)?.status === 'delivered') {
+          history.push(n);
+        } else {
+          updates.push(n);
         }
+      } else {
+        history.push(n);
       }
-
-      // Read status filter
-      if (statusFilter === 'unread' && n.isRead) return false;
-      if (statusFilter === 'read' && !n.isRead) return false;
-
-      // Search Query
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchTitle = n.title.toLowerCase().includes(query);
-        const matchMsg = n.message.toLowerCase().includes(query);
-        const matchOrder = n.metadata?.orderNumber?.toLowerCase().includes(query);
-        if (!matchTitle && !matchMsg && !matchOrder) return false;
-      }
-
-      return true;
     });
-  }, [userNotifications, activeTab, statusFilter, searchQuery]);
 
+    return { requests, updates, history };
+  }, [userNotifications, orders]);
+
+  // Current tab items filtered by search
+  const currentTabItems = useMemo(() => {
+    const list = activeTab === 'requests'
+      ? categorized.requests
+      : activeTab === 'updates'
+      ? categorized.updates
+      : categorized.history;
+
+    if (!searchQuery.trim()) return list;
+
+    const q = searchQuery.toLowerCase();
+    return list.filter(n => {
+      return (
+        n.title.toLowerCase().includes(q) ||
+        n.message.toLowerCase().includes(q) ||
+        n.metadata?.orderNumber?.toLowerCase().includes(q) ||
+        n.metadata?.customerName?.toLowerCase().includes(q) ||
+        n.metadata?.storeName?.toLowerCase().includes(q)
+      );
+    });
+  }, [activeTab, categorized, searchQuery]);
+
+  // Selected Notification
+  const selectedItem = useMemo(() => {
+    if (!selectedNotificationId && currentTabItems.length > 0) {
+      return currentTabItems[0];
+    }
+    return userNotifications.find(n => n.id === selectedNotificationId) || currentTabItems[0] || null;
+  }, [selectedNotificationId, userNotifications, currentTabItems]);
+
+  // Associated Order if any
+  const associatedOrder = useMemo(() => {
+    if (!selectedItem?.orderId && !selectedItem?.metadata?.orderId) return null;
+    const oId = selectedItem?.orderId || selectedItem?.metadata?.orderId;
+    return orders.find(o => o.id === oId) || null;
+  }, [selectedItem, orders]);
+
+  // Time format helper
   const formatTimeAgo = (dateStr: string) => {
     try {
       const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-      if (diff < 60) return 'ئێستا';
-      if (diff < 3600) return `پێش ${Math.floor(diff / 60)} خولەک`;
-      if (diff < 86400) return `پێش ${Math.floor(diff / 3600)} کاتژمێر`;
+      if (diff < 60) return t('ئێستا') || 'ئێستا';
+      if (diff < 3600) return `${Math.floor(diff / 60)} ${t('خولەک پێش ئێستا') || 'خولەک پێش ئێستا'}`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)} ${t('کاتژمێر پێش ئێستا') || 'کاتژمێر پێش ئێستا'}`;
       const days = Math.floor(diff / 86400);
-      if (days === 1) return 'دوێنێ';
-      return `پێش ${days} ڕۆژ`;
+      if (days === 1) return t('دوێنێ') || 'دوێنێ';
+      return `${days} ${t('ڕۆژ پێش ئێستا') || 'ڕۆژ پێش ئێستا'}`;
     } catch {
       return dateStr;
     }
   };
 
-  const getTypeIcon = (type: NotificationType, status?: NotificationStatus) => {
+  // Icon Helper
+  const getIcon = (type: NotificationType, actionRequired?: boolean) => {
+    if (actionRequired) {
+      return <Flame className="w-5 h-5 text-orange-500 animate-pulse" />;
+    }
     switch (type) {
       case 'order':
-        return <ShoppingCart className="w-4 h-4 text-[#2563EB]" />;
-      case 'payment':
-        return <CreditCard className="w-4 h-4 text-emerald-600" />;
-      case 'car':
-        return <Car className="w-4 h-4 text-[#F97316]" />;
+        return <ShoppingCart className="w-5 h-5 text-[#2563EB]" />;
+      case 'delivery':
+        return <Truck className="w-5 h-5 text-teal-600" />;
       case 'seller':
-        return <Store className="w-4 h-4 text-purple-600" />;
+        return <Store className="w-5 h-5 text-purple-600" />;
+      case 'car':
+        return <Car className="w-5 h-5 text-amber-600" />;
+      case 'payment':
+        return <CreditCard className="w-5 h-5 text-emerald-600" />;
+      case 'points':
+        return <Award className="w-5 h-5 text-amber-500" />;
       default:
-        if (status === 'success') return <CheckCircle2 className="w-4 h-4 text-emerald-600" />;
-        if (status === 'error') return <XCircle className="w-4 h-4 text-rose-600" />;
-        if (status === 'warning') return <AlertTriangle className="w-4 h-4 text-amber-500" />;
-        return <Info className="w-4 h-4 text-[#2563EB]" />;
+        return <Info className="w-5 h-5 text-[#2563EB]" />;
     }
   };
 
-  const getStatusBadge = (status?: NotificationStatus, type?: NotificationType) => {
-    switch (status) {
-      case 'success':
-        return <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">سەرکەوتوو</span>;
-      case 'error':
-        return <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-rose-50 text-rose-700 border border-rose-200">هەڵوەشێنراوە / شکست</span>;
-      case 'warning':
-        return <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200">ئاگاداری / لە ڕێگادایە</span>;
-      default:
-        return <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">زانیاری</span>;
+  // Actions Handlers
+  const handleStoreAcceptOrder = async (orderId: string, notifId: string) => {
+    setIsProcessingAction(orderId);
+    try {
+      await updateOrderStatus(orderId, 'accepted', 'پەسەندکرا لەلایەن فرۆشگا');
+      await markActionDone(notifId);
+    } finally {
+      setIsProcessingAction(null);
     }
   };
 
-  const handleCardClick = (notification: typeof userNotifications[0]) => {
-    if (!notification.isRead) {
-      markAsRead(notification.id);
-    }
-    if (notification.linkUrl) {
-      const cleanUrl = notification.linkUrl.replace('/', '');
-      onNavigate(cleanUrl, notification.metadata?.orderId || notification.metadata?.carAdId);
+  const handleStorePrepareOrder = async (orderId: string, notifId: string) => {
+    setIsProcessingAction(orderId);
+    try {
+      await updateOrderStatus(orderId, 'preparing', 'لە ئامادەکردندایە');
+      await markActionDone(notifId);
+    } finally {
+      setIsProcessingAction(null);
     }
   };
+
+  const handleStoreMarkReady = async (orderId: string, notifId: string) => {
+    setIsProcessingAction(orderId);
+    try {
+      await updateOrderStatus(orderId, 'ready', 'ئامادەیە بۆ گەیاندن');
+      await markActionDone(notifId);
+    } finally {
+      setIsProcessingAction(null);
+    }
+  };
+
+  const handleStoreRejectOrder = async (orderId: string, notifId: string) => {
+    setIsProcessingAction(orderId);
+    try {
+      await updateOrderStatus(orderId, 'cancelled', 'فرۆشگا لە توانایدا نییە داواکارییەکە جێبەجێ بکات');
+      await markActionDone(notifId);
+    } finally {
+      setIsProcessingAction(null);
+    }
+  };
+
+  const handleCaptainAcceptDelivery = async (orderId: string, notifId: string) => {
+    if (!currentUser) return;
+    setIsProcessingAction(orderId);
+    try {
+      await assignDriverToOrder(
+        orderId,
+        currentUser.id,
+        currentUser.fullName || 'کاپتنی شاخ',
+        currentUser.phone || '07501234567'
+      );
+      await markActionDone(notifId);
+    } finally {
+      setIsProcessingAction(null);
+    }
+  };
+
+  const handleCaptainMarkPickedUp = async (orderId: string, notifId: string) => {
+    setIsProcessingAction(orderId);
+    try {
+      await updateOrderStatus(orderId, 'picked_up', 'لە فرۆشگا وەرگیرا');
+      await markActionDone(notifId);
+    } finally {
+      setIsProcessingAction(null);
+    }
+  };
+
+  const handleCaptainMarkDelivered = async (orderId: string, notifId: string) => {
+    setIsProcessingAction(orderId);
+    try {
+      await updateOrderStatus(orderId, 'delivered', 'بە سەرکەوتوویی گەیەندرا');
+      await markActionDone(notifId);
+    } finally {
+      setIsProcessingAction(null);
+    }
+  };
+
+  // Get current user role display badge
+  const getRoleLabel = () => {
+    if (isSuperAdmin) return { title: 'بەڕێوەبەری گشتی (Super Admin)', bg: 'bg-rose-50 text-rose-700 border-rose-200' };
+    if (isDeliveryAgent) return { title: 'کاپتنی فەرمی شاخ (Shakh Courier)', bg: 'bg-teal-50 text-teal-700 border-teal-200' };
+    if (isStoreDriver) return { title: 'شۆفێری تایبەتی فرۆشگا (Store Driver)', bg: 'bg-amber-50 text-amber-700 border-amber-200' };
+    if (isSeller) return { title: `خاوەن کار / فرۆشگا (${sellerProfile?.storeName || 'Merchant'})`, bg: 'bg-purple-50 text-purple-700 border-purple-200' };
+    return { title: 'کڕیار (Customer)', bg: 'bg-blue-50 text-[#2563EB] border-blue-200' };
+  };
+
+  const roleInfo = getRoleLabel();
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Top Header Card */}
+      
+      {/* Modern Top Header Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-orange-100/40 via-blue-50/20 to-transparent rounded-full blur-3xl -z-0 pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-[#F97316] text-xs font-bold">
-              <Bell className="w-3.5 h-3.5" />
-              <span>ناوەندی ئاگادارییە ڕاستەوخۆکان (Real-Time Notifications)</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${roleInfo.bg}`}>
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>{roleInfo.title}</span>
+              </span>
+
+              {actionableCount > 0 && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500 text-white text-xs font-bold shadow-xs animate-bounce">
+                  <Flame className="w-3 h-3" />
+                  <span>{actionableCount} {t('داواکاری کارپێکراو')}</span>
+                </span>
+              )}
             </div>
+
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              ئاگاداری و پەیامەکان
+              {t('ناوەندی بەڕێوەبردنی داواکاری و ئاگادارییەکان')}
             </h1>
             <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-              ئاگادارییەکانی گۆڕانی دۆخی داواکاری، سەرکەوتنی پارەدان، هۆشداری بەسەرچوونی ڕیکلامی ئۆتۆمبێل، و داواکارییە نوێیەکانی فرۆشیار بە کاتی ڕاستەقینە لێرە دەبینیت.
+              {t('داواکارییە نوێیەکان، شوێنپێهەڵگرتنی دۆخی گەیاندن، و ئاگادارییە گرنگەکان بە کاتی ڕاستەقینە لێرە دەبینیت.')}
             </p>
           </div>
 
-          {/* Header Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0">
+          {/* Quick Header Actions */}
+          <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563EB] text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-blue-50 hover:bg-blue-100 text-[#2563EB] text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs"
               >
                 <CheckCheck className="w-4 h-4" />
-                <span>هەمووی وەک خوێندراوە ({unreadCount})</span>
+                <span>{t('هەمووی وەک خوێندراوە')} ({unreadCount})</span>
               </button>
             )}
 
             {userNotifications.length > 0 && (
               <button
                 onClick={clearNotifications}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-bold transition-colors cursor-pointer"
-                title="سڕینەوەی هەموو ئاگادارییەکان"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 text-xs font-bold transition-colors cursor-pointer"
+                title={t('سڕینەوەی هەمووی')}
               >
                 <Trash2 className="w-4 h-4" />
-                <span>سڕینەوەی هەمووی</span>
+                <span>{t('سڕینەوە')}</span>
               </button>
             )}
+          </div>
+        </div>
 
+        {/* Search & Tabs Row */}
+        <div className="mt-6 pt-6 border-t border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          {/* 3 Main Tabs */}
+          <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200/80 max-w-fit">
+            
+            {/* Tab 1: Requests */}
             <button
-              onClick={() => setShowSimulator(!showSimulator)}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#F97316] hover:bg-orange-600 text-white text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer"
+              onClick={() => { setActiveTab('requests'); setSelectedNotificationId(null); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'requests'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
-              <Zap className="w-4 h-4" />
-              <span>{showSimulator ? 'شاردنەوەی تاقیکەرەوە' : 'تاقیکردنەوەی خێرای ئاگاداری'}</span>
+              <Flame className={`w-4 h-4 ${categorized.requests.length > 0 ? 'text-orange-500' : 'text-slate-400'}`} />
+              <span>{t('داواکارییە کارپێکراوەکان')}</span>
+              {categorized.requests.length > 0 && (
+                <span className="px-2 py-0.2 rounded-full bg-[#F97316] text-white text-[10px] font-bold">
+                  {categorized.requests.length}
+                </span>
+              )}
+            </button>
+
+            {/* Tab 2: Updates */}
+            <button
+              onClick={() => { setActiveTab('updates'); setSelectedNotificationId(null); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'updates'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Clock className="w-4 h-4 text-[#2563EB]" />
+              <span>{t('دۆخی داواکارییەکان')}</span>
+              {categorized.updates.length > 0 && (
+                <span className="px-2 py-0.2 rounded-full bg-blue-100 text-[#2563EB] text-[10px] font-bold">
+                  {categorized.updates.length}
+                </span>
+              )}
+            </button>
+
+            {/* Tab 3: History */}
+            <button
+              onClick={() => { setActiveTab('history'); setSelectedNotificationId(null); }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'history'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Layers className="w-4 h-4 text-slate-400" />
+              <span>{t('مێژووی داواکارییەکان')}</span>
+              {categorized.history.length > 0 && (
+                <span className="px-2 py-0.2 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">
+                  {categorized.history.length}
+                </span>
+              )}
             </button>
           </div>
-        </div>
 
-        {/* Live Simulator Panel */}
-        {showSimulator && (
-          <div className="mt-6 pt-6 border-t border-slate-100 relative z-10">
-            <div className="flex items-center justify-between gap-2 mb-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#F97316]" />
-                <h3 className="text-xs sm:text-sm font-bold text-slate-900">
-                  تاقیکردنەوەی ڕاستەوخۆی ڕووداوەکان (Interactive Live Simulator)
-                </h3>
-              </div>
-              <span className="text-[11px] text-slate-400">
-                کلیک بکە بۆ ناردنی ئاگاداری دەستبەجێ بە دەنگ و شاشە
-              </span>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              {/* 1. Accepted */}
-              <button
-                onClick={() => simulateNotification('order_accepted')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-200/80 hover:border-blue-300 text-right transition-all text-xs font-semibold text-slate-800 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                <span className="truncate">📦 پەسەندکرا</span>
-              </button>
-
-              {/* 2. Preparing */}
-              <button
-                onClick={() => simulateNotification('order_preparing')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-200/80 hover:border-blue-300 text-right transition-all text-xs font-semibold text-slate-800 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
-                <span className="truncate">🍳 ئامادەکردن</span>
-              </button>
-
-              {/* 3. Out for delivery */}
-              <button
-                onClick={() => simulateNotification('order_out_for_delivery')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 border border-slate-200/80 hover:border-blue-300 text-right transition-all text-xs font-semibold text-slate-800 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0" />
-                <span className="truncate">🛵 لە ڕێگادایە</span>
-              </button>
-
-              {/* 4. Delivered */}
-              <button
-                onClick={() => simulateNotification('order_delivered')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-300 text-right transition-all text-xs font-semibold text-slate-800 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                <span className="truncate">🎉 گەیەندرا</span>
-              </button>
-
-              {/* 5. Cancelled */}
-              <button
-                onClick={() => simulateNotification('order_cancelled')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-rose-50 border border-slate-200/80 hover:border-rose-300 text-right transition-all text-xs font-semibold text-slate-800 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
-                <span className="truncate">❌ هەڵوەشێنرا</span>
-              </button>
-
-              {/* 6. Payment Success */}
-              <button
-                onClick={() => simulateNotification('payment_success')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 border border-slate-200/80 hover:border-emerald-300 text-right transition-all text-xs font-semibold text-slate-800 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
-                <span className="truncate">💳 پارەدانی سەرکەوتوو</span>
-              </button>
-
-              {/* 7. Payment Failed */}
-              <button
-                onClick={() => simulateNotification('payment_failed')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-rose-50 border border-slate-200/80 hover:border-rose-300 text-right transition-all text-xs font-semibold text-slate-800 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0" />
-                <span className="truncate">⚠️ شکستی پارەدان</span>
-              </button>
-
-              {/* 8. Car Expiring */}
-              <button
-                onClick={() => simulateNotification('car_expiring_soon')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-amber-50 border border-slate-200/80 hover:border-amber-300 text-right transition-all text-xs font-semibold text-slate-800 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />
-                <span className="truncate">⏳ هۆشداری ئۆتۆمبێل</span>
-              </button>
-
-              {/* 9. Car Expired */}
-              <button
-                onClick={() => simulateNotification('car_expired')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-50 hover:bg-rose-50 border border-slate-200/80 hover:border-rose-300 text-right transition-all text-xs font-semibold text-slate-800 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-rose-600 flex-shrink-0" />
-                <span className="truncate">🚫 ڕیکلام بەسەرچوو</span>
-              </button>
-
-              {/* 10. Seller New Order */}
-              <button
-                onClick={() => simulateNotification('seller_new_order')}
-                className="flex items-center gap-2 p-2.5 rounded-xl bg-purple-50/80 hover:bg-purple-100 border border-purple-200 text-right transition-all text-xs font-semibold text-purple-900 cursor-pointer"
-              >
-                <span className="w-2 h-2 rounded-full bg-purple-600 flex-shrink-0" />
-                <span className="truncate">🔔 داواکاری فرۆشیار</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Filter Tabs & Search Bar */}
-      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        {/* Category Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full scrollbar-none">
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'all'
-                ? 'bg-[#2563EB] text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            هەمووی ({tabCounts.all})
-          </button>
-
-          <button
-            onClick={() => setActiveTab('order')}
-            className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'order'
-                ? 'bg-[#2563EB] text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            داواکارییەکان ({tabCounts.order})
-          </button>
-
-          <button
-            onClick={() => setActiveTab('payment')}
-            className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'payment'
-                ? 'bg-[#2563EB] text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            پارەدان ({tabCounts.payment})
-          </button>
-
-          <button
-            onClick={() => setActiveTab('car')}
-            className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'car'
-                ? 'bg-[#2563EB] text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            ڕیکلامی ئۆتۆمبێل ({tabCounts.car})
-          </button>
-
-          <button
-            onClick={() => setActiveTab('seller')}
-            className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'seller'
-                ? 'bg-[#2563EB] text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            فرۆشیاران ({tabCounts.seller})
-          </button>
-
-          <button
-            onClick={() => setActiveTab('system')}
-            className={`px-3.5 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
-              activeTab === 'system'
-                ? 'bg-[#2563EB] text-white shadow-xs'
-                : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
-            }`}
-          >
-            سیستەم ({tabCounts.system})
-          </button>
-        </div>
-
-        {/* Search & Read Status Filter */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <div className="relative flex-1 sm:w-64">
+          {/* Search Input */}
+          <div className="relative w-full md:w-72">
+            <Search className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="گەڕان لە پەیامەکان..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-white border border-slate-200 text-xs focus:outline-hidden focus:border-[#2563EB] transition-colors"
+              placeholder={t('گەڕان بەپێی ژمارەی داواکاری یان ناو...')}
+              className="w-full pr-10 pl-4 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/20 focus:border-[#2563EB] transition-all"
             />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
           </div>
-
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'unread' | 'read')}
-            className="py-2 px-3 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-700 focus:outline-hidden focus:border-[#2563EB] cursor-pointer"
-          >
-            <option value="all">هەموو دۆخەکان</option>
-            <option value="unread">تەنها نەخوێندراوە</option>
-            <option value="read">خوێندراوەکان</option>
-          </select>
         </div>
       </div>
 
-      {/* Notifications List */}
-      <div className="space-y-3">
-        {filteredNotifications.length === 0 ? (
-          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
-            <div className="w-16 h-16 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-4">
-              <Bell className="w-8 h-8" />
-            </div>
-            <h3 className="text-base font-bold text-slate-800 mb-1">هیچ ئاگادارییەک نەدۆزرایەوە</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mb-6">
-              لەگەڵ هەر داواکارییەکی نوێ، گۆڕانی دۆخی گەیاندن یان پارەدان، ئاگادارییەکان لێرە بە کاتی ڕاستەقینە نوێ دەبنەوە.
-            </p>
-            <button
-              onClick={() => simulateNotification('order_accepted')}
-              className="px-4 py-2 rounded-xl bg-[#2563EB] text-white text-xs font-bold hover:bg-blue-700 transition-colors cursor-pointer"
-            >
-              ناردنی نموونەیەک ئاگاداری
-            </button>
-          </div>
-        ) : (
-          filteredNotifications.map((n) => (
-            <div
-              key={n.id}
-              onClick={() => handleCardClick(n)}
-              className={`group bg-white rounded-2xl border transition-all duration-200 p-4 sm:p-5 flex flex-col sm:flex-row items-start justify-between gap-4 cursor-pointer ${
-                n.isRead
-                  ? 'border-slate-200/80 hover:border-blue-300 hover:shadow-sm'
-                  : 'border-blue-200 bg-blue-50/20 hover:border-[#2563EB] shadow-xs'
-              }`}
-            >
-              <div className="flex items-start gap-3.5 flex-1 min-w-0">
-                {/* Icon Circle */}
-                <div
-                  className={`p-2.5 rounded-2xl flex-shrink-0 shadow-2xs ${
-                    n.type === 'order'
-                      ? 'bg-blue-50 text-[#2563EB]'
-                      : n.type === 'payment'
-                      ? 'bg-emerald-50 text-emerald-600'
-                      : n.type === 'car'
-                      ? 'bg-orange-50 text-[#F97316]'
-                      : n.type === 'seller'
-                      ? 'bg-purple-50 text-purple-600'
-                      : 'bg-slate-100 text-slate-600'
-                  }`}
-                >
-                  {getTypeIcon(n.type, n.status)}
-                </div>
-
-                {/* Info and text */}
-                <div className="space-y-1.5 flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 leading-snug group-hover:text-[#2563EB] transition-colors">
-                      {n.title}
-                    </h3>
-                    {!n.isRead && (
-                      <span className="w-2 h-2 rounded-full bg-[#2563EB] flex-shrink-0 animate-pulse" />
-                    )}
-                    {getStatusBadge(n.status, n.type)}
-                  </div>
-
-                  <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                    {n.message}
-                  </p>
-
-                  {/* Metadata Chips if available */}
-                  <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-400">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      <span>{formatTimeAgo(n.createdAt)}</span>
-                    </span>
-
-                    {n.metadata?.orderNumber && (
-                      <span className="font-latin font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                        #{n.metadata.orderNumber}
-                      </span>
-                    )}
-
-                    {n.metadata?.amount && (
-                      <span className="font-latin font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                        {n.metadata.amount.toLocaleString()} د.ع
-                      </span>
-                    )}
-
-                    {n.metadata?.daysLeft !== undefined && (
-                      <span className="font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">
-                        {n.metadata.daysLeft === 0 ? 'بەسەرچوو' : `${n.metadata.daysLeft} ڕۆژ ماوە`}
-                      </span>
-                    )}
-                  </div>
-                </div>
+      {/* Main Content Layout: Split Master-Detail on Large screens */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Left List (Cards) */}
+        <div className={`space-y-3 ${selectedItem ? 'lg:col-span-6' : 'lg:col-span-12'}`}>
+          {currentTabItems.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 border border-slate-200 text-center space-y-3">
+              <div className="w-16 h-16 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mx-auto">
+                <Bell className="w-8 h-8 opacity-40" />
               </div>
+              <h3 className="text-base font-bold text-slate-800">
+                {activeTab === 'requests' ? t('هیچ داواکارییەکی کارپێکراو لەم کاتەدا نییە') : t('هیچ ئاگادارییەک نەدۆزرایەوە')}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                {activeTab === 'requests'
+                  ? t('هەموو داواکارییەکان جێبەجێکراون و هیچ کارێکی چاوەڕوانکراوت نییە.')
+                  : t('ئاگاداری و دۆخی نوێ لێرە بە شێوەی ڕاستەوخۆ دەردەکەوێت.')}
+              </p>
+            </div>
+          ) : (
+            currentTabItems.map(item => {
+              const isSelected = selectedItem?.id === item.id;
+              const ord = orders.find(o => o.id === (item.orderId || item.metadata?.orderId));
 
-              {/* Action Buttons */}
-              <div
-                className="flex items-center justify-end gap-2 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 flex-shrink-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {n.linkUrl && (
-                  <button
-                    onClick={() => handleCardClick(n)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#2563EB] text-xs font-bold transition-colors cursor-pointer"
-                  >
-                    <span>{n.actionLabel || 'بینین'}</span>
-                    {isRtl ? <ArrowLeft className="w-3.5 h-3.5" /> : <ArrowRight className="w-3.5 h-3.5" />}
-                  </button>
-                )}
-
-                <button
-                  onClick={() => markAsRead(n.id)}
-                  className={`p-2 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
-                    n.isRead
-                      ? 'text-slate-400 hover:bg-slate-100'
-                      : 'text-[#2563EB] hover:bg-blue-50 bg-white'
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedNotificationId(item.id);
+                    if (!item.isRead) markAsRead(item.id);
+                  }}
+                  className={`p-4 sm:p-5 rounded-3xl border transition-all cursor-pointer relative overflow-hidden ${
+                    isSelected
+                      ? 'bg-blue-50/40 border-[#2563EB] shadow-md ring-2 ring-[#2563EB]/10'
+                      : item.actionRequired
+                      ? 'bg-orange-50/30 border-orange-200 hover:border-orange-300 shadow-xs'
+                      : !item.isRead
+                      ? 'bg-slate-50/80 border-slate-200 hover:border-slate-300'
+                      : 'bg-white border-slate-200 hover:border-slate-300'
                   }`}
-                  title={n.isRead ? 'خوێندراوەتەوە' : 'مارککردن وەک خوێندراوە'}
                 >
-                  <CheckCheck className="w-4 h-4" />
-                </button>
+                  {/* Actionable Ribbon */}
+                  {item.actionRequired && (
+                    <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-orange-500 to-amber-500" />
+                  )}
+
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 ${
+                        item.actionRequired ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-700'
+                      }`}>
+                        {getIcon(item.type, item.actionRequired)}
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {item.metadata?.orderNumber && (
+                            <span className="px-2 py-0.5 rounded-lg bg-blue-100 text-[#2563EB] text-[11px] font-black font-latin">
+                              #{item.metadata.orderNumber}
+                            </span>
+                          )}
+
+                          <span className="text-xs font-bold text-slate-900 line-clamp-1">
+                            {item.title}
+                          </span>
+
+                          {!item.isRead && (
+                            <span className="w-2 h-2 rounded-full bg-[#2563EB] flex-shrink-0" />
+                          )}
+                        </div>
+
+                        <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                          {item.message}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <span className="text-[10px] text-slate-400 font-latin whitespace-nowrap">
+                        {formatTimeAgo(item.createdAt)}
+                      </span>
+
+                      {item.actionRequired && (
+                        <span className="px-2 py-0.5 rounded-md bg-orange-100 text-orange-700 text-[10px] font-bold">
+                          {t('پێویستی بە وەڵامە')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Metadata Bar */}
+                  {item.metadata && (
+                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {item.metadata.customerName && (
+                          <span className="font-semibold text-slate-700">
+                            👤 {item.metadata.customerName}
+                          </span>
+                        )}
+                        {item.metadata.storeName && (
+                          <span className="font-semibold text-slate-700">
+                            🏪 {item.metadata.storeName}
+                          </span>
+                        )}
+                        {item.metadata.amount && (
+                          <span className="font-bold text-emerald-600 font-latin">
+                            💰 {item.metadata.amount.toLocaleString()} د.ع
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1 text-[#2563EB] font-bold text-[11px]">
+                        <span>{t('وردەکاری')}</span>
+                        {isRtl ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Right Details & Action Panel (Interactive) */}
+        {selectedItem && (
+          <div className="lg:col-span-6 space-y-4 sticky top-24">
+            <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-sm space-y-6">
+              
+              {/* Header of Detail Panel */}
+              <div className="flex items-start justify-between gap-4 pb-5 border-b border-slate-100">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {selectedItem.metadata?.orderNumber && (
+                      <span className="px-2.5 py-1 rounded-xl bg-blue-100 text-[#2563EB] text-xs font-black font-latin">
+                        #{selectedItem.metadata.orderNumber}
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-400 font-latin">
+                      {new Date(selectedItem.createdAt).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+                    </span>
+                  </div>
+
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900">
+                    {selectedItem.title}
+                  </h2>
+                </div>
 
                 <button
-                  onClick={() => deleteNotification(n.id)}
+                  onClick={() => deleteNotification(selectedItem.id)}
                   className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                  title="سڕینەوە"
+                  title={t('سڕینەوەی ئەم ئاگادارییە')}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
+
+              {/* Message */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                {selectedItem.message}
+              </div>
+
+              {/* Order Information if associated */}
+              {associatedOrder && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <Package className="w-4 h-4 text-[#2563EB]" />
+                      <span>{t('وردەکاری داواکاری')}</span>
+                    </h3>
+                    <button
+                      onClick={() => onNavigate('order-tracking', associatedOrder.id)}
+                      className="text-xs font-bold text-[#2563EB] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>{t('پەڕەی شوێنپێهەڵگرتن')}</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {/* Summary Cards */}
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                      <span className="text-[10px] text-slate-400 block mb-1">{t('کڕیار')}</span>
+                      <p className="font-bold text-slate-800">{associatedOrder.customerName}</p>
+                      <p className="text-[11px] text-slate-500 font-latin">{associatedOrder.customerPhone}</p>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                      <span className="text-[10px] text-slate-400 block mb-1">{t('فرۆشگا')}</span>
+                      <p className="font-bold text-slate-800">{associatedOrder.sellerName}</p>
+                      <p className="text-[11px] text-slate-500">{associatedOrder.sellerAddress || associatedOrder.deliveryCity}</p>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                      <span className="text-[10px] text-slate-400 block mb-1">{t('ناونیشانی گەیاندن')}</span>
+                      <p className="font-bold text-slate-800">{associatedOrder.deliveryAddress}</p>
+                      <p className="text-[11px] text-slate-500">{associatedOrder.deliveryCity}</p>
+                    </div>
+
+                    <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100">
+                      <span className="text-[10px] text-slate-400 block mb-1">{t('کۆی گشتی')}</span>
+                      <p className="font-black text-emerald-600 text-sm font-latin">{associatedOrder.total.toLocaleString()} د.ع</p>
+                      <p className="text-[10px] text-slate-400">{associatedOrder.paymentMethod === 'cash_on_delivery' ? t('پارەدان کاتی وەرگرتن') : t('پارەدانی ئەلیکترۆنی')}</p>
+                    </div>
+                  </div>
+
+                  {/* Items List */}
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-bold text-slate-500 block">{t('کاڵاکان')} ({associatedOrder.items.length}):</span>
+                    <div className="max-h-36 overflow-y-auto space-y-1 pr-1">
+                      {associatedOrder.items.map((it, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-slate-50 text-xs">
+                          <span className="font-medium text-slate-800">{it.productTitle} × {it.quantity}</span>
+                          <span className="font-bold text-slate-700 font-latin">{(it.price * it.quantity).toLocaleString()} د.ع</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ACTION BUTTONS: Real-Time Flow Controls */}
+              {selectedItem.actionRequired && associatedOrder && (
+                <div className="pt-4 border-t border-slate-100 space-y-3">
+                  <span className="text-xs font-bold text-slate-900 block">
+                    ⚡ {t('کرداری خێرا بۆ ئەم داواکارییە:')}
+                  </span>
+
+                  {/* 1. Store Owner Flow */}
+                  {(isSeller || isSuperAdmin) && associatedOrder.status === 'pending' && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleStoreAcceptOrder(associatedOrder.id, selectedItem.id)}
+                        disabled={Boolean(isProcessingAction)}
+                        className="py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+                      >
+                        <Check className="w-4 h-4" />
+                        <span>{t('پەسەندکردنی داواکاری')}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleStoreRejectOrder(associatedOrder.id, selectedItem.id)}
+                        disabled={Boolean(isProcessingAction)}
+                        className="py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>{t('ڕەتکردنەوە')}</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {(isSeller || isSuperAdmin) && associatedOrder.status === 'accepted' && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => handleStorePrepareOrder(associatedOrder.id, selectedItem.id)}
+                        disabled={Boolean(isProcessingAction)}
+                        className="py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+                      >
+                        <Package className="w-4 h-4" />
+                        <span>{t('دەستپێکردنی ئامادەکردن')}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleStoreMarkReady(associatedOrder.id, selectedItem.id)}
+                        disabled={Boolean(isProcessingAction)}
+                        className="py-3 px-4 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+                      >
+                        <Truck className="w-4 h-4" />
+                        <span>{t('ئامادەیە بۆ گەیاندن')}</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* 2. Shakh Captain Flow */}
+                  {(isDeliveryAgent || isSuperAdmin) && !associatedOrder.driverId && (associatedOrder.status === 'ready' || associatedOrder.status === 'accepted') && (
+                    <button
+                      onClick={() => handleCaptainAcceptDelivery(associatedOrder.id, selectedItem.id)}
+                      disabled={Boolean(isProcessingAction)}
+                      className="w-full py-3.5 px-4 rounded-2xl bg-[#F97316] hover:bg-orange-600 text-white text-xs font-black flex items-center justify-center gap-2 transition-all shadow-md active:scale-95 cursor-pointer disabled:opacity-50"
+                    >
+                      <Truck className="w-4 h-4" />
+                      <span>{t('وەرگرتنی ئەم گەیاندنە (Accept Delivery)')}</span>
+                    </button>
+                  )}
+
+                  {/* 3. Captain Pickup / Deliver Progression */}
+                  {(isDeliveryAgent || isStoreDriver || isSuperAdmin) && associatedOrder.driverId && associatedOrder.status !== 'delivered' && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {associatedOrder.status !== 'picked_up' && associatedOrder.status !== 'on_the_way' && (
+                        <button
+                          onClick={() => handleCaptainMarkPickedUp(associatedOrder.id, selectedItem.id)}
+                          disabled={Boolean(isProcessingAction)}
+                          className="py-3 px-4 rounded-2xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+                        >
+                          <Package className="w-4 h-4" />
+                          <span>{t('وەرگیرا لە فرۆشگا')}</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => handleCaptainMarkDelivered(associatedOrder.id, selectedItem.id)}
+                        disabled={Boolean(isProcessingAction)}
+                        className="py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{t('گەیەندرا بە سەرکەوتوویی')}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Navigation Action */}
+              {selectedItem.linkUrl && (
+                <div className="pt-4 border-t border-slate-100">
+                  <button
+                    onClick={() => {
+                      const cleanUrl = selectedItem.linkUrl?.replace('/', '') || 'orders';
+                      onNavigate(cleanUrl, selectedItem.metadata?.orderId || selectedItem.metadata?.carAdId);
+                    }}
+                    className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-blue-50 hover:text-[#2563EB] text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                  >
+                    <span>{selectedItem.actionLabel || t('بینینی پەڕەی پەیوەندیدار')}</span>
+                    {isRtl ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                  </button>
+                </div>
+              )}
             </div>
-          ))
+          </div>
         )}
       </div>
     </div>

@@ -76,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const { currentUser, isSuperAdmin, isSeller, isDeliveryAgent, logout } = useAuth();
   const { totalItems, setIsOpen: setCartOpen } = useCart();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
+  const { userNotifications, unreadCount, actionableCount, markAsRead, markAllAsRead } = useNotification();
   const { language, setLanguage, t } = useLanguage();
   const { products, sellers, carAds } = useMarketplace();
 
@@ -670,10 +670,10 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </div>
 
                     <div className="max-h-[60vh] sm:max-h-72 overflow-y-auto space-y-2 pr-0.5">
-                      {notifications.length === 0 ? (
+                      {userNotifications.length === 0 ? (
                         <p className="text-xs text-slate-400 text-center py-6">{t('هیچ ئاگادارییەک نییە')}</p>
                       ) : (
-                        notifications.slice(0, 8).map(n => (
+                        userNotifications.slice(0, 8).map(n => (
                           <div
                             key={n.id}
                             onClick={() => {

@@ -70,6 +70,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     toggleSellerVerification,
     updateOrderStatus,
     updateCarAdStatus,
+    pointsSettings,
+    updatePointsSettings,
+    calculateDiscountFromPoints,
+    calculatePointsRequiredForDiscount,
     shakhAgreements,
     pointsTransactions,
     getSellerAgreement,
@@ -1273,6 +1277,91 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
       {/* Shakh & Seller Agreements Management Tab */}
       {tab === 'agreements' && (
         <div className="space-y-6">
+          {/* Global Points System Conversion Rate Master Config */}
+          <div className="bg-gradient-to-r from-amber-900 via-slate-900 to-amber-950 text-white p-6 sm:p-8 rounded-3xl border border-amber-500/30 shadow-xl space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-lg shadow-amber-500/20">
+                  <Gift className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-black text-white">ڕێکخستنی سیستەمی پۆینت و گۆڕینەوە (Points Settings)</h3>
+                    <span className="text-[10px] bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full font-latin">
+                      150 Pts = 1 IQD Rule
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-200/80 mt-0.5">
+                    یاسای سەرەکی: هەموو ١٥٠ پۆینت یەکسانە بە ١ دیناری عێراقی (discountIQD = points / 150)
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="text-left bg-white/10 px-4 py-2 rounded-2xl border border-white/10">
+                  <span className="text-[10px] text-amber-300 block font-bold">نرخی ئێستا:</span>
+                  <span className="text-lg font-black text-amber-400 font-latin">
+                    {pointsSettings.pointsPerIQD} Pts = 1 IQD
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Formula & Verification Demonstration Cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <span className="text-slate-400 block text-[10px]">کەباب (Kebab Meal)</span>
+                <span className="font-black text-amber-300 font-latin text-sm">300 pts = 2 IQD</span>
+                <span className="text-[10px] text-slate-400 block font-latin">300 / {pointsSettings.pointsPerIQD} = {calculateDiscountFromPoints(300)} د.ع</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <span className="text-slate-400 block text-[10px]">شاوەرمای مریشک (Chicken)</span>
+                <span className="font-black text-amber-300 font-latin text-sm">100 pts = 0.666 IQD</span>
+                <span className="text-[10px] text-slate-400 block font-latin">100 / {pointsSettings.pointsPerIQD} = {calculateDiscountFromPoints(100).toFixed(3)} د.ع</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <span className="text-slate-400 block text-[10px]">کۆپۆنی ١,٥٠٠ پۆینت</span>
+                <span className="font-black text-amber-300 font-latin text-sm">1,500 pts = 10 IQD</span>
+                <span className="text-[10px] text-slate-400 block font-latin">1500 / {pointsSettings.pointsPerIQD} = {calculateDiscountFromPoints(1500)} د.ع</span>
+              </div>
+              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
+                <span className="text-slate-400 block text-[10px]">کۆپۆنی ٣,٠٠٠ پۆینت</span>
+                <span className="font-black text-amber-300 font-latin text-sm">3,000 pts = 20 IQD</span>
+                <span className="text-[10px] text-slate-400 block font-latin">3000 / {pointsSettings.pointsPerIQD} = {calculateDiscountFromPoints(3000)} د.ع</span>
+              </div>
+            </div>
+
+            {/* Config Form to adjust rate in Firebase/State */}
+            <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-white/10">
+              <div className="flex items-center gap-3">
+                <label className="text-xs font-bold text-slate-300">ڕێژەی پۆینت بۆ ١ دینار (pointsPerIQD):</label>
+                <input
+                  type="number"
+                  min="1"
+                  defaultValue={pointsSettings.pointsPerIQD}
+                  id="adminPointsPerIQDInput"
+                  className="w-24 px-3 py-1.5 rounded-xl bg-white text-slate-950 font-latin font-bold text-sm text-center"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  const inputEl = document.getElementById('adminPointsPerIQDInput') as HTMLInputElement;
+                  const val = Number(inputEl?.value || 150);
+                  if (val > 0) {
+                    await updatePointsSettings({ pointsPerIQD: val });
+                    alert(`ڕێکخستنی سیستەمی پۆینت بۆ ${val} پۆینت = ١ د.ع پاشەکەوت کرا.`);
+                  }
+                }}
+                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs flex items-center gap-2 cursor-pointer shadow-md transition-transform active:scale-95"
+              >
+                <Save className="w-4 h-4" />
+                <span>پاشەکەوتکردنی ڕێژەی پۆینت</span>
+              </button>
+            </div>
+          </div>
+
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>

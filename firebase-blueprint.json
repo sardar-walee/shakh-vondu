@@ -160,6 +160,17 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "orderId", "userId", "targetType", "targetId", "rating", "comment"]
+    },
+    "PointsSettings": {
+      "title": "Points System Settings",
+      "description": "Configurable points conversion settings (e.g. 150 points = 1 IQD)",
+      "type": "object",
+      "properties": {
+        "pointsPerIQD": { "type": "number", "description": "Conversion rate: 150 points = 1 IQD" },
+        "minRedemptionPoints": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["pointsPerIQD"]
     }
   },
   "firestore": {
@@ -168,6 +179,7 @@
     "/products/{productId}": { "schema": "Product", "description": "Product catalog" },
     "/orders/{orderId}": { "schema": "Order", "description": "Orders collection" },
     "/cars/{carId}": { "schema": "Car", "description": "Cars marketplace collection" },
-    "/reviews/{reviewId}": { "schema": "Review", "description": "Customer ratings and reviews" }
+    "/reviews/{reviewId}": { "schema": "Review", "description": "Customer ratings and reviews" },
+    "/system_settings/points_config": { "schema": "PointsSettings", "description": "Global points conversion rate config" }
   }
 }
