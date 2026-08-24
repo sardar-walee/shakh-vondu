@@ -597,6 +597,17 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Action Icons & Navigation Buttons */}
           <div className="flex items-center gap-2 sm:gap-3">
 
+            {/* Post Product Button (for Super Admin & Sellers) */}
+            {(isSuperAdmin || isSeller) && (
+              <button
+                onClick={() => onNavigate('post-product')}
+                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white text-xs font-bold shadow-sm hover:shadow transition-all active:scale-95 cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4 text-orange-500" />
+                <span>{isSuperAdmin ? '+ بڵاوکردنەوە (گشت بەشەکان)' : '+ زیادکردنی کاڵا'}</span>
+              </button>
+            )}
+
             {/* Post Car Ad Button */}
             <button
               onClick={() => onNavigate('post-car-ad')}
@@ -787,13 +798,22 @@ export const Navbar: React.FC<NavbarProps> = ({
                       {/* Role Specific Actions */}
                       <div className="py-1">
                         {isSuperAdmin && (
-                          <button
-                            onClick={() => { onNavigate('admin-dashboard'); setIsUserOpen(false); }}
-                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-50 text-right cursor-pointer"
-                          >
-                            <ShieldCheck className="w-4 h-4 text-red-600" />
-                            {t('داشبۆردی سەرپەرشتیار (Admin)')}
-                          </button>
+                          <>
+                            <button
+                              onClick={() => { onNavigate('admin-dashboard'); setIsUserOpen(false); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-50 text-right cursor-pointer"
+                            >
+                              <ShieldCheck className="w-4 h-4 text-red-600" />
+                              {t('داشبۆردی سەرپەرشتیار (Admin)')}
+                            </button>
+                            <button
+                              onClick={() => { onNavigate('post-product'); setIsUserOpen(false); }}
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-black text-orange-600 hover:bg-orange-50 text-right cursor-pointer"
+                            >
+                              <PlusCircle className="w-4 h-4 text-orange-500" />
+                              <span>+ بڵاوکردنەوە لە گشت بەشەکان</span>
+                            </button>
+                          </>
                         )}
 
                         {isSeller && (
@@ -1007,16 +1027,28 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                   {/* Role Specific Direct Dashboards */}
                   {isSuperAdmin && (
-                    <button
-                      onClick={() => { onNavigate('admin-dashboard'); setIsMobileMenuOpen(false); }}
-                      className="w-full flex items-center justify-between p-2.5 rounded-xl bg-red-600 text-white text-xs font-black shadow-sm hover:bg-red-700 transition-all cursor-pointer active:scale-98"
-                    >
-                      <div className="flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4 shrink-0" />
-                        <span>{t('داشبۆردی سەرپەرشتیاری گشتی (Super Admin)')}</span>
-                      </div>
-                      <ChevronLeft className="w-4 h-4 shrink-0" />
-                    </button>
+                    <div className="space-y-1.5">
+                      <button
+                        onClick={() => { onNavigate('admin-dashboard'); setIsMobileMenuOpen(false); }}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-red-600 text-white text-xs font-black shadow-sm hover:bg-red-700 transition-all cursor-pointer active:scale-98"
+                      >
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck className="w-4 h-4 shrink-0" />
+                          <span>{t('داشبۆردی سەرپەرشتیاری گشتی (Super Admin)')}</span>
+                        </div>
+                        <ChevronLeft className="w-4 h-4 shrink-0" />
+                      </button>
+                      <button
+                        onClick={() => { onNavigate('post-product'); setIsMobileMenuOpen(false); }}
+                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 text-white text-xs font-black shadow-sm hover:opacity-95 transition-all cursor-pointer active:scale-98"
+                      >
+                        <div className="flex items-center gap-2">
+                          <PlusCircle className="w-4 h-4 shrink-0" />
+                          <span>+ بڵاوکردنەوەی کاڵا لە گشت بەشەکان</span>
+                        </div>
+                        <ChevronLeft className="w-4 h-4 shrink-0" />
+                      </button>
+                    </div>
                   )}
 
                   {isSeller && (

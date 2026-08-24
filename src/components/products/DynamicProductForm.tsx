@@ -52,6 +52,7 @@ import {
   calculateSuggestedPoints
 } from '../../utils/categoryFields';
 import { useLanguage } from '../../context/LanguageContext';
+import { useMarketplace } from '../../context/MarketplaceContext';
 
 interface DynamicProductFormProps {
   initialData?: Product | null;
@@ -75,13 +76,23 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
   isSubmitting = false
 }) => {
   const { t, currentLanguage } = useLanguage();
+  const { sellers } = useMarketplace();
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [hasDraftLoaded, setHasDraftLoaded] = useState(false);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
 
+  // Super Admin store assignment state
+  const [currentSellerId, setCurrentSellerId] = useState<string>(
+    initialData?.sellerId || sellerId || (isSuperAdmin ? 'admin-store' : 'store-1')
+  );
+  const [currentSellerName, setCurrentSellerName] = useState<string>(
+    initialData?.sellerName || sellerName || (isSuperAdmin ? 'بەڕێوەبەرایەتی شاخ' : 'فرۆشگای من')
+  );
+  const [customSellerName, setCustomSellerName] = useState<string>('');
+
   // Category state
   const [category, setCategory] = useState<ProductCategory>(
-    initialData?.category || allowedCategory || 'clothes'
+    initialData?.category || allowedCategory || 'food'
   );
 
   // Core fields state
@@ -432,8 +443,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
     }
 
     const payload: Omit<Product, 'id' | 'createdAt'> = {
-      sellerId,
-      sellerName: sellerName || 'فرۆشگای شاخ',
+      sellerId: isSuperAdmin ? (currentSellerId === 'custom' ? `custom-${Date.now()}` : currentSellerId) : (sellerId || currentSellerId),
+      sellerName: isSuperAdmin ? (currentSellerName || 'بەڕێوەبەرایەتی شاخ') : (sellerName || currentSellerName || 'فرۆشگای شاخ'),
       category,
       subcategory: subcategory || undefined,
       title: title.trim(),
@@ -616,6 +627,82 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <Info className="w-4 h-4 text-orange-500" />
               <span>هەنگاوی ١: زانیارییە سەرەکییەکانی کاڵا</span>
             </h3>
+
+            {/* Super Admin Store Assignment Bar */}
+            {isSuperAdmin && (
+              <div className="p-4 bg-gradient-to-r from-red-50 to-orange-50/60 border border-red-200/80 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-red-950 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-red-600" />
+                    <span>دیاریکردنی فرۆشگا / چێشتخانەی بڵاوکەرەوە (Super Admin Store Assignment)</span>
+                  </span>
+                  <span className="text-[10px] font-black bg-red-600 text-white px-2.5 py-0.5 rounded-full">
+                    دەسەڵاتی سوپەر ئەدمین
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      هەڵبژاردنی فرۆشگا یان چێشتخانەی تۆمارکراو:
+                    </label>
+                    <select
+                      value={currentSellerId}
+                      onChange={(e) => {
+                        const sid = e.target.value;
+                        setCurrentSellerId(sid);
+                        if (sid === 'admin-store') {
+                          setCurrentSellerName('بەڕێوەبەرایەتی شاخ');
+                        } else if (sid === 'custom') {
+                          setCurrentSellerName(customSellerName || 'فرۆشگای تایبەت');
+                        } else {
+                          const matched = sellers.find(s => s.id === sid);
+                          if (matched) {
+                            setCurrentSellerName(matched.storeName);
+                          }
+                        }
+                      }}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 shadow-xs cursor-pointer"
+                    >
+                      <option value="admin-store">👑 بەڕێوەبەرایەتی شاخ (Shakh Official Management)</option>
+                      <optgroup label="چێشتخانە و فرۆشگاکانی سیستەم">
+                        {sellers.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.storeName} ({s.category} - {s.city})
+                          </option>
+                        ))}
+                      </optgroup>
+                      <option value="custom">✏️ فرۆشگا / چێشتخانەی تر (ناوی تایبەت بنووسە)</option>
+                    </select>
+                  </div>
+
+                  {currentSellerId === 'custom' ? (
+                    <div>
+                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                        ناوی فرۆشگا / چێشتخانەی نوێ بنووسە:
+                      </label>
+                      <input
+                        type="text"
+                        value={customSellerName}
+                        onChange={(e) => {
+                          setCustomSellerName(e.target.value);
+                          setCurrentSellerName(e.target.value);
+                        }}
+                        placeholder="وەک: چێشتخانەی کەبابی هەولێر، شاخ مۆبایل..."
+                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 shadow-xs"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col justify-end">
+                      <div className="p-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
+                        <span className="text-slate-500 text-[11px]">بڵاو دەبێتەوە بە ناوی:</span>
+                        <span className="font-black text-slate-900">{currentSellerName}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Category Selector */}
             <div className="space-y-2">

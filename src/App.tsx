@@ -24,6 +24,7 @@ import { CustomerOrdersView } from './views/CustomerOrdersView';
 import { CarMarketplaceView } from './views/CarMarketplaceView';
 import { CarDetailView } from './views/CarDetailView';
 import { PostCarAdView } from './views/PostCarAdView';
+import { PostProductView } from './views/PostProductView';
 import { SellerDashboardView } from './views/SellerDashboardView';
 import { DeliveryDashboardView } from './views/DeliveryDashboardView';
 import { AdminDashboardView } from './views/AdminDashboardView';
@@ -155,6 +156,13 @@ const MainApp: React.FC = () => {
         {currentView === 'post-car-ad' && (
           <PostCarAdView
             onNavigate={handleNavigate}
+          />
+        )}
+
+        {currentView === 'post-product' && (
+          <PostProductView
+            onNavigate={handleNavigate}
+            initialCategory={viewParam as ProductCategory}
           />
         )}
 

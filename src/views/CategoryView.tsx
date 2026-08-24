@@ -7,13 +7,16 @@ import {
   ArrowRight,
   ArrowLeft,
   Search,
-  Check
+  Check,
+  PlusCircle,
+  Sparkles
 } from 'lucide-react';
 import { ProductCategory, Product } from '../types';
 import { ProductCard } from '../components/cards/ProductCard';
 import { SellerCard } from '../components/cards/SellerCard';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { CITIES } from '../data/seedData';
 
 interface CategoryViewProps {
@@ -28,6 +31,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
   selectedCity
 }) => {
   const { products, sellers } = useMarketplace();
+  const { isSuperAdmin, sellerProfile, canManageCategory } = useAuth();
   const { t, dir } = useLanguage();
 
   const [searchFilter, setSearchFilter] = useState('');
@@ -139,7 +143,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
     <div className="space-y-8 pb-16">
       
       {/* Category Banner */}
-      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${config.bannerGradient} text-white p-8 sm:p-10 shadow-lg`}>
+      <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${config.bannerGradient} text-white p-8 sm:p-10 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6`}>
         <div className="max-w-2xl space-y-2 text-right">
           <div className="flex items-center gap-2 text-xs font-bold bg-white/20 backdrop-blur-md w-fit px-3 py-1 rounded-full">
             <span>شاخی</span>
@@ -151,6 +155,24 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
             {config.desc}
           </p>
         </div>
+
+        {/* Super Admin & Seller Post Action Button */}
+        {(isSuperAdmin || canManageCategory(category)) && (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => onNavigate(category === 'cars' ? 'post-car-ad' : 'post-product', category)}
+              className="px-5 py-3 rounded-2xl bg-white text-slate-900 hover:bg-white/90 text-xs sm:text-sm font-black shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4 text-orange-600" />
+              <span>+ بڵاوکردنەوە لەم بەشەدا</span>
+              {isSuperAdmin && (
+                <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold">
+                  Super Admin
+                </span>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tabs Switcher: Products vs Stores */}
