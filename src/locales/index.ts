@@ -20,11 +20,10 @@ export const SUPPORTED_LANGUAGES: LanguageOption[] = [
   { code: 'ku_badini', name: 'کوردی (بادینی)', label: 'بادینی', flag: '🏔️', dir: 'rtl' },
   { code: 'ar', name: 'العربية', label: 'عربي', flag: '🌴', dir: 'rtl' },
   { code: 'en', name: 'English', label: 'EN', flag: '🇬🇧', dir: 'ltr' },
-  { code: 'tr', name: 'Türkçe', label: 'TR', flag: '🇹🇷', dir: 'ltr' },
-  { code: 'fa', name: 'فارسی', label: 'فارسی', flag: '🇮🇷', dir: 'rtl' }
+  { code: 'tr', name: 'Türkçe', label: 'TR', flag: '🇹🇷', dir: 'ltr' }
 ];
 
-export const RTL_LANGUAGES: Language[] = ['ku', 'ku_badini', 'ar', 'fa'];
+export const RTL_LANGUAGES: Language[] = ['ku', 'ku_badini', 'ar'];
 export const LTR_LANGUAGES: Language[] = ['en', 'tr'];
 
 export const translations: Record<Language, Record<string, string>> = {
@@ -63,15 +62,31 @@ export function translate(
   if (!keyOrText) return '';
   const trimmed = keyOrText.trim();
 
+  // Category aliases map
+  const categoryAliases: Record<string, string> = {
+    'cat.food': 'category.food',
+    'cat.market': 'category.market',
+    'cat.clothes': 'category.clothes',
+    'cat.fruits_vegetables': 'category.fruits_vegetables',
+    'cat.fresh_meat': 'category.fresh_meat',
+    'cat.dairy': 'category.dairy',
+    'cat.electronics': 'category.electronics',
+    'cat.beauty': 'category.beauty',
+    'cat.cars': 'category.cars',
+    'cat.umrah': 'category.umrah'
+  };
+
+  const lookupKey = categoryAliases[trimmed] || trimmed;
+
   // 1. Check target language dictionary
   const langDict = translations[lang];
-  if (langDict && langDict[trimmed] !== undefined) {
-    return interpolate(langDict[trimmed], params);
+  if (langDict && langDict[lookupKey] !== undefined) {
+    return interpolate(langDict[lookupKey], params);
   }
 
   // 2. Case-insensitive lookup in target language
   if (langDict) {
-    const lower = trimmed.toLowerCase();
+    const lower = lookupKey.toLowerCase();
     const matchKey = Object.keys(langDict).find(k => k.toLowerCase() === lower);
     if (matchKey && langDict[matchKey] !== undefined) {
       return interpolate(langDict[matchKey], params);
@@ -80,14 +95,31 @@ export function translate(
 
   // 3. Fallback to Kurdish Sorani
   const kuDict = translations['ku'];
-  if (kuDict && kuDict[trimmed] !== undefined) {
-    return interpolate(kuDict[trimmed], params);
+  if (kuDict && kuDict[lookupKey] !== undefined) {
+    return interpolate(kuDict[lookupKey], params);
   }
 
   // 4. Fallback to English
   const enDict = translations['en'];
-  if (enDict && enDict[trimmed] !== undefined) {
-    return interpolate(enDict[trimmed], params);
+  if (enDict && enDict[lookupKey] !== undefined) {
+    return interpolate(enDict[lookupKey], params);
+  }
+
+  // 5. Fallback: if it was a cat. key, provide default Kurdish name
+  const defaultNames: Record<string, string> = {
+    'cat.food': 'چێشتخانە و خواردن',
+    'cat.market': 'مارکێت و سوپەرمارکێت',
+    'cat.clothes': 'جلوبەرگ و مۆدە',
+    'cat.fruits_vegetables': 'سەوزە و میوە',
+    'cat.fresh_meat': 'گۆشتی تازەی کوردی',
+    'cat.dairy': 'شیرەمەنی و ماست',
+    'cat.electronics': 'ئەلیکترۆنیات و مۆبایل',
+    'cat.beauty': 'جوانی و مکیاژ',
+    'cat.cars': 'بازاڕی ئۆتۆمبێل',
+    'cat.umrah': 'گەشت و عومرە'
+  };
+  if (defaultNames[trimmed]) {
+    return defaultNames[trimmed];
   }
 
   // 5. Fallback: return original text with interpolation applied

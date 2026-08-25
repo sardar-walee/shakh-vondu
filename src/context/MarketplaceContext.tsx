@@ -129,6 +129,8 @@ interface MarketplaceContextType {
   postCarAd: (adData: Omit<CarAd, 'id' | 'createdAt' | 'paymentStatus' | 'adStatus'>) => Promise<{ success: boolean; adId?: string; error?: string }>;
   processCarPayment: (adId: string, packageType: CarPackageType, paymentMethod: PaymentMethod) => Promise<{ success: boolean; txRef?: string; error?: string }>;
   updateCarAdStatus: (adId: string, status: CarAd['adStatus']) => Promise<void>;
+  approveCarAd: (adId: string) => Promise<{ success: boolean; error?: string }>;
+  rejectCarAd: (adId: string, reason?: string) => Promise<{ success: boolean; error?: string }>;
 
   // Reviews & Favorites
   addReview: (review: Omit<Review, 'id' | 'createdAt'>) => Promise<void>;
@@ -1721,8 +1723,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const newAd: CarAd = {
       ...adData,
       id: `car-${now}`,
-      adStatus: 'active',
-      paymentStatus: 'paid',
+      adStatus: 'pending_payment',
+      paymentStatus: 'pending',
+      adminApprovalStatus: 'pending',
       startDate,
       expirationDate,
       viewsCount: 1,
@@ -1760,8 +1763,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     addNotification({
       userId: currentUser.id,
-      title: 'ڕیکلامی ئۆتۆمبێل بڵاوکرایەوە',
-      message: `ڕیکلامی (${newAd.title}) بە سەرکەوتوویی لە بەشی ئۆتۆمبێلەکان بڵاوکرایەوە.`,
+      title: 'ڕیکلامی ئۆتۆمبێل نێردرا بۆ سوپەر ئەدمین ⏳',
+      message: `ڕیکلامی (${newAd.title}) بە سەرکەوتوویی تۆمارکرا. پاش وردبینی وەسڵ و پارەدان لەلایەن سوپەر ئەدمین، دەستبەجێ بڵاودەبێتەوە.`,
       type: 'car'
     });
 
@@ -1769,6 +1772,77 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const postCarAd = createCarAd;
+
+  const approveCarAd = async (adId: string): Promise<{ success: boolean; error?: string }> => {
+    const targetAd = carAds.find(a => a.id === adId);
+    if (!targetAd) return { success: false, error: 'ڕیکلام نەدۆزرایەوە' };
+
+    const durationDays = targetAd.packageType === '1_month' ? 30 : targetAd.packageType === '15_days' ? 15 : 7;
+    const now = Date.now();
+    const startDate = new Date(now).toISOString();
+    const expirationDate = new Date(now + durationDays * 24 * 60 * 60 * 1000).toISOString();
+
+    setCarAds(prev => prev.map(a => (a.id === adId ? {
+      ...a,
+      adStatus: 'active',
+      paymentStatus: 'paid',
+      adminApprovalStatus: 'approved',
+      adminApprovedAt: startDate,
+      startDate,
+      expirationDate
+    } : a)));
+
+    try {
+      await updateDoc(doc(db, 'cars', adId), {
+        adStatus: 'active',
+        paymentStatus: 'paid',
+        adminApprovalStatus: 'approved',
+        adminApprovedAt: startDate,
+        startDate,
+        expirationDate
+      });
+    } catch (e) {}
+
+    addNotification({
+      userId: targetAd.userId,
+      title: 'ڕیکلامی ئۆتۆمبێلەکەت پەسەندکرا! 🎉',
+      message: `پارەدانی ڕیکلامی (${targetAd.title}) لەلایەن سوپەر ئەدمین تەسدیقکرا و ئێستا لە بەشی ئۆتۆمبێل بڵاوکرایەوە.`,
+      type: 'car'
+    });
+
+    return { success: true };
+  };
+
+  const rejectCarAd = async (adId: string, reason?: string): Promise<{ success: boolean; error?: string }> => {
+    const targetAd = carAds.find(a => a.id === adId);
+    if (!targetAd) return { success: false, error: 'ڕیکلام نەدۆزرایەوە' };
+
+    const rejectReason = reason || 'بەڵگەی پارەدان یان وەسڵەکە ڕەتکرایەوە لەلایەن بەڕێوەبەرایەتی';
+
+    setCarAds(prev => prev.map(a => (a.id === adId ? {
+      ...a,
+      adStatus: 'rejected',
+      adminApprovalStatus: 'rejected',
+      adminRejectionReason: rejectReason
+    } : a)));
+
+    try {
+      await updateDoc(doc(db, 'cars', adId), {
+        adStatus: 'rejected',
+        adminApprovalStatus: 'rejected',
+        adminRejectionReason: rejectReason
+      });
+    } catch (e) {}
+
+    addNotification({
+      userId: targetAd.userId,
+      title: 'ڕیکلامی ئۆتۆمبێل پەسەند نەکرا ❌',
+      message: `ڕیکلامی (${targetAd.title}) ڕەتکرایەوە: ${rejectReason}`,
+      type: 'car'
+    });
+
+    return { success: true };
+  };
 
   const processCarPayment = async (adId: string, packageType: CarPackageType, paymentMethod: PaymentMethod): Promise<{ success: boolean; txRef?: string; error?: string }> => {
     const pkg = CAR_PACKAGES.find(p => p.id === packageType) || CAR_PACKAGES[0];
@@ -2556,6 +2630,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         postCarAd,
         processCarPayment,
         updateCarAdStatus,
+        approveCarAd,
+        rejectCarAd,
         addReview,
         submitOrderReview,
         replyToReview,

@@ -11,27 +11,46 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<Theme>(() => {
+function getInitialTheme(): Theme {
+  try {
     const savedTheme = localStorage.getItem('shakh_theme') as Theme | null;
     if (savedTheme === 'light' || savedTheme === 'dark') {
       return savedTheme;
     }
-    // Check system preferences if no saved theme
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
-    return 'light';
-  });
+  } catch (e) {}
+  return 'light';
+}
+
+// Immediately apply on script load to avoid flash
+if (typeof document !== 'undefined') {
+  try {
+    const initTheme = getInitialTheme();
+    if (initTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  } catch (e) {}
+}
+
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
       root.classList.add('dark');
+      if (document.body) document.body.classList.add('dark');
     } else {
       root.classList.remove('dark');
+      if (document.body) document.body.classList.remove('dark');
     }
-    localStorage.setItem('shakh_theme', theme);
+    try {
+      localStorage.setItem('shakh_theme', theme);
+    } catch (e) {}
   }, [theme]);
 
   const toggleTheme = () => {

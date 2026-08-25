@@ -78,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { totalItems, setIsOpen: setCartOpen } = useCart();
   const { userNotifications, unreadCount, actionableCount, markAsRead, markAllAsRead } = useNotification();
   const { language, setLanguage, t } = useLanguage();
-  const { products, sellers, carAds } = useMarketplace();
+  const { products, sellers, carAds, appVersion, openUpdateModal } = useMarketplace();
 
   const { isDarkMode, toggleTheme } = useTheme();
 
@@ -597,57 +597,18 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Action Icons & Navigation Buttons */}
           <div className="flex items-center gap-2 sm:gap-3">
 
-            {/* Post Product Button (for Super Admin & Sellers) */}
-            {(isSuperAdmin || isSeller) && (
-              <button
-                onClick={() => onNavigate('post-product')}
-                className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white text-xs font-bold shadow-sm hover:shadow transition-all active:scale-95 cursor-pointer"
-              >
-                <PlusCircle className="w-4 h-4 text-orange-500" />
-                <span>{isSuperAdmin ? '+ بڵاوکردنەوە (گشت بەشەکان)' : '+ زیادکردنی کاڵا'}</span>
-              </button>
-            )}
-
-            {/* Post Car Ad Button */}
-            <button
-              onClick={() => onNavigate('post-car-ad')}
-              className="hidden lg:inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#F97316] hover:bg-orange-600 text-white text-xs font-bold shadow-sm hover:shadow transition-all active:scale-95 cursor-pointer"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>{t('car.post_ad')}</span>
-            </button>
-
-            {/* Dark Mode Toggle Button */}
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-400 transition-all cursor-pointer shadow-xs active:scale-90"
-              title={isDarkMode ? t('دۆخی ڕووناک') : t('دۆخی تاریک')}
-              aria-label="Toggle dark mode"
-            >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4 text-amber-400 animate-spin-slow" />
-              ) : (
-                <Moon className="w-4 h-4 text-slate-700" />
-              )}
-            </button>
-
-            {/* Language Selector Dropdown */}
-            <div className="relative">
-              <LanguageSelector />
-            </div>
-
             {/* Notifications Bell */}
             <div ref={notifRef} className="relative">
               <button
                 onClick={() => setIsNotifOpen(!isNotifOpen)}
                 className={`relative p-2.5 rounded-full transition-colors cursor-pointer ${
-                  isNotifOpen ? 'bg-blue-100 text-[#2563EB]' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                  isNotifOpen ? 'bg-blue-100 text-[#2563EB]' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
                 }`}
                 aria-label="Notifications"
               >
                 <Bell className="w-4 h-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#F97316] text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-white animate-pulse">
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#F97316] text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900 animate-pulse">
                     {unreadCount}
                   </span>
                 )}
@@ -660,12 +621,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-40 sm:hidden"
                     onClick={() => setIsNotifOpen(false)}
                   />
-                  <div className="fixed sm:absolute top-[74px] sm:top-full mt-2 inset-x-3 sm:inset-x-auto left-3 right-3 sm:left-0 sm:right-auto max-w-sm sm:w-92 mx-auto sm:mx-0 bg-white rounded-3xl sm:rounded-2xl shadow-2xl sm:shadow-xl border border-slate-200 sm:border-slate-100 p-3.5 sm:p-4 z-50 animate-in fade-in slide-in-from-top-2">
-                    <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-2">
+                  <div className="fixed sm:absolute top-[74px] sm:top-full mt-2 inset-x-3 sm:inset-x-auto left-3 right-3 sm:left-0 sm:right-auto max-w-sm sm:w-92 mx-auto sm:mx-0 bg-white dark:bg-slate-900 rounded-3xl sm:rounded-2xl shadow-2xl sm:shadow-xl border border-slate-200 sm:border-slate-100 dark:border-slate-800 p-3.5 sm:p-4 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center justify-between pb-2.5 border-b border-slate-100 dark:border-slate-800 mb-2">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-slate-900">{t('ئاگادارییەکان')}</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">{t('ئاگادارییەکان')}</span>
                         {unreadCount > 0 && (
-                          <span className="text-[10px] font-bold bg-orange-100 text-[#F97316] px-2 py-0.5 rounded-full font-latin">
+                          <span className="text-[10px] font-bold bg-orange-100 dark:bg-orange-950/60 text-[#F97316] px-2 py-0.5 rounded-full font-latin">
                             {unreadCount} {t('نوێ')}
                           </span>
                         )}
@@ -697,29 +658,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                               }
                             }}
                             className={`p-3 rounded-2xl transition-all cursor-pointer text-start ${
-                              n.isRead ? 'bg-slate-50/80 hover:bg-slate-100' : 'bg-blue-50/70 border border-blue-100/80 hover:bg-blue-100/70'
+                              n.isRead ? 'bg-slate-50/80 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800' : 'bg-blue-50/70 dark:bg-blue-950/50 border border-blue-100/80 dark:border-blue-900/60 hover:bg-blue-100/70'
                             }`}
                           >
                             <div className="flex items-center justify-between gap-1 mb-1">
-                              <span className="text-xs font-bold text-slate-900 line-clamp-1">{n.title}</span>
+                              <span className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{n.title}</span>
                               <span className="text-[10px] text-slate-400 font-latin whitespace-nowrap">
                                 {new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">{n.message}</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">{n.message}</p>
                           </div>
                         ))
                       )}
                     </div>
 
                     {/* Open Full Notification Center link */}
-                    <div className="mt-3 pt-2.5 border-t border-slate-100">
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800">
                       <button
                         onClick={() => {
                           setIsNotifOpen(false);
                           onNavigate('notifications');
                         }}
-                        className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-blue-50 text-[#2563EB] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                        className="w-full py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950/40 text-[#2563EB] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                       >
                         <span>{t('بینینی هەموو ئاگادارییەکان لە ناوەندی ئاگاداری')}</span>
                         <ArrowLeft className="w-3.5 h-3.5" />
@@ -733,7 +694,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Cart Drawer Trigger */}
             <button
               onClick={() => setCartOpen(true)}
-              className="relative p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 transition-colors cursor-pointer"
+              className="relative p-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
               aria-label="Cart"
             >
               <ShoppingCart className="w-4 h-4" />
@@ -749,7 +710,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {currentUser ? (
                 <button
                   onClick={() => setIsUserOpen(!isUserOpen)}
-                  className="flex items-center gap-2 p-1.5 pr-2.5 rounded-full bg-slate-100 hover:bg-slate-200 transition-colors cursor-pointer"
+                  className="flex items-center gap-2 p-1.5 pr-2.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                 >
                   {currentUser?.avatarUrl ? (
                     <img
@@ -762,7 +723,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       {currentUser?.fullName?.charAt(0) || <User className="w-4 h-4" />}
                     </div>
                   )}
-                  <span className="text-xs font-bold text-slate-800 hidden md:block max-w-[90px] truncate">
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 hidden md:block max-w-[90px] truncate">
                     {currentUser.fullName}
                   </span>
                   <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden md:block" />
@@ -777,14 +738,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
 
               {isUserOpen && (
-                <div className="absolute top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 left-0">
+                <div className="absolute top-full mt-2 w-64 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 py-2 z-50 left-0">
                   {currentUser && (
                     <>
-                      <div className="px-4 py-3 border-b border-slate-100 text-right">
-                        <p className="text-xs font-bold text-slate-900">{currentUser.fullName}</p>
-                        <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
+                      <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 text-right">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">{currentUser.fullName}</p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">{currentUser.email}</p>
                         <div className="mt-1.5 flex items-center gap-1.5">
-                          <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 text-[#2563EB]">
+                          <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 text-[#2563EB]">
                             {t(`role.${currentUser.role}`)}
                           </span>
                           {isSuperAdmin && (
@@ -801,14 +762,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                           <>
                             <button
                               onClick={() => { onNavigate('admin-dashboard'); setIsUserOpen(false); }}
-                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-50 text-right cursor-pointer"
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 text-right cursor-pointer"
                             >
                               <ShieldCheck className="w-4 h-4 text-red-600" />
                               {t('داشبۆردی سەرپەرشتیار (Admin)')}
                             </button>
                             <button
                               onClick={() => { onNavigate('post-product'); setIsUserOpen(false); }}
-                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-black text-orange-600 hover:bg-orange-50 text-right cursor-pointer"
+                              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-black text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 text-right cursor-pointer"
                             >
                               <PlusCircle className="w-4 h-4 text-orange-500" />
                               <span>+ بڵاوکردنەوە لە گشت بەشەکان</span>
@@ -819,7 +780,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         {isSeller && (
                           <button
                             onClick={() => { onNavigate('seller-dashboard'); setIsUserOpen(false); }}
-                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-orange-600 hover:bg-orange-50 text-right cursor-pointer"
+                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-950/40 text-right cursor-pointer"
                           >
                             <Store className="w-4 h-4 text-orange-500" />
                             {t('داشبۆردی فرۆشیار و قازانج')}
@@ -829,7 +790,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         {isDeliveryAgent && (
                           <button
                             onClick={() => { onNavigate('delivery-dashboard'); setIsUserOpen(false); }}
-                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-teal-700 hover:bg-teal-50 text-right cursor-pointer"
+                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40 text-right cursor-pointer"
                           >
                             <Truck className="w-4 h-4 text-teal-600" />
                             {t('داشبۆردی شۆفێری گەیاندن')}
@@ -838,7 +799,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                         <button
                           onClick={() => { onNavigate('customer-orders'); setIsUserOpen(false); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 text-right cursor-pointer"
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-right cursor-pointer"
                         >
                           <Package className="w-4 h-4 text-slate-400" />
                           {t('داواکارییەکانم')}
@@ -846,7 +807,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                         <button
                           onClick={() => { onNavigate('favorites'); setIsUserOpen(false); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 text-right cursor-pointer"
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-right cursor-pointer"
                         >
                           <Heart className="w-4 h-4 text-slate-400" />
                           {t('دڵخوازەکانم')}
@@ -854,16 +815,16 @@ export const Navbar: React.FC<NavbarProps> = ({
 
                         <button
                           onClick={() => { onNavigate('user-profile'); setIsUserOpen(false); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 text-right cursor-pointer"
+                          className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-right cursor-pointer"
                         >
                           <User className="w-4 h-4 text-slate-400" />
                           {t('پڕۆفایل و ناونیشانەکان')}
                         </button>
 
-                        <div className="border-t border-slate-100 my-1 pt-1">
+                        <div className="border-t border-slate-100 dark:border-slate-800 my-1 pt-1">
                           <button
                             onClick={() => { logout(); setIsUserOpen(false); }}
-                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 hover:bg-red-50 text-right cursor-pointer"
+                            className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 text-right cursor-pointer"
                           >
                             <LogOut className="w-4 h-4" />
                             {t('logout')}
@@ -927,7 +888,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             {/* Drawer Top Header */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/95 dark:bg-[#131d31]/95 backdrop-blur-md shrink-0">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/95 dark:bg-[#131d31]/95 backdrop-blur-md shrink-0">
               <div className="flex items-center gap-3">
                 <Logo size="sm" showTagline={false} />
                 <span className="text-xs font-black text-slate-500 dark:text-slate-400 border-r border-slate-200 dark:border-slate-700 pr-2.5">
@@ -936,49 +897,93 @@ export const Navbar: React.FC<NavbarProps> = ({
               </div>
               <button
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="w-9 h-9 rounded-full bg-slate-200/90 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-slate-700 hover:text-[#FF5500] flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-xs"
+                className="w-8 h-8 rounded-full bg-slate-200/90 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-orange-100 dark:hover:bg-slate-700 hover:text-[#FF5500] flex items-center justify-center transition-all cursor-pointer active:scale-90 shadow-xs"
                 aria-label="Close menu"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
             {/* Drawer Scrollable Content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-5 text-right scrollbar-none pb-28">
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 space-y-4 text-right scrollbar-none pb-24">
 
-              {/* 1. User Identity / Authentication Card */}
+              {/* 1. Quick Publishing & Posting Actions (Sleek Compact Bar) */}
+              <div className="space-y-2">
+                {(isSuperAdmin || isSeller) ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        onNavigate('post-product');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all cursor-pointer active:scale-95"
+                    >
+                      <PlusCircle className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{isSuperAdmin ? '+ بڵاوکردنەوەی کاڵا' : '+ زیادکردنی کاڵا'}</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        onNavigate('post-car-ad');
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl bg-gradient-to-r from-[#FF5500] to-amber-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all cursor-pointer active:scale-95"
+                    >
+                      <Car className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{t('car.post_ad')}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => {
+                      onNavigate('post-car-ad');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-[#FF5500] to-amber-500 text-white font-bold text-xs shadow-sm hover:opacity-95 transition-all cursor-pointer active:scale-98"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                        <Car className="w-4 h-4" />
+                      </div>
+                      <span className="leading-tight font-black">{t('car.post_ad')}</span>
+                    </div>
+                    <ChevronLeft className="w-4 h-4 opacity-80 shrink-0" />
+                  </button>
+                )}
+              </div>
+
+              {/* 2. User Account Card */}
               {currentUser ? (
-                <div className="bg-gradient-to-br from-slate-50 to-orange-50/40 dark:from-slate-800/90 dark:to-slate-850 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-xs space-y-3">
+                <div className="bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-3.5 space-y-3 shadow-xs">
                   <div className="flex items-center gap-3">
                     {currentUser.avatarUrl ? (
                       <img
                         src={currentUser.avatarUrl}
                         alt={currentUser.fullName}
-                        className="w-12 h-12 rounded-2xl object-cover ring-2 ring-[#FF5500]/30 shadow-xs shrink-0"
+                        className="w-11 h-11 rounded-xl object-cover ring-2 ring-[#FF5500]/30 shadow-xs shrink-0"
                       />
                     ) : (
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#FF5500] to-amber-500 text-white flex items-center justify-center font-black text-lg shadow-md shadow-orange-500/20 shrink-0">
+                      <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#FF5500] to-amber-500 text-white flex items-center justify-center font-black text-base shadow-sm shrink-0">
                         {currentUser.fullName?.charAt(0) || 'U'}
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-black text-slate-900 dark:text-white truncate">
+                        <p className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate">
                           {currentUser.fullName}
                         </p>
                         {currentUser.isVerified && (
                           <CheckCircle2 className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-latin truncate">
+                      <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-latin truncate">
                         {currentUser.email}
                       </p>
-                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-[#2563EB] dark:bg-blue-900/50 dark:text-blue-300">
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
+                        <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/50 text-[#2563EB] dark:text-blue-300">
                           {t(`role.${currentUser.role}`)}
                         </span>
                         {isSuperAdmin && (
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-red-600 text-white shadow-xs">
+                          <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-red-600 text-white shadow-xs">
                             Super Admin
                           </span>
                         )}
@@ -986,79 +991,63 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </div>
                   </div>
 
-                  {/* Fast Profile Action Links */}
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                    <button
-                      onClick={() => { onNavigate('user-profile'); setIsMobileMenuOpen(false); }}
-                      className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-100 dark:border-slate-800 hover:border-orange-200 transition-all cursor-pointer"
-                    >
-                      <User className="w-3.5 h-3.5 text-[#FF5500] shrink-0" />
-                      <span className="truncate">{t('پڕۆفایلەکەم')}</span>
-                    </button>
+                  {/* 4 Quick Profile Buttons */}
+                  <div className="grid grid-cols-4 gap-1.5 pt-2 border-t border-slate-200/70 dark:border-slate-700/70">
                     <button
                       onClick={() => { onNavigate('customer-orders'); setIsMobileMenuOpen(false); }}
-                      className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-100 dark:border-slate-800 hover:border-blue-200 transition-all cursor-pointer"
+                      className="flex flex-col items-center justify-center gap-1 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-800 hover:border-blue-300 transition-all cursor-pointer active:scale-95"
                     >
-                      <Package className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
-                      <span className="truncate">{t('داواکارییەکانم')}</span>
+                      <Package className="w-4 h-4 text-[#2563EB]" />
+                      <span className="text-[10px] font-bold truncate max-w-full">{t('داواکارییەکان')}</span>
                     </button>
                     <button
                       onClick={() => { onNavigate('favorites'); setIsMobileMenuOpen(false); }}
-                      className="flex items-center gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-100 dark:border-slate-800 hover:border-rose-200 transition-all cursor-pointer"
+                      className="flex flex-col items-center justify-center gap-1 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-800 hover:border-rose-300 transition-all cursor-pointer active:scale-95"
                     >
-                      <Heart className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                      <span className="truncate">{t('دڵخوازەکان')}</span>
+                      <Heart className="w-4 h-4 text-rose-500" />
+                      <span className="text-[10px] font-bold truncate max-w-full">{t('دڵخوازەکان')}</span>
                     </button>
                     <button
                       onClick={() => { onNavigate('notifications'); setIsMobileMenuOpen(false); }}
-                      className="flex items-center justify-between p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-100 dark:border-slate-800 hover:border-amber-200 transition-all cursor-pointer"
+                      className="relative flex flex-col items-center justify-center gap-1 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-800 hover:border-amber-300 transition-all cursor-pointer active:scale-95"
                     >
-                      <div className="flex items-center gap-2 truncate">
-                        <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span className="truncate">{t('ئاگادارییەکان')}</span>
-                      </div>
+                      <Bell className="w-4 h-4 text-amber-500" />
+                      <span className="text-[10px] font-bold truncate max-w-full">{t('ئاگادارییەکان')}</span>
                       {unreadCount > 0 && (
-                        <span className="text-[9px] font-bold bg-[#FF5500] text-white px-1.5 py-0.5 rounded-full font-latin shrink-0">
-                          {unreadCount}
-                        </span>
+                        <span className="absolute top-1 left-1.5 w-2 h-2 bg-[#FF5500] rounded-full ring-2 ring-white dark:ring-slate-900" />
                       )}
+                    </button>
+                    <button
+                      onClick={() => { onNavigate('user-profile'); setIsMobileMenuOpen(false); }}
+                      className="flex flex-col items-center justify-center gap-1 p-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-100 dark:border-slate-800 hover:border-orange-300 transition-all cursor-pointer active:scale-95"
+                    >
+                      <User className="w-4 h-4 text-[#FF5500]" />
+                      <span className="text-[10px] font-bold truncate max-w-full">{t('پڕۆفایل')}</span>
                     </button>
                   </div>
 
-                  {/* Role Specific Direct Dashboards */}
+                  {/* Dashboard Access if Admin / Seller / Driver */}
                   {isSuperAdmin && (
-                    <div className="space-y-1.5">
-                      <button
-                        onClick={() => { onNavigate('admin-dashboard'); setIsMobileMenuOpen(false); }}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-red-600 text-white text-xs font-black shadow-sm hover:bg-red-700 transition-all cursor-pointer active:scale-98"
-                      >
-                        <div className="flex items-center gap-2">
-                          <ShieldCheck className="w-4 h-4 shrink-0" />
-                          <span>{t('داشبۆردی سەرپەرشتیاری گشتی (Super Admin)')}</span>
-                        </div>
-                        <ChevronLeft className="w-4 h-4 shrink-0" />
-                      </button>
-                      <button
-                        onClick={() => { onNavigate('post-product'); setIsMobileMenuOpen(false); }}
-                        className="w-full flex items-center justify-between p-2.5 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 text-white text-xs font-black shadow-sm hover:opacity-95 transition-all cursor-pointer active:scale-98"
-                      >
-                        <div className="flex items-center gap-2">
-                          <PlusCircle className="w-4 h-4 shrink-0" />
-                          <span>+ بڵاوکردنەوەی کاڵا لە گشت بەشەکان</span>
-                        </div>
-                        <ChevronLeft className="w-4 h-4 shrink-0" />
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => { onNavigate('admin-dashboard'); setIsMobileMenuOpen(false); }}
+                      className="w-full flex items-center justify-between p-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-black transition-all cursor-pointer active:scale-98 shadow-xs"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                        <span>{t('داشبۆردی سەرپەرشتیاری گشتی (Admin)')}</span>
+                      </div>
+                      <ChevronLeft className="w-4 h-4 shrink-0" />
+                    </button>
                   )}
 
                   {isSeller && (
                     <button
                       onClick={() => { onNavigate('seller-dashboard'); setIsMobileMenuOpen(false); }}
-                      className="w-full flex items-center justify-between p-2.5 rounded-xl bg-orange-600 text-white text-xs font-black shadow-sm hover:bg-orange-700 transition-all cursor-pointer active:scale-98"
+                      className="w-full flex items-center justify-between p-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-black transition-all cursor-pointer active:scale-98 shadow-xs"
                     >
                       <div className="flex items-center gap-2">
                         <Store className="w-4 h-4 shrink-0" />
-                        <span>{t('داشبۆردی فرۆشیار و بەڕێوەبردن')}</span>
+                        <span>{t('داشبۆردی فرۆشیار و قازانج')}</span>
                       </div>
                       <ChevronLeft className="w-4 h-4 shrink-0" />
                     </button>
@@ -1067,7 +1056,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {isDeliveryAgent && (
                     <button
                       onClick={() => { onNavigate('delivery-dashboard'); setIsMobileMenuOpen(false); }}
-                      className="w-full flex items-center justify-between p-2.5 rounded-xl bg-teal-600 text-white text-xs font-black shadow-sm hover:bg-teal-700 transition-all cursor-pointer active:scale-98"
+                      className="w-full flex items-center justify-between p-2 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-black transition-all cursor-pointer active:scale-98 shadow-xs"
                     >
                       <div className="flex items-center gap-2">
                         <Truck className="w-4 h-4 shrink-0" />
@@ -1078,164 +1067,175 @@ export const Navbar: React.FC<NavbarProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="bg-gradient-to-br from-orange-500 via-[#FF5500] to-amber-600 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/20 space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center font-bold shrink-0">
-                      <User className="w-6 h-6" />
+                <div className="bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl p-3.5 text-white shadow-md space-y-2.5">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                      <User className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-black">{t('بەخێربێیت بۆ بازاڕی شاخی')}</p>
-                      <p className="text-[11px] text-orange-100 mt-0.5">{t('خواردن، مارکێت، جلوبەرگ و ئۆتۆمبێل')}</p>
+                      <p className="text-xs font-black">{t('بەخێربێیت بۆ بازاڕی شاخی')}</p>
+                      <p className="text-[10px] text-orange-100">{t('چێشتخانە، مارکێت، مۆدە و ئۆتۆمبێل')}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => { onNavigate('auth', 'login'); setIsMobileMenuOpen(false); }}
-                    className="w-full py-2.5 rounded-xl bg-white text-slate-900 text-xs font-black shadow-sm hover:bg-orange-50 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                    className="w-full py-2 rounded-xl bg-white text-slate-900 text-xs font-black shadow-xs hover:bg-orange-50 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                   >
-                    <User className="w-4 h-4 text-[#FF5500]" />
                     <span>{t('چوونە ژوورەوە / دروستکردنی هەژمار')}</span>
                   </button>
                 </div>
               )}
 
-              {/* 2. Primary Highlight: Post Car Ad Action */}
-              <button
-                onClick={() => { onNavigate('post-car-ad'); setIsMobileMenuOpen(false); }}
-                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-[#FF5500] to-amber-500 text-white font-black text-xs sm:text-sm shadow-md shadow-orange-500/25 hover:opacity-95 transition-all cursor-pointer active:scale-98"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
-                    <PlusCircle className="w-5 h-5 stroke-[2.5]" />
-                  </div>
-                  <div className="text-right">
-                    <p className="leading-tight">{t('car.post_ad')}</p>
-                    <p className="text-[10px] font-medium text-orange-100">{t('ڕیکلامی ئۆتۆمبێلەکەت بڵاوبکەرەوە')}</p>
-                  </div>
-                </div>
-                <ChevronLeft className="w-4 h-4 opacity-80 shrink-0" />
-              </button>
-
-              {/* 3. Location / City Selector */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
-                    <MapPin className="w-4 h-4 text-[#2563EB]" />
-                    <span>{t('هەڵبژاردنی شار:')}</span>
-                  </div>
-                  <span className="text-[11px] font-bold text-[#FF5500] font-latin">
-                    {selectedCity ? t(`city.${selectedCity}`) || selectedCity : t('هەموو شارەکان')}
-                  </span>
-                </div>
-                <select
-                  value={selectedCity}
-                  onChange={(e) => onSelectCity(e.target.value)}
-                  className="w-full text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-800 dark:text-slate-200 font-bold focus:outline-hidden focus:ring-2 focus:ring-[#FF5500]"
-                >
-                  <option value="">{t('هەموو شارەکانی کوردستان و عێراق')}</option>
-                  {CITIES.map(c => (
-                    <option key={c} value={c}>{t(`city.${c}`) || c}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 4. All Marketplace Categories (بەشەکانی بازاڕی شاخی) */}
-              <div className="space-y-2.5">
-                <div className="flex items-center justify-between pb-1">
-                  <div className="flex items-center gap-1.5">
-                    <Layers className="w-4 h-4 text-[#FF5500]" />
-                    <h4 className="text-xs font-black text-slate-900 dark:text-white">{t('بەشە سەرەکییەکانی بازاڕ')}</h4>
-                  </div>
+              {/* 3. Marketplace Categories - Single Label Selector (بەشە سەرەکییەکانی بازاڕ) */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-[#FF5500]" />
+                    <span>{t('بەشە سەرەکییەکانی بازاڕ:')}</span>
+                  </label>
                   <button
                     onClick={() => { onNavigate('home'); setIsMobileMenuOpen(false); }}
-                    className="text-[11px] text-[#2563EB] font-bold hover:underline cursor-pointer"
+                    className="text-[10px] text-[#2563EB] dark:text-blue-400 font-bold hover:underline cursor-pointer"
                   >
                     {t('پەڕەی سەرەکی')}
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'food', name: t('cat.food') || 'چێشتخانە و خواردن', icon: Utensils, color: 'text-amber-600 bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/50' },
-                    { id: 'market', name: t('cat.market') || 'سوپەرمارکێت', icon: ShoppingBag, color: 'text-blue-600 bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/50' },
-                    { id: 'clothes', name: t('cat.clothes') || 'جلوبەرگ و مۆدە', icon: Shirt, color: 'text-purple-600 bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-900/50' },
-                    { id: 'fruits_vegetables', name: t('cat.fruits_vegetables') || 'سەوزە و میوە', icon: Apple, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/50' },
-                    { id: 'fresh_meat', name: t('cat.fresh_meat') || 'گۆشتی تازەی کوردی', icon: Beef, color: 'text-rose-600 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/50' },
-                    { id: 'dairy', name: t('cat.dairy') || 'شیرەمەنی و ماست', icon: Milk, color: 'text-cyan-600 bg-cyan-50 dark:bg-cyan-950/40 border-cyan-200 dark:border-cyan-900/50' },
-                    { id: 'electronics', name: t('cat.electronics') || 'ئەلیکترۆنیات', icon: Smartphone, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-900/50' },
-                    { id: 'beauty', name: t('cat.beauty') || 'جوانی و مکیاژ', icon: Sparkles, color: 'text-pink-600 bg-pink-50 dark:bg-pink-950/40 border-pink-200 dark:border-pink-900/50' },
-                  ].map(cat => {
-                    const IconComp = cat.icon;
-                    return (
-                      <button
-                        key={cat.id}
-                        onClick={() => {
-                          onNavigate('category', cat.id);
-                          setIsMobileMenuOpen(false);
-                        }}
-                        className={`p-2.5 rounded-xl border text-right transition-all hover:scale-[1.02] active:scale-95 flex items-center gap-2 cursor-pointer ${cat.color}`}
-                      >
-                        <IconComp className="w-4 h-4 shrink-0" />
-                        <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 truncate">{cat.name}</span>
-                      </button>
-                    );
-                  })}
-
-                  {/* Cars Full Card */}
-                  <button
-                    onClick={() => {
-                      onNavigate('car-marketplace');
+                <div className="relative">
+                  <select
+                    defaultValue=""
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) return;
+                      if (val === 'home') {
+                        onNavigate('home');
+                      } else if (val === 'car-marketplace') {
+                        onNavigate('car-marketplace');
+                      } else {
+                        onNavigate('category', val);
+                      }
                       setIsMobileMenuOpen(false);
                     }}
-                    className="col-span-2 p-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-gradient-to-r from-blue-50 to-indigo-50/60 dark:from-blue-950/40 dark:to-slate-900 text-blue-900 dark:text-blue-100 flex items-center justify-between transition-all hover:scale-[1.01] active:scale-95 cursor-pointer"
+                    className="w-full text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 pl-8 pr-3 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] cursor-pointer appearance-none shadow-2xs"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-[#2563EB] text-white flex items-center justify-center shrink-0">
-                        <Car className="w-4 h-4" />
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs font-black text-slate-900 dark:text-white">{t('بازاڕی کڕین و فرۆشتنی ئۆتۆمبێل')}</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">{t('پاکێجی VIP، سیستەمی کات و هەڵبژێردراو')}</p>
-                      </div>
-                    </div>
-                    <ChevronLeft className="w-4 h-4 text-[#2563EB] shrink-0" />
-                  </button>
+                    <option value="" disabled>{t('هەڵبژاردنی بەشی بازاڕ... (کلیک بکە)')}</option>
+                    <option value="home">🏠 {t('گشت بەشەکان / پەڕەی سەرەکی')}</option>
+                    <option value="food">🍽️ {t('cat.food') || 'چێشتخانە و خواردن'}</option>
+                    <option value="market">🛒 {t('cat.market') || 'سوپەرمارکێت'}</option>
+                    <option value="clothes">👕 {t('cat.clothes') || 'جلوبەرگ و مۆدە'}</option>
+                    <option value="fruits_vegetables">🍏 {t('cat.fruits_vegetables') || 'سەوزە و میوە'}</option>
+                    <option value="fresh_meat">🥩 {t('cat.fresh_meat') || 'گۆشتی تازەی کوردی'}</option>
+                    <option value="dairy">🥛 {t('cat.dairy') || 'شیرەمەنی و ماست'}</option>
+                    <option value="electronics">📱 {t('cat.electronics') || 'ئەلیکترۆنیات'}</option>
+                    <option value="beauty">✨ {t('cat.beauty') || 'جوانی و مکیاژ'}</option>
+                    <option value="car-marketplace">🚗 {t('بازاڕی کڕین و فرۆشتنی ئۆتۆمبێل')}</option>
+                  </select>
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
                 </div>
               </div>
 
-              {/* 5. Preferences: Language & Theme */}
-              <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                {/* Language Switcher */}
-                <LanguageSwitcher variant="mobile" />
-
-                {/* Dark Mode Toggle */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
-                    {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" /> : <Moon className="w-3.5 h-3.5 text-slate-400 shrink-0" />}
-                    <span>{t('دۆخی ڕووناک / تاریک:')}</span>
+              {/* 4. Location Selector (شار) */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+                <div className="flex items-center justify-between px-1">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-[#2563EB]" />
+                    <span>{t('هەڵبژاردنی شار:')}</span>
+                  </label>
+                  <span className="text-[10px] font-bold text-[#FF5500] font-latin">
+                    {selectedCity ? t(`city.${selectedCity}`) || selectedCity : t('هەموو شارەکان')}
+                  </span>
+                </div>
+                <div className="relative">
+                  <select
+                    value={selectedCity}
+                    onChange={(e) => onSelectCity(e.target.value)}
+                    className="w-full text-xs font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 pl-8 pr-3 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:ring-2 focus:ring-[#FF5500] cursor-pointer appearance-none shadow-2xs"
+                  >
+                    <option value="">{t('هەموو شارەکانی کوردستان و عێراق')}</option>
+                    {CITIES.map(c => (
+                      <option key={c} value={c}>{t(`city.${c}`) || c}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">
+                    <ChevronDown className="w-4 h-4" />
                   </div>
+                </div>
+              </div>
+
+              {/* 5. Unified Settings Box (ڕێکخستنەکان: زمان و دۆخی تاریک لە ناو یەک بلۆک) */}
+              <div className="bg-slate-50 dark:bg-slate-800/60 p-3 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#FF5500]" />
+                    <span>{t('ڕێکخستنەکان و زمان')}</span>
+                  </span>
+                </div>
+
+                {/* Single Label Language Selector */}
+                <LanguageSwitcher variant="select" />
+
+                {/* Dark Mode Toggle Bar */}
+                <div className="flex items-center justify-between bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
+                  <div className="flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-amber-50 dark:bg-slate-800 flex items-center justify-center">
+                      {isDarkMode ? (
+                        <Moon className="w-3.5 h-3.5 text-amber-400" />
+                      ) : (
+                        <Sun className="w-3.5 h-3.5 text-amber-500" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        {isDarkMode ? t('دۆخی تاریک (Dark Mode)') : t('دۆخی ڕووناک (Light Mode)')}
+                      </p>
+                    </div>
+                  </div>
+
                   <button
                     onClick={toggleTheme}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                    className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden ${
+                      isDarkMode ? 'bg-[#2563EB]' : 'bg-slate-300'
+                    }`}
+                    role="switch"
+                    aria-checked={isDarkMode}
                   >
-                    {isDarkMode ? (
-                      <>
-                        <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span>{t('دۆخی ڕووناک')}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Moon className="w-3.5 h-3.5 text-slate-600 shrink-0" />
-                        <span>{t('دۆخی تاریک')}</span>
-                      </>
-                    )}
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out ${
+                        isDarkMode ? '-translate-x-5' : 'translate-x-0'
+                      }`}
+                    />
                   </button>
                 </div>
               </div>
+
+              {/* 6. App Updates & Changelog Action Button */}
+              <button
+                onClick={() => {
+                  openUpdateModal();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-orange-50/80 dark:bg-slate-800/80 border border-orange-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold hover:border-orange-400 transition-all cursor-pointer shadow-2xs"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-[#FF5500] text-white flex items-center justify-center shrink-0">
+                    <Sparkles className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-slate-900 dark:text-white leading-tight">{t('ئەپدەیتی نوێ و گۆڕانکارییەکان')}</p>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400">{t('بینینی نوێکارییەکانی وەشانی ئەپ')}</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-latin font-bold bg-[#FF5500] text-white px-2 py-0.5 rounded-md shrink-0">
+                  v{appVersion.version}
+                </span>
+              </button>
 
             </div>
 
             {/* Drawer Bottom Footer */}
-            <div className="p-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/95 dark:bg-[#131d31]/95 shrink-0 space-y-2">
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/95 dark:bg-[#131d31]/95 shrink-0 space-y-2">
               {currentUser && (
                 <button
                   onClick={() => {

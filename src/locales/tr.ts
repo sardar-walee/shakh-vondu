@@ -188,6 +188,16 @@ export const trTranslations: Record<string, string> = {
   'کڕیار': 'Müşteri',
 
   // Categories
+  'cat.food': 'Restoran & Yemek',
+  'cat.market': 'Market & Süpermarket',
+  'cat.clothes': 'Giyim & Moda',
+  'cat.fruits_vegetables': 'Taze Meyve & Sebze',
+  'cat.fresh_meat': 'Taze Yerli Et',
+  'cat.dairy': 'Süt Ürünleri & Peynir',
+  'cat.electronics': 'Elektronik & Telefon',
+  'cat.beauty': 'Güzellik & Kozmetik',
+  'cat.cars': 'Araç Pazarı',
+  'cat.umrah': 'Seyahat & Umre',
   'category.food': 'Restoran & Yemek',
   'category.market': 'Market & Süpermarket',
   'category.clothes': 'Giyim & Moda',

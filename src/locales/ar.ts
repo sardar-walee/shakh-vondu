@@ -188,6 +188,16 @@ export const arTranslations: Record<string, string> = {
   'کڕیار': 'زبون',
 
   // Categories
+  'cat.food': 'المطاعم والأغذية',
+  'cat.market': 'السوبرماركت والبقالة',
+  'cat.clothes': 'الملابس والأزياء',
+  'cat.fruits_vegetables': 'الفواكه والخضروات',
+  'cat.fresh_meat': 'اللحوم الطازجة',
+  'cat.dairy': 'الألبان والأجبان',
+  'cat.electronics': 'الإلكترونيات والموبايل',
+  'cat.beauty': 'الجمال والمكياج',
+  'cat.cars': 'سوق السيارات',
+  'cat.umrah': 'السياحة والعمرة',
   'category.food': 'المطاعم والأغذية',
   'category.market': 'السوبرماركت والبقالة',
   'category.clothes': 'الملابس والأزياء',

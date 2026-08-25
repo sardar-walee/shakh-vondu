@@ -422,6 +422,12 @@ export interface CarAd {
   packagePrice: number;
   paymentStatus: CarPaymentStatus;
   paymentRef?: string;
+  paymentProofUrl?: string;
+  paymentSenderPhone?: string;
+  paymentMethodUsed?: PaymentMethod;
+  adminApprovalStatus?: 'pending' | 'approved' | 'rejected';
+  adminRejectionReason?: string;
+  adminApprovedAt?: string;
   adStatus: CarAdStatus;
   startDate?: string;
   expirationDate?: string;

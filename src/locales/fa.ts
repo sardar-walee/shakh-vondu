@@ -188,6 +188,16 @@ export const faTranslations: Record<string, string> = {
   'کڕیار': 'مشتری',
 
   // Categories
+  'cat.food': 'رستوران و غذا',
+  'cat.market': 'سوپرمارکت و مواد غذایی',
+  'cat.clothes': 'پوشاک و مد',
+  'cat.fruits_vegetables': 'میوه و سبزیجات تازه',
+  'cat.fresh_meat': 'گوشت تازه و مرغ',
+  'cat.dairy': 'لبنیات و ماست محلی',
+  'cat.electronics': 'الکترونیک و موبایل',
+  'cat.beauty': 'زیبایی و آرایشی',
+  'cat.cars': 'بازار خودرو',
+  'cat.umrah': 'سفر و عمره',
   'category.food': 'رستوران و غذا',
   'category.market': 'سوپرمارکت و مواد غذایی',
   'category.clothes': 'پوشاک و مد',

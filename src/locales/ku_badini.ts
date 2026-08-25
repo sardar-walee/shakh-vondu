@@ -188,6 +188,16 @@ export const kuBadiniTranslations: Record<string, string> = {
   'کڕیار': 'کڕیار',
 
   // Categories
+  'cat.food': 'خوارنگەهـ و خوارن',
+  'cat.market': 'مارکێت و سوپەرمارکێت',
+  'cat.clothes': 'جلک و مۆدە',
+  'cat.fruits_vegetables': 'سەوزە و میڤە',
+  'cat.fresh_meat': 'گۆشتێ فرێش یێ کوردی',
+  'cat.dairy': 'شیرەمەنی و ماست',
+  'cat.electronics': 'ئەلیکترۆنیات و مۆبایل',
+  'cat.beauty': 'جوانی و مکیاژ',
+  'cat.cars': 'بازاڕێ ترۆمبێلان',
+  'cat.umrah': 'گەشت و عومرە',
   'category.food': 'خوارنگەهـ و خوارن',
   'category.market': 'مارکێت و سوپەرمارکێت',
   'category.clothes': 'جلک و مۆدە',

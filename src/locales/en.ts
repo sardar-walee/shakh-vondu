@@ -188,6 +188,16 @@ export const enTranslations: Record<string, string> = {
   'کڕیار': 'Customer',
 
   // Categories
+  'cat.food': 'Restaurants & Food',
+  'cat.market': 'Market & Supermarket',
+  'cat.clothes': 'Fashion & Clothing',
+  'cat.fruits_vegetables': 'Fresh Fruits & Veggies',
+  'cat.fresh_meat': 'Fresh Kurdish Meat',
+  'cat.dairy': 'Dairy & Cheese',
+  'cat.electronics': 'Electronics & Mobiles',
+  'cat.beauty': 'Beauty & Cosmetics',
+  'cat.cars': 'Car Marketplace',
+  'cat.umrah': 'Travel & Umrah',
   'category.food': 'Restaurants & Food',
   'category.market': 'Market & Supermarket',
   'category.clothes': 'Fashion & Clothing',

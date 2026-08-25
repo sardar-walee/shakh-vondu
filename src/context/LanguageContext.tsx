@@ -11,7 +11,7 @@ const STORAGE_KEY = 'shakh_language';
 const OVERRIDES_STORAGE_KEY = 'shakh_i18n_overrides';
 const LEGACY_STORAGE_KEYS = ['language', 'locale', 'selected_language'];
 
-const VALID_LANGUAGES: Language[] = ['ku', 'ku_badini', 'ar', 'en', 'tr', 'fa'];
+const VALID_LANGUAGES: Language[] = ['ku', 'ku_badini', 'ar', 'en', 'tr'];
 
 interface LanguageContextType {
   language: Language;
