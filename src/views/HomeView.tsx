@@ -75,7 +75,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const specialOffers = products.filter(p => p.isAvailable !== false && p.productStatus !== 'hidden' && p.discountPrice && p.discountPrice < p.price).slice(0, 8);
   const featuredRestaurants = sellers.filter(s => s.category === 'food').slice(0, 8);
   const featuredMarkets = sellers.filter(s => s.category === 'market').slice(0, 8);
-  const activeCarAds = filteredCarAds.filter(c => c.adStatus === 'active').slice(0, 8);
+  const activeCarAds = filteredCarAds.filter(c => c.adStatus !== 'rejected' && c.adStatus !== 'hidden' && c.adStatus !== 'deleted').slice(0, 8);
   const trendingProducts = products.filter(p => p.isAvailable !== false && p.productStatus !== 'hidden').slice(0, 12);
 
   // Best sellers computation (filtered by category if selected)

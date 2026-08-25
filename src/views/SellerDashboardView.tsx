@@ -1226,12 +1226,12 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
               </h3>
 
               {/* Range Distance Slider */}
-              <div className="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <div className="space-y-3 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-slate-800">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     سنوری دوری گەیاندن لە شوێنی فرۆشگا:
                   </label>
-                  <span className="text-sm font-black text-orange-600 font-latin bg-white px-3 py-1 rounded-xl border border-orange-200 shadow-2xs">
+                  <span className="text-sm font-black text-orange-600 dark:text-orange-400 font-latin bg-white dark:bg-slate-800 px-3 py-1 rounded-xl border border-orange-200 dark:border-orange-800 shadow-2xs">
                     لە {minDist} کم هەتا {maxDist} کم
                   </span>
                 </div>
@@ -1243,10 +1243,10 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                   step={1}
                   value={maxDist}
                   onChange={(e) => setMaxDist(Number(e.target.value))}
-                  className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                  className="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
                 />
 
-                <div className="flex justify-between text-[11px] text-slate-400 font-latin">
+                <div className="flex justify-between text-[11px] text-slate-400 dark:text-slate-400 font-latin">
                   <span>٠ کم (لەبەردەم فرۆشگا)</span>
                   <span>١٥ کم (ناوەندی شار)</span>
                   <span>٣٠ کم (دەوروبەر)</span>
@@ -1257,7 +1257,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
               {/* Base Fee & Threshold */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     نرخی بنەڕەتی گەیاندن (دینار) *
                   </label>
                   <div className="relative">
@@ -1266,7 +1266,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                       step={250}
                       value={baseFee}
                       onChange={(e) => setBaseFee(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                     />
                     <span className="absolute left-3 top-3 text-xs text-slate-400">د.ع</span>
                   </div>
@@ -1274,7 +1274,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     دوری بنەڕەتی لەناو نرخدا (کم) *
                   </label>
                   <div className="relative">
@@ -1285,7 +1285,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                       max={20}
                       value={baseThresholdKm}
                       onChange={(e) => setBaseThresholdKm(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                     />
                     <span className="absolute left-3 top-3 text-xs text-slate-400">کم</span>
                   </div>
@@ -1296,7 +1296,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
               {/* Per Km Extra Fee & Free Delivery Threshold */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     زیادەی هەر کم دوای دوری بنەڕەت (دینار) *
                   </label>
                   <div className="relative">
@@ -1305,14 +1305,14 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                       step={50}
                       value={perKmFee}
                       onChange={(e) => setPerKmFee(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                     />
                     <span className="absolute left-3 top-3 text-xs text-slate-400">د.ع / کم</span>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     گەیاندنی بێبەرامبەر سەرووی (دینار)
                   </label>
                   <div className="relative">
@@ -1322,7 +1322,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                       value={freeDeliveryOver}
                       onChange={(e) => setFreeDeliveryOver(Number(e.target.value))}
                       placeholder="0 ئەگەر ناچالاک بێت"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                     />
                     <span className="absolute left-3 top-3 text-xs text-slate-400">د.ع</span>
                   </div>
@@ -1331,12 +1331,12 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
               </div>
 
               {/* Strict Radius Toggle */}
-              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-start justify-between gap-4">
+              <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 flex items-start justify-between gap-4">
                 <div>
-                  <h4 className="text-xs font-black text-amber-900">
+                  <h4 className="text-xs font-black text-amber-900 dark:text-amber-200">
                     ڕێسای توندی سنوری گەیاندن (Strict Delivery Boundary)
                   </h4>
-                  <p className="text-[11px] text-amber-700 mt-0.5 leading-relaxed">
+                  <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-0.5 leading-relaxed">
                     ئەگەر چالاک بێت، کڕیار ناتوانێت داواکاری بنێرێت ئەگەر دوری ناونیشانەکەی لە {maxDist} کم زیاتر بێت.
                   </p>
                 </div>
@@ -1347,13 +1347,13 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                     onChange={(e) => setIsStrict(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-300 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                  <div className="w-11 h-6 bg-slate-300 dark:bg-slate-700 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                 </label>
               </div>
 
               {/* Delivery Note */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                   ڕوونکردنەوەی گەیاندن بۆ کڕیار
                 </label>
                 <input
@@ -1361,13 +1361,13 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                   value={deliveryNote}
                   onChange={(e) => setDeliveryNote(e.target.value)}
                   placeholder={`وەک: گەیاندنی خێرا لە ٠ کم تا ${maxDist} کم لە هەولێر`}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:bg-white focus:outline-hidden focus:border-orange-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                 />
               </div>
 
               {/* Neighborhoods Manager */}
-              <div className="space-y-2.5 pt-2 border-t border-slate-100">
-                <label className="text-xs font-bold text-slate-800 block">
+              <div className="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-700">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
                   گەڕەکە سەرەکییە داپۆشراوەکان ({neighborhoods.length} گەڕەک دیاریکراوە):
                 </label>
 
@@ -1643,7 +1643,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
 
               {/* Delivery Mode Choice */}
               <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-800 block">
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">
                   شێوازی گەیاندنی فرۆشگاکەت لە ئەپڵیکەیشن:
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1658,24 +1658,24 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                       onClick={() => setDeliveryMode(m.id as DeliveryMode)}
                       className={`p-4 rounded-2xl border text-right transition-all cursor-pointer space-y-1.5 ${
                         deliveryMode === m.id
-                          ? 'border-orange-500 bg-orange-50/70 text-orange-950 shadow-xs'
-                          : 'border-slate-200 hover:border-slate-300 bg-white text-slate-700'
+                          ? 'border-orange-500 bg-orange-50/70 dark:bg-orange-950/40 text-orange-950 dark:text-orange-200 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200'
                       }`}
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-black text-xs">{m.title}</span>
                         <span className="text-lg">{m.icon}</span>
                       </div>
-                      <p className="text-[11px] text-slate-500 leading-relaxed">{m.desc}</p>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">{m.desc}</p>
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Store Delivery Pricing */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-100 dark:border-slate-700">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     کرێی دیاریکراوی دلیڤەری دوکان (دینار) *
                   </label>
                   <div className="relative">
@@ -1684,7 +1684,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                       step={250}
                       value={storeDeliveryFee}
                       onChange={(e) => setStoreDeliveryFee(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                     />
                     <span className="absolute left-3 top-3 text-xs text-slate-400">د.ع</span>
                   </div>
@@ -1692,7 +1692,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     گەیاندنی بەخۆڕایی لە کڕینی سەرووی (دینار)
                   </label>
                   <div className="relative">
@@ -1701,7 +1701,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                       step={5000}
                       value={storeFreeDeliveryOver}
                       onChange={(e) => setStoreFreeDeliveryOver(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                     />
                     <span className="absolute left-3 top-3 text-xs text-slate-400">د.ع</span>
                   </div>
@@ -1709,7 +1709,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700">
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">
                     کاتی خەمڵێنراوی گەیاندن (خولەک) *
                   </label>
                   <div className="relative">
@@ -1718,7 +1718,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
                       step={5}
                       value={storeEstimatedMins}
                       onChange={(e) => setStoreEstimatedMins(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 focus:bg-white focus:outline-hidden focus:border-orange-500"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin font-bold text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                     />
                     <span className="absolute left-3 top-3 text-xs text-slate-400">خولەک</span>
                   </div>
@@ -1794,25 +1794,25 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
 
       {/* Settings Tab */}
       {activeTab === 'settings' && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 space-y-4 max-w-xl">
-          <h3 className="text-sm font-black text-slate-900">ڕێکخستنەکانی فرۆشگا</h3>
+        <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200 dark:border-slate-700 space-y-4 max-w-xl">
+          <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">ڕێکخستنەکانی فرۆشگا</h3>
           <div className="space-y-3 text-xs">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">ناوی فرۆشگا:</label>
-              <input type="text" defaultValue={sellerProfile?.storeName} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" />
+              <label className="font-bold text-slate-800 dark:text-slate-200 block mb-1">ناوی فرۆشگا:</label>
+              <input type="text" defaultValue={sellerProfile?.storeName} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-2.5" />
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">ژمارەی تەلەفۆن:</label>
-              <input type="text" defaultValue={sellerProfile?.phone} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 font-latin" />
+              <label className="font-bold text-slate-800 dark:text-slate-200 block mb-1">ژمارەی تەلەفۆن:</label>
+              <input type="text" defaultValue={sellerProfile?.phone} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-2.5 font-latin" />
             </div>
             <div>
-              <label className="font-bold text-slate-700 block mb-1">کاتەکانی کارکردن:</label>
-              <input type="text" defaultValue={sellerProfile?.openingHours} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5" />
+              <label className="font-bold text-slate-800 dark:text-slate-200 block mb-1">کاتەکانی کارکردن:</label>
+              <input type="text" defaultValue={sellerProfile?.openingHours} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-2.5" />
             </div>
             <button
               type="button"
               onClick={() => alert('ڕێکخستنەکان پاشەکەوت کران!')}
-              className="mt-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl font-bold cursor-pointer"
+              className="mt-2 px-6 py-2.5 bg-slate-900 dark:bg-orange-500 text-white rounded-xl font-bold cursor-pointer hover:bg-slate-800 dark:hover:bg-orange-600"
             >
               پاشەکەوتکردن
             </button>
@@ -1829,34 +1829,34 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
       >
         <div className="space-y-4 text-xs">
           <div>
-            <label className="font-bold text-slate-700 block mb-1">ناوی شۆفێر *</label>
+            <label className="font-bold text-slate-800 dark:text-slate-200 block mb-1">ناوی شۆفێر *</label>
             <input
               type="text"
               value={newDriverName}
               onChange={(e) => setNewDriverName(e.target.value)}
               placeholder="وەک: ئارام کەریم"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3"
             />
           </div>
 
           <div>
-            <label className="font-bold text-slate-700 block mb-1">ژمارەی مۆبایل *</label>
+            <label className="font-bold text-slate-800 dark:text-slate-200 block mb-1">ژمارەی مۆبایل *</label>
             <input
               type="tel"
               value={newDriverPhone}
               onChange={(e) => setNewDriverPhone(e.target.value)}
               placeholder="0750 123 4567"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-latin"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 font-latin"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="font-bold text-slate-700 block mb-1">هۆکاری گواستنەوە</label>
+              <label className="font-bold text-slate-800 dark:text-slate-200 block mb-1">هۆکاری گواستنەوە</label>
               <select
                 value={newDriverVehicle}
                 onChange={(e) => setNewDriverVehicle(e.target.value as any)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3"
               >
                 <option value="motorcycle">ماتۆڕسکیل 🛵</option>
                 <option value="car">ئۆتۆمبێل 🚗</option>
@@ -1866,13 +1866,13 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
             </div>
 
             <div>
-              <label className="font-bold text-slate-700 block mb-1">ژمارەی تابلۆ (ئارەزوومەندانە)</label>
+              <label className="font-bold text-slate-800 dark:text-slate-200 block mb-1">ژمارەی تابلۆ (ئارەزوومەندانە)</label>
               <input
                 type="text"
                 value={newDriverPlate}
                 onChange={(e) => setNewDriverPlate(e.target.value)}
                 placeholder="هەولێر 1234 A"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 font-latin"
+                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 font-latin"
               />
             </div>
           </div>

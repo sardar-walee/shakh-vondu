@@ -135,10 +135,10 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   return (
     <div className="w-full space-y-3">
       <div className="flex items-center justify-between">
-        {label && <label className="block text-xs sm:text-sm font-bold text-slate-800">{label}</label>}
+        {label && <label className="block text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100">{label}</label>}
         
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg">
+          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
             {images.length} / {maxImages} وێنە
           </span>
           <button

@@ -412,52 +412,52 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
             </div>
 
             <div className="border-t border-slate-100 pt-4">
-              <h4 className="text-xs font-black text-slate-800 mb-3 flex items-center gap-1.5">
+              <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-1.5">
                 <User className="w-4 h-4 text-orange-500" />
                 <span>دەستکاری زانیاری پڕۆفایل و ناونیشان:</span>
               </h4>
 
               <form onSubmit={handleSave} className="space-y-4 text-right">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">ناوی تەواو:</label>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ناوی تەواو:</label>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:bg-white focus:outline-hidden focus:border-orange-500"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">ژمارەی مۆبایل:</label>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ژمارەی مۆبایل:</label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     dir="ltr"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin text-right focus:bg-white focus:outline-hidden focus:border-orange-500"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-latin text-right focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">شار:</label>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200">شار:</label>
                     <select
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold focus:bg-white focus:outline-hidden"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-semibold focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden"
                     >
                       {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">گەڕەک / ناوچە:</label>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200">گەڕەک / ناوچە:</label>
                     <input
                       type="text"
                       value={area}
                       onChange={(e) => setArea(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:bg-white focus:outline-hidden"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden"
                     />
                   </div>
                 </div>
@@ -613,11 +613,11 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">جۆری فیدباک / پێشنیار:</label>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">جۆری فیدباک / پێشنیار:</label>
                   <select
                     value={fbType}
                     onChange={(e) => setFbType(e.target.value as FeedbackType)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-bold focus:bg-white focus:outline-hidden focus:border-emerald-500"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-bold focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-emerald-500"
                   >
                     <option value="feature_request">💡 پێشنیاری تایبەتمەندی و بەشی نوێ</option>
                     <option value="category_suggestion">📦 پێشنیاری زیادکردنی کاڵا و بەشی نوێ</option>
@@ -627,7 +627,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">هەڵسەنگاندن (Stars):</label>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">هەڵسەنگاندن (Stars):</label>
                   <div className="flex items-center gap-2 pt-2">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
@@ -636,35 +636,35 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
                         onClick={() => setFbRating(star)}
                         className="p-1 cursor-pointer transition-transform hover:scale-110"
                       >
-                        <Star className={`w-6 h-6 ${star <= fbRating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
+                        <Star className={`w-6 h-6 ${star <= fbRating ? 'fill-amber-400 text-amber-400' : 'text-slate-300 dark:text-slate-600'}`} />
                       </button>
                     ))}
-                    <span className="text-xs font-bold font-latin text-slate-500 mr-2">({fbRating}/5)</span>
+                    <span className="text-xs font-bold font-latin text-slate-500 dark:text-slate-400 mr-2">({fbRating}/5)</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">سەردێڕی فیدباک یان پێشنیار:</label>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">سەردێڕی فیدباک یان پێشنیار:</label>
                 <input
                   type="text"
                   required
                   value={fbTitle}
                   onChange={(e) => setFbTitle(e.target.value)}
                   placeholder="سەردێڕێکی کورت و ڕوون بنووسە..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:bg-white focus:outline-hidden focus:border-emerald-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">ناواخنی سەرنج و پێشنیارەکەت بە وردی:</label>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ناواخنی سەرنج و پێشنیارەکەت بە وردی:</label>
                 <textarea
                   required
                   rows={4}
                   value={fbMessage}
                   onChange={(e) => setFbMessage(e.target.value)}
                   placeholder="ڕاو سەرنجەکانت بە درێژی بنووسە بۆ بەرەوپێشبردنی پڕۆژەکە..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs focus:bg-white focus:outline-hidden focus:border-emerald-500"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
 

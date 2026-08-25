@@ -297,7 +297,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 {/* Sizes */}
                 {product.sizes && product.sizes.length > 0 && (
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">قەبارە هەڵبژێرە:</label>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200">قەبارە هەڵبژێرە:</label>
                     <div className="flex flex-wrap gap-2">
                       {product.sizes.map(s => (
                         <button
@@ -307,7 +307,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                           className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                             selectedSize === s
                               ? 'border-purple-600 bg-purple-600 text-white shadow-xs'
-                              : 'border-purple-200 bg-white text-slate-700 hover:border-purple-300'
+                              : 'border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-purple-300'
                           }`}
                         >
                           {s}
@@ -320,7 +320,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 {/* Colors */}
                 {product.colors && product.colors.length > 0 && (
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700">ڕەنگ هەڵبژێرە:</label>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ڕەنگ هەڵبژێرە:</label>
                     <div className="flex flex-wrap gap-2">
                       {product.colors.map(c => (
                         <button
@@ -330,7 +330,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                           className={`px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                             selectedColor === c
                               ? 'border-purple-600 bg-purple-600 text-white shadow-xs'
-                              : 'border-purple-200 bg-white text-slate-700 hover:border-purple-300'
+                              : 'border-purple-200 dark:border-purple-800 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-purple-300'
                           }`}
                         >
                           {c}
@@ -460,10 +460,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
                 {product.ingredients && product.ingredients.length > 0 && (
                   <div className="space-y-1.5 pt-1">
-                    <label className="text-xs font-bold text-slate-700">پێکهاتە سەرەکییەکان:</label>
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200">پێکهاتە سەرەکییەکان:</label>
                     <div className="flex flex-wrap gap-1.5">
                       {product.ingredients.map(ing => (
-                        <span key={ing} className="bg-white border border-orange-200 text-slate-700 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
+                        <span key={ing} className="bg-white dark:bg-slate-800 border border-orange-200 dark:border-orange-800/60 text-slate-700 dark:text-slate-300 text-[11px] font-semibold px-2.5 py-1 rounded-lg">
                           {ing}
                         </span>
                       ))}

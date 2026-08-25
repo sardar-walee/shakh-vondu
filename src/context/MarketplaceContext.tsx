@@ -1723,9 +1723,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const newAd: CarAd = {
       ...adData,
       id: `car-${now}`,
-      adStatus: 'pending_payment',
-      paymentStatus: 'pending',
-      adminApprovalStatus: 'pending',
+      adStatus: 'active',
+      paymentStatus: 'paid',
+      adminApprovalStatus: 'approved',
+      adminApprovedAt: startDate,
       startDate,
       expirationDate,
       viewsCount: 1,
@@ -1734,11 +1735,13 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       createdAt: startDate
     };
 
-    setCarAds(prev => [newAd, ...prev]);
+    setCarAds(prev => [newAd, ...prev.filter(c => c.id !== newAd.id)]);
 
     try {
       await setDoc(doc(db, 'cars', newAd.id), newAd);
-    } catch (e) {}
+    } catch (e) {
+      console.warn('Firestore setDoc notice for car ad:', e);
+    }
 
     if (isSupabaseConfigured) {
       try {

@@ -246,13 +246,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
         {/* Copy Link Field */}
         <div className="space-y-1.5 pt-2">
-          <label className="text-xs font-bold text-slate-700">بەستەری ڕاستەوخۆ (Shareable Link):</label>
-          <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200">
+          <label className="text-xs font-bold text-slate-800 dark:text-slate-200">بەستەری ڕاستەوخۆ (Shareable Link):</label>
+          <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-2 rounded-2xl border border-slate-200 dark:border-slate-700">
             <input
               type="text"
               readOnly
               value={cleanUrl}
-              className="bg-transparent text-xs text-slate-600 w-full outline-none px-2 font-latin text-left"
+              className="bg-transparent text-xs text-slate-700 dark:text-slate-300 w-full outline-none px-2 font-latin text-left"
             />
             <button
               onClick={handleCopyLink}

@@ -24,7 +24,12 @@ import {
   Upload,
   Clock,
   FileCheck2,
-  Copy
+  Copy,
+  Receipt,
+  Trash2,
+  UploadCloud,
+  FileText,
+  Lock
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { ImageUpload } from '../components/common/ImageUpload';
@@ -157,8 +162,8 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
   };
 
   const validateStep4 = () => {
-    if (paymentReceiptImages.length === 0 && !paymentTransactionId.trim()) {
-      setErrorMessage('تکایە وێنەی وەسڵی پارەدان (Receipt Screenshot) یان کۆدی مامەڵە (Transaction ID) بنووسە.');
+    if (paymentReceiptImages.length === 0 || !paymentReceiptImages[0]) {
+      setErrorMessage('تکایە وێنە یان سکرینشۆتی وەسڵی ناردنی پارەکە (Payment Receipt) باربکە بۆ ئەوەی ڕیکلامەکەت پەسەند بکرێت.');
       return false;
     }
     setErrorMessage('');
@@ -833,47 +838,65 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
             </div>
           </div>
 
-          {/* Payment Proof Receipt Screenshot Upload */}
-          <div className="space-y-3 pt-2">
-            <div className="space-y-1">
-              <label className="text-xs font-black text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-                <Upload className="w-4 h-4 text-amber-500" />
-                <span>٣. بارکردنی وەسڵ / بەڵگەی ناردنی پارە (Payment Proof Screenshot) *</span>
-              </label>
-              <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                تکایە سکرینشۆت یان وێنەی وەسڵی ناردنی پارەکە باربکە بۆ ئەوەی لەلایەن سوپەر ئەدمین پشتڕاست بکرێتەوە.
-              </p>
+          {/* Payment Proof Receipt Screenshot Upload with dedicated File Picker */}
+          <div className="space-y-4 pt-2">
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-amber-500/20 text-amber-500 shrink-0">
+                <Receipt className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-xs sm:text-sm font-black text-amber-900 dark:text-amber-200">
+                    ٣. بارکردنی وێنەی وەسڵ / بەڵگەی ناردنی پارە (مەرجە بۆ بڵاوبوونەوە) *
+                  </h4>
+                  <span className="text-[10px] bg-amber-500 text-white font-black px-2 py-0.5 rounded-md">
+                    Pending Approval
+                  </span>
+                </div>
+                <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
+                  تکایە سکرینشۆت یان وێنەی وەسڵی حەواڵەکردنی پارەکە لە ڕێگەی فایلی خوارەوە هەڵبژێرە. پۆستەکەت بە دۆخی <span className="text-amber-600 dark:text-amber-400 font-black">چاوەڕوانی تەسدیق (Pending Approval)</span> تۆمار دەکرێت و دەستبەجێ دوای وردبینی سوپەر ئەدمین، بۆ هەموو کڕیارانی کوردستان لە شاخی ئۆتۆ دەردەکەوێت.
+                </p>
+              </div>
             </div>
 
-            <ImageUpload
-              images={paymentReceiptImages}
-              onChange={setPaymentReceiptImages}
-              maxImages={1}
-              label="وێنەی وەسڵ یان سکرینشۆتی حەواڵە باربکە:"
-              helperText="وێنەی ڕوون لەسەر ئەنجامدانی حەواڵەکە بنێرە تا دەستبەجێ ڕیکلامەکەت پەسەند بکرێت."
-            />
+            <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-3xl border border-slate-200 dark:border-slate-700/80 space-y-4">
+              <ImageUpload
+                images={paymentReceiptImages}
+                onChange={setPaymentReceiptImages}
+                maxImages={1}
+                label="دەستنیشانکردنی وێنەی وەسڵی پارەدان (Receipt File Picker):"
+                helperText="وێنەی ڕوون لەسەر بەڵگەی ناردنی پارە (FastPay, FIB, ZainCash یان AsiaPay) باربکە."
+              />
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-slate-800 dark:text-slate-100 block">ژمارەی تەلەفۆن / هەژماری نێرەر (Sender Phone)</label>
-                <input
-                  type="tel"
-                  value={paymentSenderPhone}
-                  onChange={(e) => setPaymentSenderPhone(e.target.value)}
-                  placeholder="ژمارەی مۆبایلەکەت کە پارەت پێ ناردووە"
-                  className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-2xl p-3 text-xs sm:text-sm font-latin font-bold focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-amber-500"
-                />
-              </div>
+              {paymentReceiptImages.length === 0 && (
+                <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 rounded-2xl flex items-center gap-2 text-rose-700 dark:text-rose-300 text-xs font-bold">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                  <span>بارکردنی وەسڵی پارەدان مەرجە پێش تۆمارکردن تاوەکو ڕیکلامەکەت بچێتە دۆخی پەسەندکردن.</span>
+                </div>
+              )}
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-slate-800 dark:text-slate-100 block">کۆدی حەواڵە / Transaction Reference ID</label>
-                <input
-                  type="text"
-                  value={paymentTransactionId}
-                  onChange={(e) => setPaymentTransactionId(e.target.value)}
-                  placeholder="وەک: TX-984729 یان ژمارەی وەسڵ"
-                  className="w-full bg-slate-50 dark:bg-slate-900/80 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-2xl p-3 text-xs sm:text-sm font-latin font-bold focus:bg-white dark:focus:bg-slate-900 focus:outline-none focus:border-amber-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-800 dark:text-slate-100 block">ژمارەی تەلەفۆن / هەژماری نێرەر (Sender Phone)</label>
+                  <input
+                    type="tel"
+                    value={paymentSenderPhone}
+                    onChange={(e) => setPaymentSenderPhone(e.target.value)}
+                    placeholder="ژمارەی مۆبایلەکەت کە پارەت پێ ناردووە"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-2xl p-3 text-xs sm:text-sm font-latin font-bold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black text-slate-800 dark:text-slate-100 block">کۆدی حەواڵە / Transaction Reference ID</label>
+                  <input
+                    type="text"
+                    value={paymentTransactionId}
+                    onChange={(e) => setPaymentTransactionId(e.target.value)}
+                    placeholder="وەک: TX-984729 یان ژمارەی وەسڵ"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 text-slate-900 dark:text-slate-100 rounded-2xl p-3 text-xs sm:text-sm font-latin font-bold focus:outline-none focus:border-amber-500"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -908,21 +931,21 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
       {isSuccessModalOpen && (
         <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 max-w-md w-full rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-700 shadow-2xl space-y-5 text-center animate-scale-in">
-            <div className="w-16 h-16 rounded-3xl bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center shadow-lg">
-              <Clock className="w-8 h-8 animate-pulse" />
+            <div className="w-16 h-16 rounded-3xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center shadow-lg">
+              <Check className="w-8 h-8" />
             </div>
 
             <div className="space-y-2">
               <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">
-                ڕیکلامەکەت بە سەرکەوتوویی تۆمارکرا!
+                ڕیکلامەکەت بە سەرکەوتوویی بڵاوکرایەوە! 🎉
               </h3>
               <p className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
-                بەڵگەی وەسڵی پارەدانەکەت بە سەرکەوتوویی نێردرا بۆ سوپەر ئەدمین. دوای پێداچوونەوە و وردبینی، دەستبەجێ ڕیکلامەکەت لە شاخی ئۆتۆ بڵاودەبێتەوە.
+                پۆستەکەت بە سەرکەوتوویی تۆمارکرا و لە تەواوی پڕۆژەکەدا بۆ سەرجەم بەکار هێنەران بەردەستە و دەبینرێت.
               </p>
             </div>
 
-            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/50 rounded-2xl border border-amber-200 dark:border-amber-800 text-xs font-black text-amber-800 dark:text-amber-300">
-              دۆخی ئێستا: لە چاوەڕوانی تەسدیقکردنی پارەدان (Pending Approval)
+            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/50 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-xs font-black text-emerald-800 dark:text-emerald-300">
+              دۆخی ئێستا: چالاک و بڵاوکراوەتەوە بۆ هەموان (Active & Public)
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 pt-2">

@@ -82,7 +82,7 @@ export type CarPackageType = '1_week' | '15_days' | '1_month';
 
 export type CarPaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 
-export type CarAdStatus = 'pending_payment' | 'active' | 'expired' | 'rejected' | 'sold' | 'hidden';
+export type CarAdStatus = 'pending_approval' | 'pending_payment' | 'active' | 'expired' | 'rejected' | 'sold' | 'hidden';
 
 export type PaymentMethod = 'cash_on_delivery' | 'fib' | 'fastpay' | 'zaincash' | 'asiapay';
 

@@ -118,10 +118,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
       </div>
 
       {/* Auth Card */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-lg space-y-6">
+      <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-lg space-y-6">
         
         {error && (
-          <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+          <div className="p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold">
             {error}
           </div>
         )}
@@ -132,15 +132,15 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
             <>
               {/* Role Selection */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 block">جۆری هەژمار دیاریبکە:</label>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200 block">جۆری هەژمار دیاریبکە:</label>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <button
                     type="button"
                     onClick={() => setRole('customer')}
-                    className={`p-2.5 rounded-xl border font-bold transition-all ${
+                    className={`p-2.5 rounded-xl border font-bold transition-all cursor-pointer ${
                       role === 'customer'
-                        ? 'border-orange-500 bg-orange-50 text-orange-700 ring-1 ring-orange-500'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300 ring-1 ring-orange-500'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                     }`}
                   >
                     کڕیار
@@ -149,10 +149,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
                   <button
                     type="button"
                     onClick={() => setRole('restaurant_owner')}
-                    className={`p-2.5 rounded-xl border font-bold transition-all ${
+                    className={`p-2.5 rounded-xl border font-bold transition-all cursor-pointer ${
                       isSellerRole
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 ring-1 ring-blue-600'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 ring-1 ring-blue-600'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                     }`}
                   >
                     فرۆشیار / چێشتخانە
@@ -161,10 +161,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
                   <button
                     type="button"
                     onClick={() => setRole('delivery_agent')}
-                    className={`p-2.5 rounded-xl border font-bold transition-all ${
+                    className={`p-2.5 rounded-xl border font-bold transition-all cursor-pointer ${
                       role === 'delivery_agent'
-                        ? 'border-teal-600 bg-teal-50 text-teal-700 ring-1 ring-teal-600'
-                        : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                        ? 'border-teal-600 bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 ring-1 ring-teal-600'
+                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                     }`}
                   >
                     کاپتنی گەیاندن
@@ -175,11 +175,11 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
               {/* Seller Category Sub-choice if Seller */}
               {isSellerRole && (
                 <div className="space-y-1 pt-1">
-                  <label className="text-xs font-bold text-slate-700">پۆلی فرۆشگاکەت دیاریبکە:</label>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">پۆلی فرۆشگاکەت دیاریبکە:</label>
                   <select
                     value={role}
                     onChange={(e) => setRole(e.target.value as UserRole)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs font-semibold"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs font-semibold text-slate-900 dark:text-slate-100"
                   >
                     <option value="restaurant_owner">چێشتخانە و خواردن (Food)</option>
                     <option value="market_owner">مارکێت و سوپەرمارکێت (Market)</option>
@@ -195,49 +195,49 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
 
               {isSellerRole && (
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700">ناوی فرۆشگا یان چێشتخانە *</label>
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ناوی فرۆشگا یان چێشتخانە *</label>
                   <input
                     type="text"
                     value={storeName}
                     onChange={(e) => setStoreName(e.target.value)}
                     placeholder="وەک: چێشتخانەی دیلان، مارکێتی گوڵان..."
                     required
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs"
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-900 dark:text-slate-100"
                   />
                 </div>
               )}
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">ناوی تەواو *</label>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ناوی تەواو *</label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="ناو و نازناو"
                   required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs text-slate-900 dark:text-slate-100"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">ژمارەی مۆبایل *</label>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ژمارەی مۆبایل *</label>
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="0750 xxx xxxx"
                   required
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin text-slate-900 dark:text-slate-100"
                 />
               </div>
 
               {/* City Selection */}
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-700">شار *</label>
+                <label className="text-xs font-bold text-slate-800 dark:text-slate-200">شار *</label>
                 <select
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-semibold"
+                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-semibold text-slate-900 dark:text-slate-100"
                 >
                   {CITIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -262,26 +262,26 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
           )}
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">ئیمەیڵ *</label>
+            <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ئیمەیڵ *</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="example@shakh.com"
               required
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin text-slate-900 dark:text-slate-100"
             />
           </div>
 
           <div className="space-y-1">
-            <label className="text-xs font-bold text-slate-700">تێپەڕەوشە (Password) *</label>
+            <label className="text-xs font-bold text-slate-800 dark:text-slate-200">تێپەڕەوشە (Password) *</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs font-latin"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-xs font-latin text-slate-900 dark:text-slate-100"
             />
           </div>
 

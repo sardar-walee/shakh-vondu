@@ -622,18 +622,18 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
         {/* STEP 1: BASIC INFORMATION */}
         {activeStep === 1 && (
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-6 animate-fade-in">
-            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-700 shadow-xs space-y-6 animate-fade-in">
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
               <Info className="w-4 h-4 text-orange-500" />
               <span>هەنگاوی ١: زانیارییە سەرەکییەکانی کاڵا</span>
             </h3>
 
             {/* Super Admin Store Assignment Bar */}
             {isSuperAdmin && (
-              <div className="p-4 bg-gradient-to-r from-red-50 to-orange-50/60 border border-red-200/80 rounded-2xl space-y-3">
+              <div className="p-4 bg-gradient-to-r from-red-50 to-orange-50/60 dark:from-red-950/40 dark:to-orange-950/40 border border-red-200/80 dark:border-red-800/80 rounded-2xl space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-red-950 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-red-600" />
+                  <span className="text-xs font-black text-red-950 dark:text-red-300 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-red-600 dark:text-red-400" />
                     <span>دیاریکردنی فرۆشگا / چێشتخانەی بڵاوکەرەوە (Super Admin Store Assignment)</span>
                   </span>
                   <span className="text-[10px] font-black bg-red-600 text-white px-2.5 py-0.5 rounded-full">
@@ -643,7 +643,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    <label className="text-[11px] font-bold text-slate-800 dark:text-slate-200 block mb-1">
                       هەڵبژاردنی فرۆشگا یان چێشتخانەی تۆمارکراو:
                     </label>
                     <select
@@ -662,7 +662,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                           }
                         }
                       }}
-                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 shadow-xs cursor-pointer"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-red-500 shadow-xs cursor-pointer"
                     >
                       <option value="admin-store">👑 بەڕێوەبەرایەتی شاخ (Shakh Official Management)</option>
                       <optgroup label="چێشتخانە و فرۆشگاکانی سیستەم">
@@ -678,7 +678,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
                   {currentSellerId === 'custom' ? (
                     <div>
-                      <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                      <label className="text-[11px] font-bold text-slate-800 dark:text-slate-200 block mb-1">
                         ناوی فرۆشگا / چێشتخانەی نوێ بنووسە:
                       </label>
                       <input
@@ -689,14 +689,14 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                           setCurrentSellerName(e.target.value);
                         }}
                         placeholder="وەک: چێشتخانەی کەبابی هەولێر، شاخ مۆبایل..."
-                        className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-red-500 shadow-xs"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-red-500 shadow-xs"
                       />
                     </div>
                   ) : (
                     <div className="flex flex-col justify-end">
-                      <div className="p-2.5 bg-white/80 border border-slate-200 rounded-xl text-xs flex items-center justify-between">
-                        <span className="text-slate-500 text-[11px]">بڵاو دەبێتەوە بە ناوی:</span>
-                        <span className="font-black text-slate-900">{currentSellerName}</span>
+                      <div className="p-2.5 bg-white/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs flex items-center justify-between">
+                        <span className="text-slate-500 dark:text-slate-400 text-[11px]">بڵاو دەبێتەوە بە ناوی:</span>
+                        <span className="font-black text-slate-900 dark:text-slate-100">{currentSellerName}</span>
                       </div>
                     </div>
                   )}
@@ -706,7 +706,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
             {/* Category Selector */}
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-slate-700">بەشی سەرەکی (Category) *</label>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">بەشی سەرەکی (Category) *</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {(Object.keys(CATEGORY_FIELD_CONFIGS) as ProductCategory[]).map((catKey) => {
                   const cfg = CATEGORY_FIELD_CONFIGS[catKey];
@@ -721,12 +721,12 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                       onClick={() => handleCategoryChange(catKey)}
                       className={`p-3.5 rounded-2xl border text-right transition-all flex flex-col justify-between gap-2 ${
                         isSelected
-                          ? 'border-orange-500 bg-orange-50/70 ring-2 ring-orange-500/20 shadow-xs'
-                          : 'border-slate-200 bg-white hover:border-slate-300'
-                      } ${isDisabled ? 'opacity-40 cursor-not-allowed bg-slate-50' : 'cursor-pointer'}`}
+                          ? 'border-orange-500 bg-orange-50/70 dark:bg-orange-950/40 ring-2 ring-orange-500/20 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'
+                      } ${isDisabled ? 'opacity-40 cursor-not-allowed bg-slate-50 dark:bg-slate-800' : 'cursor-pointer'}`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-black text-slate-800">{cfg.labelKurdish}</span>
+                        <span className="text-xs font-black text-slate-800 dark:text-slate-200">{cfg.labelKurdish}</span>
                         {isSelected && <CheckCircle2 className="w-4 h-4 text-orange-500" />}
                       </div>
                       <span className="text-[10px] text-slate-400 font-latin truncate">{cfg.labelEn}</span>
@@ -739,7 +739,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
             {/* Subcategory Selector */}
             {currentCategoryConfig.subcategories && currentCategoryConfig.subcategories.length > 0 && (
               <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700">بەشی لاوەکی / پۆلێن (Subcategory)</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">بەشی لاوەکی / پۆلێن (Subcategory)</label>
                 <div className="flex flex-wrap gap-2">
                   {currentCategoryConfig.subcategories.map((sub) => {
                     const isSelected = subcategory === sub.label || subcategory === sub.id;
@@ -751,7 +751,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           isSelected
                             ? 'bg-orange-500 text-white shadow-xs'
-                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                            : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
                         }`}
                       >
                         {sub.label}
@@ -765,7 +765,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
             {/* Product Title */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="block text-xs font-bold text-slate-700">ناوی کاڵا یان خواردن (Product Title) *</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">ناوی کاڵا یان خواردن (Product Title) *</label>
                 <span className="text-[10px] text-slate-400 font-latin">{title.length}/100</span>
               </div>
               <input
@@ -774,8 +774,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={100}
                 placeholder="نموونە: تیشێرتی لۆکەی زارا، مۆبایلی ئایفۆن ١٥ پرۆ ماکس، کەبابی بەرخی تایبەت..."
-                className={`w-full px-4 py-3 rounded-2xl border text-xs sm:text-sm bg-slate-50/50 focus:bg-white focus:outline-none transition-all ${
-                  errors.title ? 'border-red-400 ring-2 ring-red-100 bg-red-50/20' : 'border-slate-200 focus:border-orange-500'
+                className={`w-full px-4 py-3 rounded-2xl border text-xs sm:text-sm bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none transition-all ${
+                  errors.title ? 'border-red-400 ring-2 ring-red-100 bg-red-50/20' : 'border-slate-200 dark:border-slate-700 focus:border-orange-500'
                 }`}
               />
               {errors.title && <p className="text-[11px] text-red-500 font-bold">{errors.title}</p>}
@@ -783,7 +783,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
             {/* Condition: New / Used / Refurbished */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700">دۆخی کاڵا (Condition)</label>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">دۆخی کاڵا (Condition)</label>
               <div className="grid grid-cols-3 gap-2.5">
                 {[
                   { value: 'new', label: 'نوێ (Brand New)' },
@@ -796,8 +796,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                     onClick={() => setCondition(c.value as any)}
                     className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
                       condition === c.value
-                        ? 'bg-orange-50 border-orange-500 text-orange-700 shadow-xs ring-2 ring-orange-500/20'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        ? 'bg-orange-50 dark:bg-orange-950/40 border-orange-500 text-orange-700 dark:text-orange-300 shadow-xs ring-2 ring-orange-500/20'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }`}
                   >
                     {c.label}
@@ -808,13 +808,13 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
             {/* Description */}
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-700">وەسف و ڕوونکردنەوەی تەواو (Description)</label>
+              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">وەسف و ڕوونکردنەوەی تەواو (Description)</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 placeholder="تایبەتمەندی، دۆخ، شێوازی بەکارهێنان و گرنگترین خاڵەکانی کاڵاکەت بنووسە بۆ کڕیار..."
-                className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:border-orange-500 focus:outline-none text-xs sm:text-sm leading-relaxed"
+                className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-orange-500 focus:outline-none text-xs sm:text-sm leading-relaxed"
               />
             </div>
           </div>
@@ -822,8 +822,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
         {/* STEP 2: CATEGORY SPECIFICATIONS */}
         {activeStep === 2 && (
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-6 animate-fade-in">
-            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-700 shadow-xs space-y-6 animate-fade-in">
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 border-b border-slate-100 dark:border-slate-700 pb-3">
               <Sliders className="w-4 h-4 text-orange-500" />
               <span>هەنگاوی ٢: تایبەتمەندییە تایبەتەکانی ({currentCategoryConfig.labelKurdish})</span>
             </h3>
@@ -834,8 +834,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                 {/* Sizes */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-slate-700">قەبارە بەردەستەکان (Available Sizes) *</label>
-                    <span className="text-[11px] text-orange-600 font-bold">{sizes.length} قەبارە دیاریکراوە</span>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">قەبارە بەردەستەکان (Available Sizes) *</label>
+                    <span className="text-[11px] text-orange-600 dark:text-orange-400 font-bold">{sizes.length} قەبارە دیاریکراوە</span>
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -849,7 +849,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                           className={`px-3 py-1.5 rounded-xl text-xs font-bold font-latin transition-all cursor-pointer ${
                             isSelected
                               ? 'bg-purple-600 text-white shadow-xs ring-2 ring-purple-600/30'
-                              : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                              : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                           }`}
                         >
                           {sz}
@@ -865,7 +865,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                       value={customSizeInput}
                       onChange={(e) => setCustomSizeInput(e.target.value)}
                       placeholder="قەبارەی تایبەت (وەک: 38/32, 4X, منداڵان ٣ ساڵ)..."
-                      className="flex-1 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-500"
+                      className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-purple-500"
                     />
                     <button
                       type="button"
@@ -881,8 +881,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                 {/* Colors */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <label className="block text-xs font-bold text-slate-700">ڕەنگە بەردەستەکان (Colors) *</label>
-                    <span className="text-[11px] text-purple-600 font-bold">{colors.length} ڕەنگ دیاریکراوە</span>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">ڕەنگە بەردەستەکان (Colors) *</label>
+                    <span className="text-[11px] text-purple-600 dark:text-purple-400 font-bold">{colors.length} ڕەنگ دیاریکراوە</span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
@@ -895,8 +895,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                           onClick={() => toggleColor(c.value)}
                           className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
                             isSelected
-                              ? 'border-purple-500 bg-purple-50 text-purple-900 shadow-xs ring-2 ring-purple-500/20'
-                              : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                              ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 shadow-xs ring-2 ring-purple-500/20'
+                              : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
                           }`}
                         >
                           <span
@@ -915,14 +915,14 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                       type="color"
                       value={customColorHex}
                       onChange={(e) => setCustomColorHex(e.target.value)}
-                      className="w-9 h-9 rounded-xl border border-slate-300 cursor-pointer p-0.5"
+                      className="w-9 h-9 rounded-xl border border-slate-300 dark:border-slate-700 cursor-pointer p-0.5"
                     />
                     <input
                       type="text"
                       value={customColorInput}
                       onChange={(e) => setCustomColorInput(e.target.value)}
                       placeholder="ناوی ڕەنگ (وەک: شینی ئاسمانی، زەیتوونی، برۆنزی)..."
-                      className="flex-1 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-500"
+                      className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-purple-500"
                     />
                     <button
                       type="button"
@@ -934,15 +934,13 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
                   {errors.colors && <p className="text-[11px] text-red-500 font-bold">{errors.colors}</p>}
                 </div>
-
-                {/* Gender, Brand & Material */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">ڕەگەز (Target Gender)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">ڕەگەز (Target Gender)</label>
                     <select
                       value={gender}
                       onChange={(e) => setGender(e.target.value as any)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:border-purple-500"
                     >
                       <option value="men">پیاوان (Men)</option>
                       <option value="women">ئافرەتان (Women)</option>
@@ -952,24 +950,24 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">براند (Brand)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">براند (Brand)</label>
                     <input
                       type="text"
                       value={brand}
                       onChange={(e) => setBrand(e.target.value)}
                       placeholder="وەک: Zara, Nike, Adidas, Mango..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-purple-500"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">قوماش و کەرەستە (Material)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">قوماش و کەرەستە (Material)</label>
                     <input
                       type="text"
                       value={material}
                       onChange={(e) => setMaterial(e.target.value)}
                       placeholder="وەک: ١٠٠٪ لۆکە، جینز، کەتان..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-purple-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-purple-500"
                     />
                   </div>
                 </div>
@@ -981,28 +979,28 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">کۆمپانیا / براند (Brand) *</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">کۆمپانیا / براند (Brand) *</label>
                     <input
                       type="text"
                       value={brand}
                       onChange={(e) => setBrand(e.target.value)}
                       placeholder="وەک: Apple, Samsung, Sony, Xiaomi, Asus..."
-                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
-                        errors.brand ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-blue-500'
+                      className={`w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border text-xs focus:outline-none ${
+                        errors.brand ? 'border-red-400 bg-red-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500'
                       }`}
                     />
                     {errors.brand && <p className="text-[11px] text-red-500 font-bold">{errors.brand}</p>}
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">مۆدێلی تەواو (Model) *</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">مۆدێلی تەواو (Model) *</label>
                     <input
                       type="text"
                       value={model}
                       onChange={(e) => setModel(e.target.value)}
                       placeholder="وەک: iPhone 15 Pro Max 256GB, Galaxy S24..."
-                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
-                        errors.model ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-blue-500'
+                      className={`w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border text-xs focus:outline-none ${
+                        errors.model ? 'border-red-400 bg-red-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-blue-500'
                       }`}
                     />
                     {errors.model && <p className="text-[11px] text-red-500 font-bold">{errors.model}</p>}
@@ -1011,11 +1009,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">قەبارەی بیرگە (Storage)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">قەبارەی بیرگە (Storage)</label>
                     <select
                       value={storageCapacity}
                       onChange={(e) => setStorageCapacity(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold font-latin focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold font-latin focus:outline-none focus:border-blue-500"
                     >
                       <option value="">هەڵبژێرە (یان بنووسە)</option>
                       <option value="128GB">128 GB</option>
@@ -1028,11 +1026,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">ڕام (RAM)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">ڕام (RAM)</label>
                     <select
                       value={ramSize}
                       onChange={(e) => setRamSize(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold font-latin focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold font-latin focus:outline-none focus:border-blue-500"
                     >
                       <option value="">هەڵبژێرە</option>
                       <option value="8GB">8 GB</option>
@@ -1045,35 +1043,35 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">گارانتی (بە مانگ)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">گارانتی (بە مانگ)</label>
                     <input
                       type="number"
                       value={warrantyMonths || ''}
                       onChange={(e) => setWarrantyMonths(e.target.value ? Number(e.target.value) : undefined)}
                       placeholder="١٢ مانگ"
                       min={0}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-latin focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-latin focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 </div>
 
                 {/* Custom Specs Table */}
-                <div className="space-y-2.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                  <label className="block text-xs font-bold text-slate-800">تایبەتمەندییە وردەکان (Specs Key/Value)</label>
+                <div className="space-y-2.5 bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">تایبەتمەندییە وردەکان (Specs Key/Value)</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={newSpecKey}
                       onChange={(e) => setNewSpecKey(e.target.value)}
                       placeholder="تایبەتمەندی (وەک: پاتری، کامێرا)..."
-                      className="flex-1 px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-blue-500"
                     />
                     <input
                       type="text"
                       value={newSpecValue}
                       onChange={(e) => setNewSpecValue(e.target.value)}
                       placeholder="بها (وەک: 5000 mAh, 200MP)..."
-                      className="flex-1 px-3 py-2 bg-white rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      className="flex-1 px-3 py-2 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-blue-500"
                     />
                     <button
                       type="button"
@@ -1087,8 +1085,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   {Object.keys(specs).length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                       {Object.entries(specs).map(([k, v]) => (
-                        <div key={k} className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-200 text-xs">
-                          <span className="font-bold text-slate-700">{k}: {v}</span>
+                        <div key={k} className="flex items-center justify-between p-2 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-xs">
+                          <span className="font-bold text-slate-700 dark:text-slate-200">{k}: {v}</span>
                           <button
                             type="button"
                             onClick={() => handleRemoveSpec(k)}
@@ -1109,64 +1107,64 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">کۆمپانیا / براند (Make) *</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">کۆمپانیا / براند (Make) *</label>
                     <input
                       type="text"
                       value={brand}
                       onChange={(e) => setBrand(e.target.value)}
                       placeholder="وەک: Toyota, Mercedes-Benz, BMW, Kia..."
-                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
-                        errors.brand ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-amber-500'
+                      className={`w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border text-xs focus:outline-none ${
+                        errors.brand ? 'border-red-400 bg-red-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-amber-500'
                       }`}
                     />
                     {errors.brand && <p className="text-[11px] text-red-500 font-bold">{errors.brand}</p>}
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">مۆدێل (Model) *</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">مۆدێل (Model) *</label>
                     <input
                       type="text"
                       value={model}
                       onChange={(e) => setModel(e.target.value)}
                       placeholder="وەک: Land Cruiser, Camry, Tucson..."
-                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
-                        errors.model ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-amber-500'
+                      className={`w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border text-xs focus:outline-none ${
+                        errors.model ? 'border-red-400 bg-red-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-amber-500'
                       }`}
                     />
                     {errors.model && <p className="text-[11px] text-red-500 font-bold">{errors.model}</p>}
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">ساڵی دروستکردن (Year) *</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">ساڵی دروستکردن (Year) *</label>
                     <input
                       type="number"
                       value={year || ''}
                       onChange={(e) => setYear(Number(e.target.value))}
                       min={1980}
                       max={new Date().getFullYear() + 1}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-latin focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-latin focus:outline-none focus:border-amber-500"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">ڕۆیشتن (کیلۆمەتر)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">ڕۆیشتن (کیلۆمەتر)</label>
                     <input
                       type="number"
                       value={mileageKm !== undefined ? mileageKm : ''}
                       onChange={(e) => setMileageKm(Number(e.target.value))}
                       min={0}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-latin focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-latin focus:outline-none focus:border-amber-500"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">گێڕ (Transmission)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">گێڕ (Transmission)</label>
                     <select
                       value={transmission}
                       onChange={(e) => setTransmission(e.target.value as any)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500"
                     >
                       <option value="automatic">ئۆتۆماتیک (Automatic)</option>
                       <option value="manual">عادی / دەستی (Manual)</option>
@@ -1174,11 +1172,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">سووتەمەنی (Fuel)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">سووتەمەنی (Fuel)</label>
                     <select
                       value={fuelType}
                       onChange={(e) => setFuelType(e.target.value as any)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500"
                     >
                       <option value="gasoline">بەنزین (Gasoline)</option>
                       <option value="hybrid">هایبرید (Hybrid)</option>
@@ -1188,11 +1186,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">دەبڵ ئەکسل (Drivetrain)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">دەبڵ ئەکسل (Drivetrain)</label>
                     <select
                       value={drivetrain}
                       onChange={(e) => setDrivetrain(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500"
                     >
                       {CAR_DRIVETRAINS.map((d) => (
                         <option key={d.value} value={d.value}>{d.label}</option>
@@ -1203,11 +1201,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">دۆخی بۆیاخ (Paint Condition)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">دۆخی بۆیاخ (Paint Condition)</label>
                     <select
                       value={paintStatus}
                       onChange={(e) => setPaintStatus(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500"
                     >
                       {CAR_PAINT_CONDITIONS.map((p) => (
                         <option key={p.value} value={p.value}>{p.label}</option>
@@ -1216,11 +1214,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">دۆخی لێدران و ڕووداو (Accident)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">دۆخی لێدران و ڕووداو (Accident)</label>
                     <select
                       value={accidentStatus}
                       onChange={(e) => setAccidentStatus(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-amber-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:border-amber-500"
                     >
                       {CAR_ACCIDENT_CONDITIONS.map((a) => (
                         <option key={a.value} value={a.value}>{a.label}</option>
@@ -1236,24 +1234,24 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">کاتی ئامادەکردن (بە خولەک)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">کاتی ئامادەکردن (بە خولەک)</label>
                     <input
                       type="number"
                       value={prepTimeMinutes || ''}
                       onChange={(e) => setPrepTimeMinutes(Number(e.target.value))}
                       placeholder="٢٠ خولەک"
                       min={5}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-latin focus:outline-none focus:border-orange-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-latin focus:outline-none focus:border-orange-500"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">تیژی خواردن (Spicy)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">تیژی خواردن (Spicy)</label>
                     <button
                       type="button"
                       onClick={() => setIsSpicy(!isSpicy)}
                       className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        isSpicy ? 'bg-red-50 border-red-500 text-red-700 ring-2 ring-red-500/20' : 'bg-slate-50 border-slate-200 text-slate-700'
+                        isSpicy ? 'bg-red-50 dark:bg-red-950/40 border-red-500 text-red-700 dark:text-red-300 ring-2 ring-red-500/20' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       <Flame className={`w-4 h-4 ${isSpicy ? 'text-red-600 fill-red-600' : 'text-slate-400'}`} />
@@ -1262,12 +1260,12 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">گیاخۆری (Vegetarian)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">گیاخۆری (Vegetarian)</label>
                     <button
                       type="button"
                       onClick={() => setIsVegetarian(!isVegetarian)}
                       className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        isVegetarian ? 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-500/20' : 'bg-slate-50 border-slate-200 text-slate-700'
+                        isVegetarian ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       <span>{isVegetarian ? 'گیاخۆرییە (Vegetarian)' : 'ئاسایی / گۆشتخۆر'}</span>
@@ -1277,14 +1275,14 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
                 {/* Ingredients */}
                 <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-700">پێکهاتەکان (Ingredients)</label>
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">پێکهاتەکان (Ingredients)</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={newIngredientInput}
                       onChange={(e) => setNewIngredientInput(e.target.value)}
                       placeholder="پێکهاتە بنووسە (وەک: پەنیری مۆزارێلا، قارچک، سنگی مریشک)..."
-                      className="flex-1 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-orange-500"
+                      className="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-orange-500"
                     />
                     <button
                       type="button"
@@ -1298,7 +1296,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   {ingredients.length > 0 && (
                     <div className="flex flex-wrap gap-2 pt-1">
                       {ingredients.map((ing) => (
-                        <span key={ing} className="px-3 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-xl text-xs font-bold flex items-center gap-1.5">
+                        <span key={ing} className="px-3 py-1 bg-orange-50 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800 rounded-xl text-xs font-bold flex items-center gap-1.5">
                           <span>{ing}</span>
                           <button type="button" onClick={() => handleRemoveIngredient(ing)} className="hover:text-red-600">
                             <X className="w-3 h-3" />
@@ -1316,11 +1314,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">جۆری گۆشت (Meat Type) *</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">جۆری گۆشت (Meat Type) *</label>
                     <select
                       value={meatType}
                       onChange={(e) => setMeatType(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-rose-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:border-rose-500"
                     >
                       <option value="lamb">گۆشتی بەرخی خۆماڵی (Lamb)</option>
                       <option value="beef">گۆشتی گوێرەکە و مانگا (Beef)</option>
@@ -1331,14 +1329,14 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">پارچە / بڕینی گۆشت (Cut) *</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">پارچە / بڕینی گۆشت (Cut) *</label>
                     <input
                       type="text"
                       value={cutType}
                       onChange={(e) => setCutType(e.target.value)}
                       placeholder="وەک: ڕان، پەراسو، فیلیە، دەست، هاڕاو، تیکە بۆ کەباب..."
-                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
-                        errors.cutType ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-rose-500'
+                      className={`w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border text-xs focus:outline-none ${
+                        errors.cutType ? 'border-red-400 bg-red-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-rose-500'
                       }`}
                     />
                     {errors.cutType && <p className="text-[11px] text-red-500 font-bold">{errors.cutType}</p>}
@@ -1347,24 +1345,24 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">سەرچاوەی سەربڕین (Origin & Halal)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">سەرچاوەی سەربڕین (Origin & Halal)</label>
                     <input
                       type="text"
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
                       placeholder="وەک: سەربڕاوی ناوخۆی کوردستان (١٠٠٪ حەڵاڵ)..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-rose-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-rose-500"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">کێش یان قەبارەی پاکێج (Weight)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">کێش یان قەبارەی پاکێج (Weight)</label>
                     <input
                       type="text"
                       value={weight}
                       onChange={(e) => setWeight(e.target.value)}
                       placeholder="وەک: ١ کیلۆگرام، ٥٠٠ گرام، نیو لاشە..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-rose-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-rose-500"
                     />
                   </div>
                 </div>
@@ -1376,23 +1374,23 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">سەرچاوە و ناوچەی بەرهەمهێنان (Origin)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">سەرچاوە و ناوچەی بەرهەمهێنان (Origin)</label>
                     <input
                       type="text"
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
                       placeholder="وەک: باخچەکانی پێنجوێن، شارەزوور، بەردەڕەش..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-emerald-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-emerald-500"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">١٠٠٪ ئۆرگانیک و سروشتی</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">١٠٠٪ ئۆرگانیک و سروشتی</label>
                     <button
                       type="button"
                       onClick={() => setIsOrganic(!isOrganic)}
                       className={`w-full py-2.5 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        isOrganic ? 'bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-500/20' : 'bg-slate-50 border-slate-200 text-slate-700'
+                        isOrganic ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/20' : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                       }`}
                     >
                       <Sparkles className={`w-4 h-4 ${isOrganic ? 'text-emerald-600' : 'text-slate-400'}`} />
@@ -1408,11 +1406,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">ڕێژەی چەوری (Fat Content)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">ڕێژەی چەوری (Fat Content)</label>
                     <select
                       value={fatPercentage}
                       onChange={(e) => setFatPercentage(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-cyan-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:border-cyan-500"
                     >
                       <option value="full_fat">چەوری تەواو و سروشتی (Full Fat)</option>
                       <option value="medium_fat">نیوە چەوری (Medium Fat)</option>
@@ -1422,24 +1420,24 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">ماوەی بەسەرچوون و پاراستن (Shelf Life)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">ماوەی بەسەرچوون و پاراستن (Shelf Life)</label>
                     <input
                       type="text"
                       value={expiryInfo}
                       onChange={(e) => setExpiryInfo(e.target.value)}
                       placeholder="وەک: ٥ ڕۆژ لە ساردکەرەوە..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-cyan-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-cyan-500"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">سەرچاوەی شیرەمەنی (Origin)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">سەرچاوەی شیرەمەنی (Origin)</label>
                     <input
                       type="text"
                       value={origin}
                       onChange={(e) => setOrigin(e.target.value)}
                       placeholder="وەک: ماستی مەڕی بەردەڕەش..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-cyan-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-cyan-500"
                     />
                   </div>
                 </div>
@@ -1451,24 +1449,24 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">براند (Brand) *</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">براند (Brand) *</label>
                     <input
                       type="text"
                       value={brand}
                       onChange={(e) => setBrand(e.target.value)}
                       placeholder="وەک: The Ordinary, CeraVe, Maybelline..."
-                      className={`w-full px-3 py-2.5 bg-slate-50 rounded-xl border text-xs focus:outline-none ${
-                        errors.brand ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-pink-500'
+                      className={`w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border text-xs focus:outline-none ${
+                        errors.brand ? 'border-red-400 bg-red-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-pink-500'
                       }`}
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">گونجاو بۆ پێست (Skin Type)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">گونجاو بۆ پێست (Skin Type)</label>
                     <select
                       value={skinType}
                       onChange={(e) => setSkinType(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold focus:outline-none focus:border-pink-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold focus:outline-none focus:border-pink-500"
                     >
                       <option value="all">سەرجەم جۆرەکان (All Skin Types)</option>
                       <option value="oily">پێستی چەور (Oily Skin)</option>
@@ -1479,13 +1477,13 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">قەبارە / کێش (Volume/Weight)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">قەبارە / کێش (Volume/Weight)</label>
                     <input
                       type="text"
                       value={volume}
                       onChange={(e) => setVolume(e.target.value)}
                       placeholder="وەک: 30ml, 50ml, 100g..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-pink-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-pink-500"
                     />
                   </div>
                 </div>
@@ -1497,35 +1495,35 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <div className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">براند (Brand)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">براند (Brand)</label>
                     <input
                       type="text"
                       value={brand}
                       onChange={(e) => setBrand(e.target.value)}
                       placeholder="وەک: Nestle, Dano, Almarai..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-blue-500"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">کێش یان قەبارەی پاکێج</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">کێش یان قەبارەی پاکێج</label>
                     <input
                       type="text"
                       value={weight}
                       onChange={(e) => setWeight(e.target.value)}
                       placeholder="وەک: 800g, 1 Liter, 5 Kg..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-blue-500"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">بەرواری بەسەرچوون (Expiry)</label>
+                    <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">بەرواری بەسەرچوون (Expiry)</label>
                     <input
                       type="text"
                       value={expiryInfo}
                       onChange={(e) => setExpiryInfo(e.target.value)}
                       placeholder="وەک: 2026/12..."
-                      className="w-full px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-blue-500"
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -1536,8 +1534,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
         {/* STEP 3: PRICE, STOCK, DELIVERY & REWARD POINTS */}
         {activeStep === 3 && (
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-6 animate-fade-in">
-            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-850 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6 animate-fade-in">
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
               <DollarSign className="w-4 h-4 text-orange-500" />
               <span>هەنگاوی ٣: نرخ، داشکاندن، کۆگا و پۆینتی شڕینی</span>
             </h3>
@@ -1545,7 +1543,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
             {/* Pricing Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">نرخی بنەڕەتی (دیناری عێراقی) *</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">نرخی بنەڕەتی (دیناری عێراقی) *</label>
                 <div className="relative">
                   <input
                     type="number"
@@ -1553,8 +1551,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                     onChange={(e) => handlePriceChange(Number(e.target.value))}
                     min={250}
                     step={250}
-                    className={`w-full px-4 py-3 rounded-2xl border text-sm font-black font-latin bg-slate-50/50 focus:bg-white focus:outline-none ${
-                      errors.price ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-orange-500'
+                    className={`w-full px-4 py-3 rounded-2xl border text-sm font-black font-latin bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none ${
+                      errors.price ? 'border-red-400 bg-red-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-orange-500'
                     }`}
                   />
                   <span className="absolute left-3 top-3 text-xs font-bold text-slate-400">د.ع</span>
@@ -1565,7 +1563,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-bold text-slate-700">نرخی داشکاندن (داشکاو)</label>
+                  <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">نرخی داشکاندن (داشکاو)</label>
                   {discountPercentage > 0 && (
                     <span className="text-[10px] bg-red-600 text-white font-black px-2 py-0.5 rounded-lg flex items-center gap-0.5">
                       <Percent className="w-3 h-3" />
@@ -1581,8 +1579,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                     placeholder="ئارەزوومەندانە"
                     min={250}
                     step={250}
-                    className={`w-full px-4 py-3 rounded-2xl border text-sm font-black font-latin bg-slate-50/50 focus:bg-white focus:outline-none ${
-                      errors.discountPrice ? 'border-red-400 bg-red-50/30' : 'border-slate-200 focus:border-orange-500'
+                    className={`w-full px-4 py-3 rounded-2xl border text-sm font-black font-latin bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:outline-none ${
+                      errors.discountPrice ? 'border-red-400 bg-red-50/30' : 'border-slate-200 dark:border-slate-700 focus:border-orange-500'
                     }`}
                   />
                   <span className="absolute left-3 top-3 text-xs font-bold text-slate-400">د.ع</span>
@@ -1591,13 +1589,13 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">ژمارەی بەردەست لە کۆگا (Stock) *</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">ژمارەی بەردەست لە کۆگا (Stock) *</label>
                 <input
                   type="number"
                   value={stock}
                   onChange={(e) => setStock(Number(e.target.value))}
                   min={0}
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm font-black font-latin bg-slate-50/50 focus:bg-white focus:border-orange-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-sm font-black font-latin bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-orange-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -1605,11 +1603,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
             {/* Unit & Availability */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">یەکەی فرۆشتن (Unit of Sale)</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">یەکەی فرۆشتن (Unit of Sale)</label>
                 <select
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
-                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-xs sm:text-sm font-bold bg-slate-50/50 focus:bg-white focus:border-orange-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs sm:text-sm font-bold bg-slate-50/50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:bg-white dark:focus:bg-slate-900 focus:border-orange-500 focus:outline-none"
                 >
                   <option value="دانە">دانە (Piece)</option>
                   <option value="کیلۆگرام">کیلۆگرام (Kg)</option>
@@ -1623,14 +1621,14 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-700">دۆخی بەردەستبوون لە فرۆشگا</label>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">دۆخی بەردەستبوون لە فرۆشگا</label>
                 <button
                   type="button"
                   onClick={() => setIsAvailable(!isAvailable)}
                   className={`w-full py-3 px-4 rounded-2xl border text-xs sm:text-sm font-bold flex items-center justify-between transition-all cursor-pointer ${
                     isAvailable
-                      ? 'bg-emerald-50 border-emerald-500 text-emerald-800 ring-2 ring-emerald-500/20'
-                      : 'bg-red-50 border-red-300 text-red-700'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-200 ring-2 ring-emerald-500/20'
+                      : 'bg-red-50 dark:bg-red-950/40 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300'
                   }`}
                 >
                   <span>{isAvailable ? 'بەردەستە بۆ کڕین (Available)' : 'تەواوبووە / ناچالاکە (Out of Stock)'}</span>
@@ -1640,15 +1638,15 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
             </div>
 
             {/* Shakh Reward Points System Integration */}
-            <div className="bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 p-5 rounded-3xl border border-amber-200/80 space-y-3">
+            <div className="bg-gradient-to-r from-amber-500/10 via-yellow-500/10 to-orange-500/10 dark:from-amber-950/30 dark:to-orange-950/30 p-5 rounded-3xl border border-amber-200/80 dark:border-amber-800/60 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="p-2 bg-amber-500 text-white rounded-xl shadow-xs">
                     <Gift className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-black text-slate-900">پۆینتی خەڵاتی شاخ بۆ کڕیار (Reward Points)</h4>
-                    <p className="text-[11px] text-slate-600">
+                    <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100">پۆینتی خەڵاتی شاخ بۆ کڕیار (Reward Points)</h4>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300">
                       پۆینت دەدرێتە کڕیار لە کاتی کڕینی ئەم کاڵایە (١٥٠ پۆینت = ١ دیناری عێراقی)
                     </p>
                   </div>
@@ -1657,7 +1655,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                 <button
                   type="button"
                   onClick={() => setRewardPoints(calculateSuggestedPoints(price))}
-                  className="text-[11px] font-bold text-amber-700 hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-[11px] font-bold text-amber-700 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>پێشنیاری خۆکار</span>
@@ -1671,21 +1669,21 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   onChange={(e) => setRewardPoints(Number(e.target.value))}
                   min={0}
                   step={50}
-                  className="w-40 px-4 py-2.5 bg-white rounded-xl border border-amber-300 text-sm font-black font-latin focus:outline-none focus:border-amber-500"
+                  className="w-40 px-4 py-2.5 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-xl border border-amber-300 dark:border-amber-700 text-sm font-black font-latin focus:outline-none focus:border-amber-500"
                 />
-                <span className="text-xs font-bold text-amber-900">
+                <span className="text-xs font-bold text-amber-900 dark:text-amber-200">
                   پۆینت (بەرامبەر بە {Math.round(rewardPoints / 150)} دینار داشکاندن لە داهاتوودا)
                 </span>
               </div>
             </div>
 
             {/* Featured Product Toggle */}
-            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-200">
+            <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700">
               <div className="flex items-center gap-3">
                 <Sparkles className="w-5 h-5 text-orange-500" />
                 <div>
-                  <h4 className="text-xs font-black text-slate-800">پیشاندان لە بەشی سەرەکی و تایبەتەکان (Featured)</h4>
-                  <p className="text-[11px] text-slate-500">کاڵاکەت لە سەرەوەی ئەپ و بەشی VIP دەردەکەوێت</p>
+                  <h4 className="text-xs font-black text-slate-800 dark:text-slate-200">پیشاندان لە بەشی سەرەکی و تایبەتەکان (Featured)</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">کاڵاکەت لە سەرەوەی ئەپ و بەشی VIP دەردەکەوێت</p>
                 </div>
               </div>
 
@@ -1693,7 +1691,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                 type="button"
                 onClick={() => setIsFeatured(!isFeatured)}
                 className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
-                  isFeatured ? 'bg-orange-500' : 'bg-slate-300'
+                  isFeatured ? 'bg-orange-500' : 'bg-slate-300 dark:bg-slate-700'
                 }`}
               >
                 <div
@@ -1708,8 +1706,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
         {/* STEP 4: IMAGES & MEDIA */}
         {activeStep === 4 && (
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-6 animate-fade-in">
-            <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+          <div className="bg-white dark:bg-slate-850 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-6 animate-fade-in">
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
               <ImageIcon className="w-4 h-4 text-orange-500" />
               <span>هەنگاوی ٤: وێنە و میدیای کاڵا (تا ٨ وێنەی کوالیتی بەرز)</span>
             </h3>
@@ -1728,18 +1726,18 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
         {/* STEP 5: PREVIEW & PUBLISH */}
         {activeStep === 5 && (
           <div className="space-y-6 animate-fade-in">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs space-y-4">
-              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <div className="bg-white dark:bg-slate-850 p-6 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
+              <h3 className="text-sm font-black text-slate-900 dark:text-slate-100 flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
                 <Eye className="w-4 h-4 text-orange-500" />
                 <span>هەنگاوی ٥: پێداچوونەوە و بڵاوکردنەوە (Live Preview)</span>
               </h3>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 ئەمە ئەو شێوازەیە کە کڕیار لە ئەپ و وێبسایتدا کاڵاکەت دەبینێت:
               </p>
 
               {/* Product Preview Card */}
-              <div className="max-w-md mx-auto bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden p-4 space-y-4">
-                <div className="relative aspect-4/3 rounded-2xl overflow-hidden bg-slate-100">
+              <div className="max-w-md mx-auto bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-md overflow-hidden p-4 space-y-4">
+                <div className="relative aspect-4/3 rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800">
                   <img
                     src={images[0] || 'https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=800'}
                     alt={title || 'Product'}
@@ -1761,23 +1759,23 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-400">{currentCategoryConfig.labelKurdish}</span>
-                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-lg">
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-lg">
                       {isAvailable ? 'بەردەستە لە کۆگا' : 'تەواوبووە'}
                     </span>
                   </div>
 
-                  <h4 className="text-base font-black text-slate-900">{title || 'ناوی کاڵا'}</h4>
+                  <h4 className="text-base font-black text-slate-900 dark:text-slate-100">{title || 'ناوی کاڵا'}</h4>
                   
                   {description && (
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">{description}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">{description}</p>
                   )}
 
                   {/* Dynamic Badges in Preview */}
                   {category === 'clothes' && sizes.length > 0 && (
                     <div className="flex flex-wrap gap-1 pt-1">
-                      <span className="text-[11px] text-slate-500 font-bold ml-1">قەبارە:</span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-bold ml-1">قەبارە:</span>
                       {sizes.slice(0, 5).map(s => (
-                        <span key={s} className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-bold rounded">
+                        <span key={s} className="px-1.5 py-0.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 text-[10px] font-bold rounded">
                           {s}
                         </span>
                       ))}
@@ -1786,18 +1784,18 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                   )}
 
                   {category === 'cars' && (
-                    <div className="flex flex-wrap gap-2 text-[11px] text-slate-600 font-bold pt-1">
+                    <div className="flex flex-wrap gap-2 text-[11px] text-slate-600 dark:text-slate-300 font-bold pt-1">
                       {year && <span>ساڵ: {year}</span>}
                       {mileageKm !== undefined && <span>• {mileageKm.toLocaleString()} کم</span>}
                       {transmission && <span>• {transmission === 'automatic' ? 'ئۆتۆماتیک' : 'عادی'}</span>}
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
                     <div>
                       {discountPrice && discountPrice < price ? (
                         <div className="flex items-baseline gap-2">
-                          <span className="text-lg font-black text-orange-600 font-latin">
+                          <span className="text-lg font-black text-orange-600 dark:text-orange-400 font-latin">
                             {discountPrice.toLocaleString()} د.ع
                           </span>
                           <span className="text-xs text-slate-400 line-through font-latin">
@@ -1805,13 +1803,13 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
                           </span>
                         </div>
                       ) : (
-                        <span className="text-lg font-black text-orange-600 font-latin">
+                        <span className="text-lg font-black text-orange-600 dark:text-orange-400 font-latin">
                           {price.toLocaleString()} د.ع
                         </span>
                       )}
                     </div>
 
-                    <span className="text-xs font-bold text-slate-500">فرۆشیار: {sellerName || 'فرۆشگای شاخ'}</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">فرۆشیار: {sellerName || 'فرۆشگای شاخ'}</span>
                   </div>
                 </div>
               </div>
@@ -1820,13 +1818,13 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
         )}
 
         {/* Bottom Actions Bar */}
-        <div className="flex items-center justify-between gap-3 bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-center justify-between gap-3 bg-white dark:bg-slate-850 p-4 sm:p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
           <div>
             {activeStep > 1 ? (
               <button
                 type="button"
                 onClick={handleBack}
-                className="px-4 sm:px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer transition-colors"
+                className="px-4 sm:px-6 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer transition-colors"
               >
                 <ArrowRight className="w-4 h-4" />
                 <span>هەنگاوی پێشوو</span>
@@ -1835,7 +1833,7 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               <button
                 type="button"
                 onClick={onCancel}
-                className="px-4 sm:px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-xs sm:text-sm font-bold cursor-pointer transition-colors"
+                className="px-4 sm:px-6 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl text-xs sm:text-sm font-bold cursor-pointer transition-colors"
               >
                 پاشگەزبوونەوە
               </button>

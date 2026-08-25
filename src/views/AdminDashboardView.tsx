@@ -254,6 +254,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     setEditingSellerId(null);
   };
 
+  const pendingCarsCount = carAds.filter(c => c.adStatus === 'pending_approval' || c.adStatus === 'pending_payment' || c.adminApprovalStatus === 'pending').length;
+
   return (
     <div className="space-y-8 pb-16">
       
@@ -300,14 +302,19 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           { id: 'feedback', label: `فیدباک و سەرنجەکان (${userFeedbacks.length})`, icon: <MessageSquare className="w-4 h-4 text-emerald-500" /> },
           { id: 'orders', label: `داواکارییەکان (${orders.length})`, icon: <Package className="w-4 h-4" /> },
           { id: 'products', label: `کاڵاکان (${products.length})`, icon: <Sliders className="w-4 h-4" /> },
-          { id: 'cars', label: `ڕیکلامی ئۆتۆمبێل (${carAds.length})`, icon: <Car className="w-4 h-4" /> },
+          {
+            id: 'cars',
+            label: `ڕیکلامی ئۆتۆمبێل (${carAds.length})`,
+            badge: pendingCarsCount > 0 ? `${pendingCarsCount} لە چاوەڕوانیدا` : undefined,
+            icon: <Car className="w-4 h-4" />
+          },
           { id: 'i18n', label: 'زمانەکان و وەرگێڕان (i18n)', icon: <Languages className="w-4 h-4 text-blue-500" /> },
           { id: 'finances', label: 'تۆماری کۆمسیۆن و داهات', icon: <DollarSign className="w-4 h-4" /> }
         ].map(t => (
           <button
             key={t.id}
             onClick={() => setTab(t.id as any)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer relative ${
               tab === t.id
                 ? 'bg-red-700 text-white shadow-xs'
                 : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -315,6 +322,11 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           >
             {t.icon}
             <span>{t.label}</span>
+            {t.badge && (
+              <span className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md animate-pulse">
+                {t.badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -927,7 +939,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="inline-flex items-center gap-1 font-bold text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-                                  {car.adStatus === 'active' ? '🟢 چالاک' : car.adStatus === 'pending_payment' ? '⏳ لە چاوەڕوانیدا' : car.adStatus === 'sold' ? '🤝 فرۆشراو' : car.adStatus === 'rejected' ? '❌ ڕەتکراوە' : '👁️‍🗨️ بزرکراو'}
+                                  {car.adStatus === 'active' ? '🟢 چالاک' : (car.adStatus === 'pending_approval' || car.adStatus === 'pending_payment' || car.adminApprovalStatus === 'pending') ? '⏳ چاوەڕوانی تەسدیق' : car.adStatus === 'sold' ? '🤝 فرۆشراو' : car.adStatus === 'rejected' ? '❌ ڕەتکراوە' : '👁️‍🗨️ بزرکراو'}
                                 </span>
                                 {car.isHidden && (
                                   <span className="bg-amber-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded-md">
@@ -977,7 +989,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                               className="text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl px-2 py-2 text-slate-700 outline-none cursor-pointer"
                             >
                               <option value="active">🟢 چالاک (Active)</option>
-                              <option value="pending_payment">⏳ لە چاوەڕوانیدا</option>
+                              <option value="pending_approval">⏳ چاوەڕوانی تەسدیق</option>
+                              <option value="pending_payment">💳 چاوەڕوانی پارەدان</option>
                               <option value="sold">🤝 فرۆشراو (Sold)</option>
                               <option value="rejected">❌ ڕەتکراوە</option>
                               <option value="hidden">👁️‍🗨️ بزرکراو</option>
@@ -1756,7 +1769,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
               <span className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-xs font-black text-amber-800 dark:text-amber-300 flex items-center gap-1.5">
                 <span>⏳ چاوەڕوانی پارەدان:</span>
                 <span className="font-latin text-amber-600 dark:text-amber-400">
-                  {carAds.filter(c => c.adStatus === 'pending_payment' || c.adminApprovalStatus === 'pending').length}
+                  {carAds.filter(c => c.adStatus === 'pending_approval' || c.adStatus === 'pending_payment' || c.adminApprovalStatus === 'pending').length}
                 </span>
               </span>
 
@@ -1779,7 +1792,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                 {
                   id: 'pending' as const,
                   label: 'چاوەڕوانی تەسدیقی وەسڵ',
-                  count: carAds.filter(c => c.adStatus === 'pending_payment' || c.adminApprovalStatus === 'pending').length,
+                  count: carAds.filter(c => c.adStatus === 'pending_approval' || c.adStatus === 'pending_payment' || c.adminApprovalStatus === 'pending').length,
                   highlight: true
                 },
                 { id: 'all' as const, label: 'هەموو ڕیکلامەکان', count: carAds.length },
@@ -1826,7 +1839,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           {(() => {
             let filteredCars = carAds.filter(c => {
               if (carFilterTab === 'pending') {
-                return c.adStatus === 'pending_payment' || c.adminApprovalStatus === 'pending';
+                return c.adStatus === 'pending_approval' || c.adStatus === 'pending_payment' || c.adminApprovalStatus === 'pending';
               }
               if (carFilterTab === 'active') return c.adStatus === 'active';
               if (carFilterTab === 'sold') return c.adStatus === 'sold';
@@ -1868,7 +1881,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             return (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filteredCars.map(car => {
-                  const isCarPending = car.adStatus === 'pending_payment' || car.adminApprovalStatus === 'pending';
+                  const isCarPending = car.adStatus === 'pending_approval' || car.adStatus === 'pending_payment' || car.adminApprovalStatus === 'pending';
                   const hasProof = Boolean(car.paymentProofUrl);
 
                   return (
