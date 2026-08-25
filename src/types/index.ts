@@ -20,14 +20,41 @@ export type DeliveryMode = 'shakh_delivery' | 'store_delivery' | 'hybrid';
 export interface StoreDriver {
   id: string;
   sellerId: string;
+  sellerName?: string;
   name: string;
   phone: string;
-  vehicleType: 'motorcycle' | 'car' | 'bicycle' | 'van';
+  vehicleType: 'motorcycle' | 'car' | 'bicycle' | 'van' | 'pickup';
+  vehicleModel?: string;
   plateNumber?: string;
+  driverPhotoUrl?: string;
+  city?: string;
+  coverageAreas?: string[];
   isActive: boolean;
+  isOnDuty?: boolean;
+  deliveryFeeType?: 'fixed' | 'per_km' | 'store_default';
+  customDeliveryFee?: number;
+  commissionRate?: number;
+  nationalIdOrLicense?: string;
+  notes?: string;
   totalDeliveries?: number;
+  totalEarnings?: number;
   rating?: number;
   createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AppVersionInfo {
+  version: string;
+  buildNumber?: number;
+  releaseDate: string;
+  title: string;
+  description: string;
+  changelog: string[];
+  isMandatory: boolean;
+  minSupportedVersion?: string;
+  actionUrl?: string;
+  publishedBy?: string;
+  updatedAt?: string;
 }
 
 export type ProductCategory =

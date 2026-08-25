@@ -54,6 +54,8 @@ import { OCCASION_PRESETS } from '../data/occasionPresets';
 import { OccasionHeaderBanner } from '../components/common/OccasionHeaderBanner';
 import { OccasionBannerAdminPanel } from '../components/common/OccasionBannerAdminPanel';
 import { I18nAdminManager } from '../components/admin/I18nAdminManager';
+import { CaptainManager } from '../components/delivery/CaptainManager';
+import { AppUpdateManager } from '../components/admin/AppUpdateManager';
 
 interface AdminDashboardViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -93,11 +95,15 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     toggleCarAdHidden,
     deleteUserFeedback,
     toggleFeedbackHidden,
-    toggleProductHidden
+    toggleProductHidden,
+    allPlatformCaptains,
+    addStoreDriver,
+    updateStoreDriver,
+    deleteStoreDriver
   } = useMarketplace();
   const { currentUser, isSuperAdmin } = useAuth();
 
-  const [tab, setTab] = useState<'overview' | 'super_omni' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances' | 'i18n'>('super_omni');
+  const [tab, setTab] = useState<'overview' | 'super_omni' | 'captains' | 'app_updates' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances' | 'i18n'>('super_omni');
 
   // Super Admin Omni Control State
   const [omniSection, setOmniSection] = useState<'users' | 'products' | 'cars' | 'posts'>('users');
@@ -276,6 +282,8 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
       <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-3 scrollbar-none">
         {[
           { id: 'super_omni', label: `⚡ بەشی سوپەر ئەدمین (کۆنترۆڵی سەرجەم بەکارهێنەر/کالا/پۆست)`, icon: <Crown className="w-4 h-4 text-amber-300" /> },
+          { id: 'app_updates', label: 'ئەپدەیتی نوێ و وەشانەکان (Live Updates)', icon: <Sparkles className="w-4 h-4 text-orange-400" /> },
+          { id: 'captains', label: `کاپتنەکانی گەیاندن (${allPlatformCaptains.length})`, icon: <UserCheck className="w-4 h-4 text-emerald-400" /> },
           { id: 'overview', label: 'پوختەی دارایی و گشتی', icon: <TrendingUp className="w-4 h-4" /> },
           { id: 'occasions', label: 'بۆنە و یادەکان (مەولود)', icon: <Sparkles className="w-4 h-4 text-amber-500" /> },
           { id: 'sellers', label: `فرۆشیاران (${sellers.length})`, icon: <Store className="w-4 h-4" /> },
@@ -2015,6 +2023,36 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
 
       {tab === 'i18n' && (
         <I18nAdminManager />
+      )}
+
+      {tab === 'app_updates' && (
+        <AppUpdateManager />
+      )}
+
+      {tab === 'captains' && (
+        <div className="space-y-6">
+          <CaptainManager
+            sellerId="platform-all"
+            sellerName="سەکۆی شاخی"
+            drivers={allPlatformCaptains}
+            isPlatformAdmin={true}
+            onAddDriver={async (d) => {
+              // Assign to default seller or admin store
+              const targetSeller = sellers[0]?.id || 'admin-store';
+              return await addStoreDriver(targetSeller, d);
+            }}
+            onUpdateDriver={async (driverId, updates) => {
+              const drv = allPlatformCaptains.find(c => c.id === driverId);
+              const targetSeller = drv?.sellerId || sellers[0]?.id || 'admin-store';
+              await updateStoreDriver(targetSeller, driverId, updates);
+            }}
+            onDeleteDriver={async (driverId) => {
+              const drv = allPlatformCaptains.find(c => c.id === driverId);
+              const targetSeller = drv?.sellerId || sellers[0]?.id || 'admin-store';
+              await deleteStoreDriver(targetSeller, driverId);
+            }}
+          />
+        </div>
       )}
 
       {/* Dynamic Product Modal for Super Admin */}

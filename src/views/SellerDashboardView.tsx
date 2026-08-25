@@ -43,6 +43,7 @@ import { EmptyState } from '../components/common/EmptyState';
 import { ImageUpload } from '../components/common/ImageUpload';
 import { DynamicProductForm } from '../components/products/DynamicProductForm';
 import { getDefaultDeliveryZone, calculateDeliveryFee, CITY_NEIGHBORHOOD_DISTANCES } from '../utils/deliveryUtils';
+import { CaptainManager } from '../components/delivery/CaptainManager';
 
 interface SellerDashboardViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -71,7 +72,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
     replyToReview
   } = useMarketplace();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'reviews' | 'agreement' | 'wallet' | 'delivery' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'reviews' | 'captains' | 'agreement' | 'wallet' | 'delivery' | 'settings'>('overview');
   const [deliverySection, setDeliverySection] = useState<'shakh_express' | 'store_inhouse' | 'drivers_team'>('shakh_express');
   const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<string>('');
@@ -303,6 +304,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
           { id: 'orders', label: `داواکارییەکان (${myOrders.length})`, icon: <ShoppingBag className="w-4 h-4" /> },
           { id: 'products', label: `لیستی کاڵاکان (${myProducts.length})`, icon: <Package className="w-4 h-4" /> },
           { id: 'reviews', label: `ڕا و هەڵسەنگاندن (${getSellerReviews(sellerId).length})`, icon: <Star className="w-4 h-4 text-amber-500" /> },
+          { id: 'captains', label: `کاپتنەکانی گەیاندن (${storeDriversList.length})`, icon: <UserCheck className="w-4 h-4 text-emerald-500" /> },
           { id: 'agreement', label: 'ڕێککەوتنی پۆینتی شاخ و خاوەن کار', icon: <Award className="w-4 h-4 text-amber-500" /> },
           { id: 'delivery', label: 'ناوچە و دوری گەیاندن (Delivery Radius)', icon: <MapPin className="w-4 h-4 text-orange-500" /> },
           { id: 'wallet', label: 'جزدان و قازانج', icon: <DollarSign className="w-4 h-4" /> },
@@ -1739,109 +1741,55 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
 
           {/* SECTION 3: STORE DRIVERS TEAM MANAGEMENT */}
           {deliverySection === 'drivers_team' && (
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-                <div>
-                  <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-                    <UserCheck className="w-5 h-5 text-orange-500" />
-                    <span>تیمی شۆفێرانی تایبەتی دوکان ({storeDriversList.length} شۆفێر)</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    شۆفێرەکانت تۆمار بکە تا لە کاتی ئامادەبوونی داواکاری ڕاستەوخۆ ئاگاداربکرێنەوە و بە شۆفێری دیاریکراو ڕەوانە بکرێت.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowAddDriverModal(true)}
-                  className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 flex items-center gap-2 cursor-pointer self-start sm:self-auto"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>زیادکردنی شۆفێری نوێ</span>
-                </button>
-              </div>
-
-              {storeDriversList.length === 0 ? (
-                <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200">
-                  <UserCheck className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-                  <p className="text-xs text-slate-500 font-bold">هیچ شۆفێرێکی تایبەتی دوکان تۆمار نەکراوە.</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddDriverModal(true)}
-                    className="mt-3 px-4 py-2 bg-orange-500 text-white rounded-xl text-xs font-bold cursor-pointer"
-                  >
-                    زیادکردنی یەکەم شۆفێر
-                  </button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {storeDriversList.map(drv => (
-                    <div
-                      key={drv.id}
-                      className="p-5 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between gap-3 hover:border-orange-300 transition-colors"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xl">
-                              {drv.vehicleType === 'car' ? '🚗' : drv.vehicleType === 'van' ? '🚐' : '🛵'}
-                            </span>
-                            <span className="font-bold text-sm text-slate-900">{drv.name}</span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleStoreDriver(drv)}
-                            className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold cursor-pointer transition-colors ${
-                              drv.isActive
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                : 'bg-slate-200 text-slate-600'
-                            }`}
-                          >
-                            {drv.isActive ? 'چالاکە ✓' : 'ناچالاکە'}
-                          </button>
-                        </div>
-
-                        <div className="text-xs text-slate-600 space-y-1">
-                          <p className="flex items-center gap-1 font-latin">
-                            <Phone className="w-3.5 h-3.5 text-orange-500" />
-                            <span>{drv.phone}</span>
-                          </p>
-                          {drv.plateNumber && (
-                            <p className="text-slate-500 font-latin text-[11px]">
-                              تابلۆ: {drv.plateNumber}
-                            </p>
-                          )}
-                          <p className="text-emerald-700 font-bold text-[11px]">
-                            کۆی گەیاندنەکان: {drv.totalDeliveries || 0}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between border-t border-slate-200 pt-3">
-                        <a
-                          href={`tel:${drv.phone}`}
-                          className="px-3 py-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 rounded-xl text-xs font-bold flex items-center gap-1.5"
-                        >
-                          <Phone className="w-3.5 h-3.5 text-emerald-600" />
-                          <span>پەیوەندی</span>
-                        </a>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteStoreDriver(drv.id)}
-                          className="px-3 py-1.5 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          سڕینەوە
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <CaptainManager
+              sellerId={sellerId}
+              sellerName={sellerProfile?.storeName}
+              drivers={storeDriversList}
+              onAddDriver={async (d) => {
+                const res = await addStoreDriver(sellerId, d);
+                if (res.success) {
+                  const created: StoreDriver = { ...d, id: res.driverId || `sdrv-${Date.now()}` };
+                  setStoreDriversList(prev => [...prev, created]);
+                }
+                return res;
+              }}
+              onUpdateDriver={async (driverId, updates) => {
+                await updateStoreDriver(sellerId, driverId, updates);
+                setStoreDriversList(prev => prev.map(drv => drv.id === driverId ? { ...drv, ...updates } : drv));
+              }}
+              onDeleteDriver={async (driverId) => {
+                await deleteStoreDriver(sellerId, driverId);
+                setStoreDriversList(prev => prev.filter(drv => drv.id !== driverId));
+              }}
+            />
           )}
 
         </div>
+      )}
+
+      {/* Captains Top-Level Tab */}
+      {activeTab === 'captains' && (
+        <CaptainManager
+          sellerId={sellerId}
+          sellerName={sellerProfile?.storeName}
+          drivers={storeDriversList}
+          onAddDriver={async (d) => {
+            const res = await addStoreDriver(sellerId, d);
+            if (res.success) {
+              const created: StoreDriver = { ...d, id: res.driverId || `sdrv-${Date.now()}` };
+              setStoreDriversList(prev => [...prev, created]);
+            }
+            return res;
+          }}
+          onUpdateDriver={async (driverId, updates) => {
+            await updateStoreDriver(sellerId, driverId, updates);
+            setStoreDriversList(prev => prev.map(drv => drv.id === driverId ? { ...drv, ...updates } : drv));
+          }}
+          onDeleteDriver={async (driverId) => {
+            await deleteStoreDriver(sellerId, driverId);
+            setStoreDriversList(prev => prev.filter(drv => drv.id !== driverId));
+          }}
+        />
       )}
 
       {/* Settings Tab */}

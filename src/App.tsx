@@ -33,6 +33,7 @@ import { FavoritesView } from './views/FavoritesView';
 import { UserProfileView } from './views/UserProfileView';
 import { NotificationCenterView } from './views/NotificationCenterView';
 import { NotificationToast } from './components/notifications/NotificationToast';
+import { AppUpdateAlert } from './components/common/AppUpdateAlert';
 import { ProductCategory } from './types';
 
 const MainApp: React.FC = () => {
@@ -212,6 +213,9 @@ const MainApp: React.FC = () => {
 
       {/* Global Live Notification Toast */}
       <NotificationToast onNavigate={handleNavigate} />
+
+      {/* Global App Version Update Alert Modal & Floating Banner */}
+      <AppUpdateAlert />
 
       {/* Cart Slide-Over Drawer */}
       <CartDrawer onCheckout={() => setCurrentView('checkout')} />

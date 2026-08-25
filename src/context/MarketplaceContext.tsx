@@ -26,7 +26,8 @@ import {
   StoreDriver,
   DeliveryMode,
   OccasionBanner,
-  PointsSettings
+  PointsSettings,
+  AppVersionInfo
 } from '../types';
 import { CAR_PACKAGES } from '../data/seedData';
 import { DEFAULT_MAWLID_BANNER } from '../data/occasionPresets';
@@ -214,6 +215,18 @@ interface MarketplaceContextType {
   deleteUserFeedback: (feedbackId: string) => Promise<{ success: boolean; error?: string }>;
   toggleFeedbackHidden: (feedbackId: string, isHidden: boolean) => Promise<{ success: boolean; error?: string }>;
   toggleProductHidden: (productId: string, isHidden: boolean) => Promise<{ success: boolean; error?: string }>;
+
+  // App Version & Live Update Alerts
+  appVersion: AppVersionInfo;
+  publishAppUpdate: (updateInfo: Partial<AppVersionInfo>) => Promise<{ success: boolean; message?: string }>;
+  isAppUpdateAvailable: boolean;
+  dismissUpdateNotification: (version?: string) => void;
+  openUpdateModal: () => void;
+  isUpdateModalOpen: boolean;
+  setIsUpdateModalOpen: (open: boolean) => void;
+
+  // Platform Drivers & Captains Management across all roles
+  allPlatformCaptains: StoreDriver[];
 }
 
 const MarketplaceContext = createContext<MarketplaceContextType | undefined>(undefined);
@@ -383,6 +396,79 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
     return DEFAULT_MAWLID_BANNER;
   });
+
+  // App Version & Update Notification State
+  const DEFAULT_APP_VERSION: AppVersionInfo = {
+    version: '2.5.0',
+    buildNumber: 250,
+    releaseDate: '2026-08-24',
+    title: 'وەشانی نوێی شاخی ٢.٥.٠ بەردەستە',
+    description: 'سیستەمی تەواوی بەڕێوەبردنی کاپتنەکان بۆ هەموو ڕۆڵەکان، ئاگادارکردنەوەی ئەپدەیتەکان و خێرایی زیاتری سیستم',
+    changelog: [
+      'زیادکردنی بەڕێوەبردنی تەواوی کاپتنانی گەیاندن (Delivery Captains) لە داشبۆردی سەرجەم ڕۆڵەکان و سوپەر ئەدمین',
+      'پشتیوانی تەواوی زانیارییەکانی کاپتن (جۆری ئامراز، تابلۆ، پەیوەندی خێرا، چاودێری ئەرک و دەستکاری)',
+      'سیستەمی زیرەکی ئاگادارکردنەوەی بەکارهێنەران لە کاتی بەردەستبوونی هەر ئەپدەیتێکی نوێ لەسەر ئەپلیکەیشن',
+      'چاککردنی فلتەری بەشە لاوەکییەکان بۆ هەموو ٩ پۆلەکە بە شێوەیەکی زیرەک و فرە-زمان',
+      'بەرزکردنەوەی خێرایی و پاراستنی داتاکان بە کلاود فایەربەیس'
+    ],
+    isMandatory: false,
+    publishedBy: 'سوپەر ئەدمینی شاخی'
+  };
+
+  const [appVersion, setAppVersion] = useState<AppVersionInfo>(() => {
+    const saved = localStorage.getItem('shakh_app_version');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return DEFAULT_APP_VERSION;
+  });
+
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [acknowledgedVersion, setAcknowledgedVersion] = useState<string>(() => {
+    return localStorage.getItem('shakh_acknowledged_version') || '';
+  });
+
+  // Compute if update alert should be active
+  const isAppUpdateAvailable = Boolean(
+    appVersion?.version &&
+    (appVersion.isMandatory || appVersion.version !== acknowledgedVersion)
+  );
+
+  const dismissUpdateNotification = (ver?: string) => {
+    const targetVer = ver || appVersion.version;
+    setAcknowledgedVersion(targetVer);
+    localStorage.setItem('shakh_acknowledged_version', targetVer);
+    setIsUpdateModalOpen(false);
+  };
+
+  const openUpdateModal = () => {
+    setIsUpdateModalOpen(true);
+  };
+
+  const publishAppUpdate = async (updateInfo: Partial<AppVersionInfo>): Promise<{ success: boolean; message?: string }> => {
+    const updated: AppVersionInfo = {
+      ...appVersion,
+      ...updateInfo,
+      updatedAt: new Date().toISOString()
+    };
+    setAppVersion(updated);
+    localStorage.setItem('shakh_app_version', JSON.stringify(updated));
+
+    try {
+      await setDoc(doc(db, 'settings', 'app_version'), updated);
+    } catch (err) {
+      console.warn('Failed to publish app update to Firestore:', err);
+    }
+
+    addNotification({
+      userId: 'all',
+      type: 'system',
+      title: `ئەپدەیتی نوێی ${updated.version} بەردەستە! 🚀`,
+      message: updated.title || `وەشانی ${updated.version} بە سەرکەوتوویی بڵاوکرایەوە. بۆ سوودمەندبوون لە نوێکارییەکان ئەپەکەت نوێ بکەرەوە.`
+    });
+
+    return { success: true, message: `وەشانی ${updated.version} بە سەرکەوتوویی بۆ هەموو بەکارهێنەران بڵاوکرایەوە.` };
+  };
 
   // All Users State (Synced for Super Admin)
   const [allUsers, setAllUsers] = useState<UserProfile[]>(() => {
@@ -566,6 +652,20 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           (err) => {
             console.warn('Users onSnapshot error:', err);
           }
+        );
+
+        // 9. App Version & Update Alert Listener
+        const appVersionDocRef = doc(db, 'settings', 'app_version');
+        onSnapshot(
+          appVersionDocRef,
+          (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data() as AppVersionInfo;
+              setAppVersion(data);
+              localStorage.setItem('shakh_app_version', JSON.stringify(data));
+            }
+          },
+          (err) => console.warn('App version onSnapshot error:', err)
         );
       } catch (err) {
         console.error('Firestore real-time sync init error:', err);
@@ -2409,6 +2509,19 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     totalCarAdsCount: carAds.length
   };
 
+  const allPlatformCaptains: StoreDriver[] = React.useMemo(() => {
+    const list: StoreDriver[] = [];
+    sellers.forEach(s => {
+      (s.ownDrivers || []).forEach(d => {
+        list.push({
+          ...d,
+          sellerName: d.sellerName || s.storeName || 'فرۆشگا'
+        });
+      });
+    });
+    return list;
+  }, [sellers]);
+
   return (
     <MarketplaceContext.Provider
       value={{
@@ -2488,7 +2601,15 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         toggleCarAdHidden,
         deleteUserFeedback,
         toggleFeedbackHidden,
-        toggleProductHidden
+        toggleProductHidden,
+        appVersion,
+        publishAppUpdate,
+        isAppUpdateAvailable,
+        dismissUpdateNotification,
+        openUpdateModal,
+        isUpdateModalOpen,
+        setIsUpdateModalOpen,
+        allPlatformCaptains
       }}
     >
       {children}
