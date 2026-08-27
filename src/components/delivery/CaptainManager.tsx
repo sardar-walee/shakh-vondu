@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   UserCheck,
   Plus,
@@ -19,12 +19,134 @@ import {
   DollarSign,
   Activity,
   Save,
-  X
+  X,
+  Upload,
+  Camera,
+  Loader2,
+  FileText,
+  Lock,
+  Mail,
+  Car
 } from 'lucide-react';
 import { StoreDriver } from '../../types';
 import { Modal } from '../common/Modal';
 import { ImageUpload } from '../common/ImageUpload';
 import { CITIES } from '../../data/seedData';
+
+const compressImageFile = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 1000;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        } else {
+          resolve(event.target?.result as string);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+const DirectFileUpload: React.FC<{
+  label: string;
+  value: string;
+  onChange: (dataUrl: string) => void;
+  placeholder?: string;
+}> = ({ label, value, onChange, placeholder }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const compressed = await compressImageFile(file);
+      onChange(compressed);
+    } catch (err) {
+      console.error('File compress error:', err);
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">{label}</label>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading}
+          className="text-[11px] font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 px-2 py-0.5 rounded-lg border border-teal-200 dark:border-teal-800 flex items-center gap-1 cursor-pointer transition-colors"
+        >
+          {loading ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : (
+            <Upload className="w-3 h-3" />
+          )}
+          <span>{loading ? 'بارکردن...' : 'هەڵبژاردنی وێنە'}</span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </div>
+
+      {value ? (
+        <div className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 aspect-video max-h-32">
+          <img src={value} alt={label} className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="absolute top-1 right-1 p-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-opacity cursor-pointer shadow-md"
+            title="سڕینەوە"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      ) : null}
+
+      <input
+        type="url"
+        placeholder={placeholder || 'یان بەستەری وێنە دابنێ (https://...)'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-2 text-xs font-latin"
+      />
+    </div>
+  );
+};
 
 interface CaptainManagerProps {
   sellerId: string;
@@ -57,14 +179,22 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
 
   // Form State
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [vehicleType, setVehicleType] = useState<'motorcycle' | 'car' | 'bicycle' | 'van' | 'pickup'>('motorcycle');
   const [vehicleModel, setVehicleModel] = useState('');
+  const [vehicleColor, setVehicleColor] = useState('');
   const [plateNumber, setPlateNumber] = useState('');
   const [city, setCity] = useState(CITIES[0] || 'Erbil (هەولێر)');
   const [coverageAreas, setCoverageAreas] = useState<string[]>([]);
   const [newAreaInput, setNewAreaInput] = useState('');
   const [driverPhotoUrl, setDriverPhotoUrl] = useState('');
+  const [idCardFrontUrl, setIdCardFrontUrl] = useState('');
+  const [idCardBackUrl, setIdCardBackUrl] = useState('');
+  const [nationalIdNumber, setNationalIdNumber] = useState('');
+  const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState('');
+  const [driverLicenseUrl, setDriverLicenseUrl] = useState('');
   const [deliveryFeeType, setDeliveryFeeType] = useState<'fixed' | 'per_km' | 'store_default'>('fixed');
   const [customDeliveryFee, setCustomDeliveryFee] = useState<number>(2000);
   const [commissionRate, setCommissionRate] = useState<number>(10);
@@ -76,14 +206,22 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
   const openAddModal = () => {
     setEditingDriver(null);
     setName('');
+    setEmail('');
+    setPassword('');
     setPhone('');
     setVehicleType('motorcycle');
     setVehicleModel('');
+    setVehicleColor('');
     setPlateNumber('');
     setCity(CITIES[0] || 'Erbil (هەولێر)');
     setCoverageAreas([]);
     setNewAreaInput('');
     setDriverPhotoUrl('');
+    setIdCardFrontUrl('');
+    setIdCardBackUrl('');
+    setNationalIdNumber('');
+    setVehiclePhotoUrl('');
+    setDriverLicenseUrl('');
     setDeliveryFeeType('fixed');
     setCustomDeliveryFee(2000);
     setCommissionRate(10);
@@ -97,14 +235,22 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
   const openEditModal = (driver: StoreDriver) => {
     setEditingDriver(driver);
     setName(driver.name || '');
+    setEmail(driver.email || '');
+    setPassword(driver.password || '');
     setPhone(driver.phone || '');
     setVehicleType(driver.vehicleType || 'motorcycle');
     setVehicleModel(driver.vehicleModel || '');
+    setVehicleColor(driver.vehicleColor || '');
     setPlateNumber(driver.plateNumber || '');
     setCity(driver.city || CITIES[0] || 'Erbil (هەولێر)');
     setCoverageAreas(driver.coverageAreas || []);
     setNewAreaInput('');
-    setDriverPhotoUrl(driver.driverPhotoUrl || '');
+    setDriverPhotoUrl(driver.driverPhotoUrl || driver.avatarUrl || '');
+    setIdCardFrontUrl(driver.idCardFrontUrl || '');
+    setIdCardBackUrl(driver.idCardBackUrl || '');
+    setNationalIdNumber(driver.nationalIdNumber || '');
+    setVehiclePhotoUrl(driver.vehiclePhotoUrl || '');
+    setDriverLicenseUrl(driver.driverLicenseUrl || '');
     setDeliveryFeeType(driver.deliveryFeeType || 'fixed');
     setCustomDeliveryFee(driver.customDeliveryFee ?? 2000);
     setCommissionRate(driver.commissionRate ?? 10);
@@ -128,13 +274,22 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
         sellerId,
         sellerName,
         name: name.trim(),
+        email: email.trim() || undefined,
+        password: password.trim() || undefined,
         phone: phone.trim(),
         vehicleType,
         vehicleModel: vehicleModel.trim() || undefined,
+        vehicleColor: vehicleColor.trim() || undefined,
         plateNumber: plateNumber.trim() || undefined,
         city: city.trim() || undefined,
         coverageAreas: coverageAreas.length > 0 ? coverageAreas : undefined,
         driverPhotoUrl: driverPhotoUrl.trim() || undefined,
+        avatarUrl: driverPhotoUrl.trim() || undefined,
+        idCardFrontUrl: idCardFrontUrl.trim() || undefined,
+        idCardBackUrl: idCardBackUrl.trim() || undefined,
+        nationalIdNumber: nationalIdNumber.trim() || undefined,
+        vehiclePhotoUrl: vehiclePhotoUrl.trim() || undefined,
+        driverLicenseUrl: driverLicenseUrl.trim() || undefined,
         deliveryFeeType,
         customDeliveryFee: Number(customDeliveryFee) || undefined,
         commissionRate: Number(commissionRate) || undefined,
@@ -579,6 +734,49 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
             </div>
           </div>
 
+          {/* Captain Credentials (Email & Password) */}
+          <div className="p-3 bg-amber-50/50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800 space-y-3">
+            <h5 className="text-xs font-black text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-amber-600" />
+              <span>ئیمەیڵ و وشەی تێپەڕی چوونەژوورەوەی کاپتن (Login Credentials):</span>
+            </h5>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">ئیمەیڵی کاپتن:</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  dir="ltr"
+                  placeholder="captain@shakh.com"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-latin text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-amber-500"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">وشەی تێپەڕ (Password):</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  dir="ltr"
+                  placeholder="********"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-latin text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-amber-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Captain Photo Direct Upload */}
+          <div className="bg-slate-50 dark:bg-slate-800/80 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <DirectFileUpload
+              label="وێنەی کەسیی کاپتن (Captain Profile Photo)"
+              value={driverPhotoUrl}
+              onChange={(dataUrl) => setDriverPhotoUrl(dataUrl)}
+              placeholder="لینکی وێنەی کاپتن..."
+            />
+          </div>
+
           {/* Vehicle Info */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
@@ -655,6 +853,55 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-latin text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-orange-500"
               />
             </div>
+          </div>
+
+          {/* Tazkara / National ID Documents */}
+          <div className="p-3 bg-teal-50/60 dark:bg-teal-950/40 rounded-2xl border border-teal-200 dark:border-teal-800 space-y-3">
+            <h5 className="text-xs font-extrabold text-teal-950 dark:text-teal-300 flex items-center gap-1.5">
+              <FileText className="w-4 h-4 text-teal-600" />
+              <span>وێنەی تەسکەرە / کارتی نیشتمانی (National ID Cards):</span>
+            </h5>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <DirectFileUpload
+                label="وێنەی پێشەوەی تەسکەرە"
+                value={idCardFrontUrl}
+                onChange={(dataUrl) => setIdCardFrontUrl(dataUrl)}
+                placeholder="لینکی وێنەی پێشەوەی تەسکەرە..."
+              />
+              <DirectFileUpload
+                label="وێنەی پشتەوەی تەسکەرە"
+                value={idCardBackUrl}
+                onChange={(dataUrl) => setIdCardBackUrl(dataUrl)}
+                placeholder="لینکی وێنەی پشتەوەی تەسکەرە..."
+              />
+            </div>
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">ژمارەی تەسکەرە / کارتی نیشتمانی:</label>
+              <input
+                type="text"
+                value={nationalIdNumber}
+                onChange={(e) => setNationalIdNumber(e.target.value)}
+                dir="ltr"
+                placeholder="199512345678"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-latin text-slate-800 dark:text-slate-200 text-right focus:outline-hidden focus:border-teal-500"
+              />
+            </div>
+          </div>
+
+          {/* Vehicle Photo & Driver License Upload */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <DirectFileUpload
+              label="وێنەی ئۆتۆمبێل / ماتۆڕسکیل"
+              value={vehiclePhotoUrl}
+              onChange={(dataUrl) => setVehiclePhotoUrl(dataUrl)}
+              placeholder="لینکی وێنەی ئۆتۆمبێل..."
+            />
+            <DirectFileUpload
+              label="وێنەی مۆڵەتی شۆفێری"
+              value={driverLicenseUrl}
+              onChange={(dataUrl) => setDriverLicenseUrl(dataUrl)}
+              placeholder="لینکی وێنەی مۆڵەت..."
+            />
           </div>
 
           {/* Coverage Neighborhoods Tag Input */}

@@ -687,6 +687,52 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     };
   }, []);
 
+  // 10. Favorites / Wishlist Real-Time Sync Listener for Logged-In User
+  useEffect(() => {
+    if (!currentUser?.id) {
+      setFavoriteProductIds([]);
+      setFavoriteSellerIds([]);
+      return;
+    }
+
+    let unsubFavs: (() => void) | null = null;
+    try {
+      const favCol = collection(db, 'favorites');
+      const qFav = query(favCol, where('userId', '==', currentUser.id));
+
+      unsubFavs = onSnapshot(
+        qFav,
+        (snapshot) => {
+          const prodIds: string[] = [];
+          const sellerIds: string[] = [];
+
+          snapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            if (data.targetType === 'seller' || data.sellerId) {
+              if (data.sellerId) sellerIds.push(data.sellerId);
+            } else if (data.productId || data.targetType === 'product') {
+              if (data.productId) prodIds.push(data.productId);
+            }
+          });
+
+          setFavoriteProductIds(prodIds);
+          setFavoriteSellerIds(sellerIds);
+          localStorage.setItem('shakh_fav_products', JSON.stringify(prodIds));
+          localStorage.setItem('shakh_fav_sellers', JSON.stringify(sellerIds));
+        },
+        (err) => {
+          console.warn('Favorites onSnapshot warning:', err);
+        }
+      );
+    } catch (err) {
+      console.warn('Error setting up favorites listener:', err);
+    }
+
+    return () => {
+      if (unsubFavs) unsubFavs();
+    };
+  }, [currentUser?.id]);
+
   const updateOccasionBanner = async (newBanner: OccasionBanner) => {
     setOccasionBanner(newBanner);
     localStorage.setItem('shakh_occasion_banner', JSON.stringify(newBanner));
@@ -2112,16 +2158,104 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return reviews.filter(r => r.targetId === productId && r.targetType === 'product');
   };
 
-  const toggleFavoriteProduct = (productId: string) => {
-    setFavoriteProductIds(prev =>
-      prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
-    );
+  const toggleFavoriteProduct = async (productId: string) => {
+    if (!currentUser) {
+      addNotification({
+        userId: 'guest',
+        type: 'system',
+        title: 'چوونەژوورەوە پێویستە 🔒',
+        message: 'تکایە سەرەتا بچۆ ژوورەوە یان هەژمارێک دروستبکە بۆ ئەوەی بتوانیت کاڵاکان بخەیتە لیستی دڵخوازەکانتەوە.'
+      });
+      return;
+    }
+
+    const docId = `${currentUser.id}_prod_${productId}`;
+    const isCurrentlyFav = favoriteProductIds.includes(productId);
+
+    if (isCurrentlyFav) {
+      setFavoriteProductIds(prev => prev.filter(id => id !== productId));
+      try {
+        await safeDeleteFirestoreDoc('favorites', docId);
+      } catch (err) {
+        console.warn('Error deleting favorite product doc:', err);
+      }
+      addNotification({
+        userId: currentUser.id,
+        type: 'system',
+        title: 'لە دڵخوازەکان لادرا 💔',
+        message: 'کاڵاکە بە سەرکەوتوویی لە لیستی دڵخوازەکانت لادرا.'
+      });
+    } else {
+      setFavoriteProductIds(prev => [...prev, productId]);
+      const favDoc = {
+        id: docId,
+        userId: currentUser.id,
+        productId,
+        targetType: 'product',
+        createdAt: new Date().toISOString()
+      };
+      try {
+        await setDoc(doc(db, 'favorites', docId), favDoc);
+      } catch (err) {
+        console.warn('Error saving favorite product doc:', err);
+      }
+      addNotification({
+        userId: currentUser.id,
+        type: 'system',
+        title: 'خرایە لیستی دڵخوازەکان ❤️',
+        message: 'کاڵاکە بە سەرکەوتوویی بۆ لیستی دڵخوازەکانت زیادکرا.'
+      });
+    }
   };
 
-  const toggleFavoriteSeller = (sellerId: string) => {
-    setFavoriteSellerIds(prev =>
-      prev.includes(sellerId) ? prev.filter(id => id !== sellerId) : [...prev, sellerId]
-    );
+  const toggleFavoriteSeller = async (sellerId: string) => {
+    if (!currentUser) {
+      addNotification({
+        userId: 'guest',
+        type: 'system',
+        title: 'چوونەژوورەوە پێویستە 🔒',
+        message: 'تکایە سەرەتا بچۆ ژوورەوە بۆ ئەوەی بتوانیت فرۆشگەکان بپاشەکەوت بکەیت لە دڵخوازەکانت.'
+      });
+      return;
+    }
+
+    const docId = `${currentUser.id}_seller_${sellerId}`;
+    const isCurrentlyFav = favoriteSellerIds.includes(sellerId);
+
+    if (isCurrentlyFav) {
+      setFavoriteSellerIds(prev => prev.filter(id => id !== sellerId));
+      try {
+        await safeDeleteFirestoreDoc('favorites', docId);
+      } catch (err) {
+        console.warn('Error deleting favorite seller doc:', err);
+      }
+      addNotification({
+        userId: currentUser.id,
+        type: 'system',
+        title: 'لە فرۆشگە دڵخوازەکان لادرا 💔',
+        message: 'فرۆشگەکە لە لیستی فرۆشگە دڵخوازەکانت لادرا.'
+      });
+    } else {
+      setFavoriteSellerIds(prev => [...prev, sellerId]);
+      const favDoc = {
+        id: docId,
+        userId: currentUser.id,
+        sellerId,
+        targetType: 'seller',
+        createdAt: new Date().toISOString()
+      };
+      try {
+        await setDoc(doc(db, 'favorites', docId), favDoc);
+      } catch (err) {
+        console.warn('Error saving favorite seller doc:', err);
+      }
+      addNotification({
+        userId: currentUser.id,
+        type: 'system',
+        title: 'فرۆشگە نیشانکرا ❤️',
+        message: 'فرۆشگەکە بە سەرکەوتوویی بۆ لیستی فرۆشگە دڵخوازەکانت زیادکرا.'
+      });
+    }
   };
 
   // Filter Helpers

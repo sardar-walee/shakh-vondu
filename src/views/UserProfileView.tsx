@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   User,
   MapPin,
@@ -29,7 +29,10 @@ import {
   ShieldCheck,
   ArrowLeft,
   ChevronLeft,
-  X
+  X,
+  Upload,
+  Camera,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
@@ -39,6 +42,121 @@ import { LanguageSwitcher } from '../components/common/LanguageSwitcher';
 import { CITIES } from '../data/seedData';
 import { FeedbackType, UserRole, GeoLocation } from '../types';
 import { GPSLocationPicker } from '../components/common/GPSLocationPicker';
+
+const compressImageFile = (file: File): Promise<string> => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 1000;
+        const MAX_HEIGHT = 1000;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        } else {
+          resolve(event.target?.result as string);
+        }
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+const DirectFileUpload: React.FC<{
+  label: string;
+  value: string;
+  onChange: (dataUrl: string) => void;
+  placeholder?: string;
+}> = ({ label, value, onChange, placeholder }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [loading, setLoading] = useState(false);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const compressed = await compressImageFile(file);
+      onChange(compressed);
+    } catch (err) {
+      console.error('File compress error:', err);
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block">{label}</label>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={loading}
+          className="text-xs font-bold text-teal-600 hover:text-teal-700 dark:text-teal-400 bg-teal-50 hover:bg-teal-100 dark:bg-teal-950/60 px-2.5 py-1 rounded-lg border border-teal-200 dark:border-teal-800 flex items-center gap-1 cursor-pointer transition-colors"
+        >
+          {loading ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <Upload className="w-3.5 h-3.5" />
+          )}
+          <span>{loading ? 'بارکردن...' : 'هەڵبژاردنی وێنە / کامێرا'}</span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+        />
+      </div>
+
+      {value ? (
+        <div className="relative group rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 aspect-video sm:aspect-21/9 max-h-40">
+          <img src={value} alt={label} className="w-full h-full object-cover" />
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="absolute top-2 right-2 p-1 bg-red-600 text-white rounded-lg hover:bg-red-700 opacity-90 transition-opacity cursor-pointer shadow-md"
+            title="سڕینەوە"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ) : null}
+
+      <input
+        type="url"
+        placeholder={placeholder || 'یان بەستەری وێنە لێرە دابنێ (https://...)'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-2.5 text-xs font-latin"
+      />
+    </div>
+  );
+};
 
 interface UserProfileViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -69,11 +187,27 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
 
   // Profile Form State
   const [fullName, setFullName] = useState(currentUser?.fullName || '');
+  const [email, setEmail] = useState(currentUser?.email || '');
+  const [newPassword, setNewPassword] = useState('');
   const [phone, setPhone] = useState(currentUser?.phone || '');
   const [city, setCity] = useState(currentUser?.city || 'Erbil (هەولێر)');
   const [address, setAddress] = useState(currentUser?.address || '');
   const [area, setArea] = useState(currentUser?.area || '');
+  const [avatarUrl, setAvatarUrl] = useState(currentUser?.avatarUrl || '');
+  const [role, setRole] = useState<UserRole>(currentUser?.role || 'customer');
   const [geoLocation, setGeoLocation] = useState<GeoLocation | null>(currentUser?.geoLocation || null);
+
+  // Captain & Verification Documents Form State
+  const [idCardFrontUrl, setIdCardFrontUrl] = useState(currentUser?.idCardFrontUrl || '');
+  const [idCardBackUrl, setIdCardBackUrl] = useState(currentUser?.idCardBackUrl || '');
+  const [nationalIdNumber, setNationalIdNumber] = useState(currentUser?.nationalIdNumber || '');
+  const [vehicleType, setVehicleType] = useState<'motorcycle' | 'car' | 'bicycle' | 'van' | 'pickup'>(currentUser?.vehicleType || 'motorcycle');
+  const [vehicleModel, setVehicleModel] = useState(currentUser?.vehicleModel || '');
+  const [vehicleColor, setVehicleColor] = useState(currentUser?.vehicleColor || '');
+  const [plateNumber, setPlateNumber] = useState(currentUser?.plateNumber || '');
+  const [vehiclePhotoUrl, setVehiclePhotoUrl] = useState(currentUser?.vehiclePhotoUrl || '');
+  const [driverLicenseUrl, setDriverLicenseUrl] = useState(currentUser?.driverLicenseUrl || '');
+  
   const [savedToast, setSavedToast] = useState(false);
   const [redeemMsg, setRedeemMsg] = useState('');
 
@@ -90,18 +224,32 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
   // My submitted feedbacks
   const myFeedbacks = userFeedbacks.filter(f => f.userId === (currentUser?.id || 'cust-demo'));
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUserProfile({
+    await updateUserProfile({
       fullName,
+      email,
       phone,
       city,
       address,
       area,
-      geoLocation: geoLocation || undefined
+      avatarUrl: avatarUrl.trim() || undefined,
+      role,
+      geoLocation: geoLocation || undefined,
+      idCardFrontUrl: idCardFrontUrl.trim() || undefined,
+      idCardBackUrl: idCardBackUrl.trim() || undefined,
+      nationalIdNumber: nationalIdNumber.trim() || undefined,
+      vehicleType,
+      vehicleModel: vehicleModel.trim() || undefined,
+      vehicleColor: vehicleColor.trim() || undefined,
+      plateNumber: plateNumber.trim() || undefined,
+      vehiclePhotoUrl: vehiclePhotoUrl.trim() || undefined,
+      driverLicenseUrl: driverLicenseUrl.trim() || undefined,
+      ...(newPassword.trim() ? { newPassword: newPassword.trim() } : {})
     });
+    setNewPassword('');
     setSavedToast(true);
-    setTimeout(() => setSavedToast(false), 3000);
+    setTimeout(() => setSavedToast(false), 4000);
   };
 
   const handleRedeemDiscount = (pts: number, discountIqd: number) => {
@@ -411,34 +559,114 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
               <LanguageSwitcher variant="full" />
             </div>
 
-            <div className="border-t border-slate-100 pt-4">
-              <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-1.5">
-                <User className="w-4 h-4 text-orange-500" />
-                <span>دەستکاری زانیاری پڕۆفایل و ناونیشان:</span>
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
+              <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 mb-4 flex items-center justify-between">
+                <span className="flex items-center gap-1.5">
+                  <User className="w-4 h-4 text-orange-500" />
+                  <span>دەستکاری زانیاری پڕۆفایل و بەڵگەنامەکانی شاخ:</span>
+                </span>
+                <span className="text-[11px] font-bold text-teal-600 bg-teal-50 dark:bg-teal-950/50 px-2.5 py-1 rounded-full border border-teal-200 dark:border-teal-800">
+                  فایربێس & سوپابێس هەماهەنگن
+                </span>
               </h4>
 
-              <form onSubmit={handleSave} className="space-y-4 text-right">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ناوی تەواو:</label>
-                  <input
-                    type="text"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
-                  />
+              <form onSubmit={handleSave} className="space-y-6 text-right">
+                
+                {/* Profile Picture URL & Quick Direct File Upload */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <div className="w-20 h-20 rounded-2xl bg-slate-200 dark:bg-slate-800 overflow-hidden border-2 border-orange-500 flex items-center justify-center flex-shrink-0 shadow-md">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-10 h-10 text-slate-400" />
+                      )}
+                    </div>
+                    <div className="flex-1 w-full">
+                      <DirectFileUpload
+                        label="وێنەی پڕۆفایل (Profile Picture Upload)"
+                        value={avatarUrl}
+                        onChange={(dataUrl) => setAvatarUrl(dataUrl)}
+                        placeholder="لینک یان وێنەی پڕۆفایل باربکە (https://...)"
+                      />
+                    </div>
+                  </div>
                 </div>
 
+                {/* Role Switcher */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ژمارەی مۆبایل:</label>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    dir="ltr"
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-latin text-right focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
-                  />
+                  <label className="text-xs font-bold text-slate-800 dark:text-slate-200">جۆری هەژمار / ڕۆڵ (Account Role):</label>
+                  <select
+                    value={role}
+                    onChange={(e) => setRole(e.target.value as UserRole)}
+                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-bold focus:outline-hidden"
+                  >
+                    <option value="customer">کڕیار (Customer)</option>
+                    <option value="delivery_agent">کاپتنی گەیاندنی شاخ (Shakh Express Captain)</option>
+                    <option value="store_driver">کاپتنی شۆفێری فرۆشگا (Store Driver)</option>
+                    <option value="seller">فرۆشیار (Seller)</option>
+                  </select>
                 </div>
 
+                {/* Basic Personal Info */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ناوی تەواو:</label>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ژمارەی مۆبایل:</label>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      dir="ltr"
+                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-latin text-right focus:bg-white dark:focus:bg-slate-900 focus:outline-hidden focus:border-orange-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Account Credentials (Email & Password for Captain / User) */}
+                <div className="p-4 bg-amber-50/50 dark:bg-amber-950/30 rounded-2xl border border-amber-200 dark:border-amber-800 space-y-4">
+                  <h5 className="text-xs font-black text-amber-900 dark:text-amber-300 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-amber-600" />
+                    <span>ئیمەیڵ و وشەی تێپەڕی تایبەت بە کاپتن (Captain Login Credentials):</span>
+                  </h5>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ئیمەیڵی فەرمی کاپتن:</label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        dir="ltr"
+                        placeholder="captain@shakh.com"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-latin text-left focus:outline-hidden focus:border-amber-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-800 dark:text-slate-200">گۆڕینی وشەی تێپەڕ (Password):</label>
+                      <input
+                        type="password"
+                        placeholder="تەنها لە کاتی گۆڕین پڕیبکەرەوە..."
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        dir="ltr"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-latin text-left focus:outline-hidden focus:border-amber-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address & City */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-slate-800 dark:text-slate-200">شار:</label>
@@ -461,6 +689,143 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
                     />
                   </div>
                 </div>
+
+                {/* CAPTAIN SPECIFIC SECTION: Tazkara (National ID) & Vehicle Photos */}
+                {(role === 'delivery_agent' || role === 'store_driver' || isDeliveryAgent) && (
+                  <div className="p-5 rounded-3xl bg-teal-50/60 dark:bg-teal-950/40 border-2 border-teal-200 dark:border-teal-800 space-y-5">
+                    <div className="flex items-center justify-between border-b border-teal-200 dark:border-teal-800 pb-3">
+                      <h4 className="text-sm font-black text-teal-900 dark:text-teal-200 flex items-center gap-2">
+                        <Truck className="w-5 h-5 text-teal-600" />
+                        <span>بەڵگەنامەکان و زانیاری ڕێکخراوی کاپتنی شاخ (Captain Documents & Vehicle)</span>
+                      </h4>
+                      <span className="px-2.5 py-0.5 bg-teal-600 text-white text-[10px] font-bold rounded-full">
+                        پشتڕاستکراوە
+                      </span>
+                    </div>
+
+                    {/* Tazkara / National ID Section */}
+                    <div className="space-y-3">
+                      <h5 className="text-xs font-extrabold text-teal-950 dark:text-teal-300 flex items-center gap-1.5">
+                        <FileText className="w-4 h-4 text-teal-600" />
+                        <span>بارکردنی وێنەی تەسکەرە / کارتی نیشتمانی (National ID Card Upload):</span>
+                      </h5>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {/* ID Card Front */}
+                        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-teal-100 dark:border-teal-900">
+                          <DirectFileUpload
+                            label="وێنەی پێشەوەی تەسکەرە (Front National ID)"
+                            value={idCardFrontUrl}
+                            onChange={(dataUrl) => setIdCardFrontUrl(dataUrl)}
+                            placeholder="لینکی وێنەی پێشەوەی تەسکەرە..."
+                          />
+                        </div>
+
+                        {/* ID Card Back */}
+                        <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-teal-100 dark:border-teal-900">
+                          <DirectFileUpload
+                            label="وێنەی پشتەوەی تەسکەرە (Back National ID)"
+                            value={idCardBackUrl}
+                            onChange={(dataUrl) => setIdCardBackUrl(dataUrl)}
+                            placeholder="لینکی وێنەی پشتەوەی تەسکەرە..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ژمارەی تەسکەرە / کارتی نیشتمانی:</label>
+                        <input
+                          type="text"
+                          placeholder="نموونە: 199512345678"
+                          value={nationalIdNumber}
+                          onChange={(e) => setNationalIdNumber(e.target.value)}
+                          dir="ltr"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-latin text-right"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Vehicle & Motorcycle Section */}
+                    <div className="space-y-3 pt-2 border-t border-teal-200 dark:border-teal-800">
+                      <h5 className="text-xs font-extrabold text-teal-950 dark:text-teal-300 flex items-center gap-1.5">
+                        <Car className="w-4 h-4 text-teal-600" />
+                        <span>وێنەی ئۆتۆمبێل / ماتۆڕسکیل و مۆدێل (Vehicle Info & Upload):</span>
+                      </h5>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-800 dark:text-slate-200">جۆری کەرەستە (Vehicle Type):</label>
+                          <select
+                            value={vehicleType}
+                            onChange={(e) => setVehicleType(e.target.value as any)}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-bold"
+                          >
+                            <option value="motorcycle">ماتۆڕسکیل (Motorcycle)</option>
+                            <option value="car">ئۆتۆمبێل (Car)</option>
+                            <option value="pickup">پیکاب (Pickup)</option>
+                            <option value="van">ڤان (Van)</option>
+                            <option value="bicycle">بایسکیل (Bicycle)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ژمارەی تابلۆ (Plate Number):</label>
+                          <input
+                            type="text"
+                            placeholder="نموونە: 48512 هەولێر"
+                            value={plateNumber}
+                            onChange={(e) => setPlateNumber(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs font-bold"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-800 dark:text-slate-200">مۆدێلی کەرەستە (Model & Brand):</label>
+                          <input
+                            type="text"
+                            placeholder="نموونە: Honda 125 2023 / Nissan Sunny"
+                            value={vehicleModel}
+                            onChange={(e) => setVehicleModel(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-800 dark:text-slate-200">ڕەنگی کەرەستە (Vehicle Color):</label>
+                          <input
+                            type="text"
+                            placeholder="نموونە: ڕەش / سپی / سوور"
+                            value={vehicleColor}
+                            onChange={(e) => setVehicleColor(e.target.value)}
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl p-3 text-xs"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Vehicle Photo Direct Upload */}
+                      <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-teal-100 dark:border-teal-900">
+                        <DirectFileUpload
+                          label="وێنەی ئۆتۆمبێل یان ماتۆڕسکیلەکە (Vehicle Photo Upload)"
+                          value={vehiclePhotoUrl}
+                          onChange={(dataUrl) => setVehiclePhotoUrl(dataUrl)}
+                          placeholder="لینکی وێنەی ئۆتۆمبێل یان ماتۆڕسکیل..."
+                        />
+                      </div>
+
+                      {/* Driver License Photo Direct Upload */}
+                      <div className="bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-teal-100 dark:border-teal-900">
+                        <DirectFileUpload
+                          label="وێنەی مۆڵەتی شۆفێری (Driver License Photo Upload)"
+                          value={driverLicenseUrl}
+                          onChange={(dataUrl) => setDriverLicenseUrl(dataUrl)}
+                          placeholder="لینکی وێنەی مۆڵەتی شۆفێری..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* GPS Location Component */}
                 <GPSLocationPicker
@@ -487,10 +852,10 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs rounded-xl shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 transition-transform active:scale-[0.98] cursor-pointer"
+                  className="w-full py-4 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-black text-xs rounded-2xl shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2 transition-transform active:scale-[0.98] cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
-                  <span>پاشەکەوتکردنی گۆڕانکارییەکان</span>
+                  <span>پاشەکەوتکردن لە سوپابێس و فایربێس (Sync All Info)</span>
                 </button>
               </form>
             </div>

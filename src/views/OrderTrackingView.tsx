@@ -23,6 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import { StatusBadge } from '../components/common/Badge';
 import { OrderStatus } from '../types';
 import { OrderRatingModal } from '../components/reviews/OrderRatingModal';
+import { LiveOrderTrackingMap } from '../components/delivery/LiveOrderTrackingMap';
 
 interface OrderTrackingViewProps {
   orderId: string;
@@ -151,6 +152,17 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Real-time Interactive Geolocation Map */}
+        {!isCancelled && (
+          <div className="pt-2">
+            <h3 className="text-xs font-bold text-slate-400 mb-3 flex items-center gap-1.5">
+              <MapPin className="w-4 h-4 text-teal-600" />
+              <span>نەخشەی ڕاستەوخۆ و شوێنپێهەڵگرتنی کاپتن (Live GPS Order Map):</span>
+            </h3>
+            <LiveOrderTrackingMap order={order} seller={seller} />
           </div>
         )}
 

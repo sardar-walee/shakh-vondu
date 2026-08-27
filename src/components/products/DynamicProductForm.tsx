@@ -449,11 +449,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
       subcategory: subcategory || undefined,
       title: title.trim(),
       description: description.trim(),
-      condition,
+      condition: (category === 'electronics' || category === 'cars') ? condition : undefined,
       price: Number(price),
       discountPrice: discountPrice ? Number(discountPrice) : undefined,
       stock: Number(stock),
-      unit: unit.trim() || 'دانە',
+      unit: (category === 'market' || category === 'fruits_vegetables' || category === 'fresh_meat' || category === 'dairy') ? (unit.trim() || 'دانە') : undefined,
       rewardPoints: Number(rewardPoints || 0),
       images,
       isAvailable,
@@ -463,41 +463,41 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 
       // Category fields
       sizes: category === 'clothes' ? sizes : undefined,
-      colors: category === 'clothes' || category === 'cars' || category === 'electronics' ? colors : undefined,
+      colors: (category === 'clothes' || category === 'electronics') ? colors : undefined,
       gender: category === 'clothes' ? gender : undefined,
       material: category === 'clothes' ? material : undefined,
       fit: category === 'clothes' ? fit : undefined,
       season: category === 'clothes' ? season : undefined,
 
-      brand: brand.trim() || undefined,
-      model: model.trim() || undefined,
-      warrantyMonths: warrantyMonths ? Number(warrantyMonths) : undefined,
+      brand: (category === 'electronics' || category === 'clothes' || category === 'market' || category === 'cars' || category === 'beauty' || category === 'dairy') ? (brand.trim() || undefined) : undefined,
+      model: (category === 'electronics' || category === 'cars') ? (model.trim() || undefined) : undefined,
+      warrantyMonths: category === 'electronics' ? (warrantyMonths ? Number(warrantyMonths) : undefined) : undefined,
       storageCapacity: category === 'electronics' ? storageCapacity : undefined,
       ramSize: category === 'electronics' ? ramSize : undefined,
-      specs: Object.keys(specs).length > 0 ? specs : undefined,
+      specs: (category === 'electronics' && Object.keys(specs).length > 0) ? specs : undefined,
 
-      year: year ? Number(year) : undefined,
-      mileageKm: mileageKm !== undefined ? Number(mileageKm) : undefined,
+      year: category === 'cars' ? (year ? Number(year) : undefined) : undefined,
+      mileageKm: category === 'cars' ? (mileageKm !== undefined ? Number(mileageKm) : undefined) : undefined,
       transmission: category === 'cars' ? transmission : undefined,
       fuelType: category === 'cars' ? fuelType : undefined,
 
-      prepTimeMinutes: prepTimeMinutes ? Number(prepTimeMinutes) : undefined,
-      ingredients: category === 'food' ? ingredients : undefined,
+      prepTimeMinutes: category === 'food' ? (prepTimeMinutes ? Number(prepTimeMinutes) : undefined) : undefined,
+      ingredients: category === 'food' ? (ingredients.length > 0 ? ingredients : undefined) : undefined,
       isSpicy: category === 'food' ? isSpicy : undefined,
       isVegetarian: category === 'food' ? isVegetarian : undefined,
 
       meatType: category === 'fresh_meat' ? meatType : undefined,
       cutType: category === 'fresh_meat' ? cutType.trim() : undefined,
 
-      origin: category === 'fruits_vegetables' || category === 'fresh_meat' || category === 'dairy' || category === 'market' ? origin.trim() : undefined,
+      origin: (category === 'fruits_vegetables' || category === 'fresh_meat' || category === 'dairy' || category === 'market') ? origin.trim() : undefined,
       isOrganic: category === 'fruits_vegetables' ? isOrganic : undefined,
 
-      expiryInfo: category === 'dairy' || category === 'beauty' || category === 'market' ? expiryInfo.trim() : undefined,
+      expiryInfo: (category === 'dairy' || category === 'beauty' || category === 'market') ? expiryInfo.trim() : undefined,
       fatPercentage: category === 'dairy' ? fatPercentage : undefined,
 
       skinType: category === 'beauty' ? skinType : undefined,
-      volume: category === 'beauty' ? volume.trim() : undefined,
-      weight: category === 'fresh_meat' || category === 'market' || category === 'fruits_vegetables' ? weight.trim() : undefined
+      volume: (category === 'beauty' || category === 'market' || category === 'dairy') ? volume.trim() : undefined,
+      weight: (category === 'fresh_meat' || category === 'market' || category === 'fruits_vegetables' || category === 'dairy') ? weight.trim() : undefined
     };
 
     // Clean up draft after successful save
@@ -781,30 +781,32 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
               {errors.title && <p className="text-[11px] text-red-500 font-bold">{errors.title}</p>}
             </div>
 
-            {/* Condition: New / Used / Refurbished */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">دۆخی کاڵا (Condition)</label>
-              <div className="grid grid-cols-3 gap-2.5">
-                {[
-                  { value: 'new', label: 'نوێ (Brand New)' },
-                  { value: 'used', label: 'بەکارهاتوو (Used)' },
-                  { value: 'refurbished', label: 'نوێکراوەتەوە (Refurbished)' }
-                ].map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    onClick={() => setCondition(c.value as any)}
-                    className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
-                      condition === c.value
-                        ? 'bg-orange-50 dark:bg-orange-950/40 border-orange-500 text-orange-700 dark:text-orange-300 shadow-xs ring-2 ring-orange-500/20'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {c.label}
-                  </button>
-                ))}
+            {/* Condition: Only for Electronics and Cars */}
+            {(category === 'electronics' || category === 'cars') && (
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">دۆخی کاڵا (Condition)</label>
+                <div className="grid grid-cols-3 gap-2.5">
+                  {[
+                    { value: 'new', label: 'نوێ (Brand New)' },
+                    { value: 'used', label: 'بەکارهاتوو (Used)' },
+                    { value: 'refurbished', label: 'نوێکراوەتەوە (Refurbished)' }
+                  ].map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      onClick={() => setCondition(c.value as any)}
+                      className={`py-2.5 px-3 rounded-xl border text-xs font-bold text-center transition-all cursor-pointer ${
+                        condition === c.value
+                          ? 'bg-orange-50 dark:bg-orange-950/40 border-orange-500 text-orange-700 dark:text-orange-300 shadow-xs ring-2 ring-orange-500/20'
+                          : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Description */}
             <div className="space-y-1.5">

@@ -165,7 +165,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               )}
               {product.category === 'fresh_meat' && (product.meatType || product.cutType) && (
                 <span className="bg-rose-50 text-rose-700 font-bold px-1.5 py-0.5 rounded">
-                  {[product.meatType, product.cutType].filter(Boolean).join(' • ')}
+                  {[product.meatType === 'lamb' ? 'گۆشتی بەرخ' : product.meatType === 'beef' ? 'گۆشتی گوێرەکە' : product.meatType === 'chicken' ? 'مریشک' : product.meatType, product.cutType].filter(Boolean).join(' • ')}
+                </span>
+              )}
+              {product.category === 'market' && (product.brand || product.weight) && (
+                <span className="bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded font-latin">
+                  {[product.brand, product.weight].filter(Boolean).join(' • ')}
+                </span>
+              )}
+              {product.category === 'dairy' && (product.fatPercentage || product.expiryInfo) && (
+                <span className="bg-cyan-50 text-cyan-800 font-bold px-1.5 py-0.5 rounded">
+                  {product.fatPercentage === 'full_fat' ? 'چەوری تەواو' : product.fatPercentage === 'low_fat' ? 'کەم چەوری' : product.expiryInfo || 'شیرەمەنی'}
                 </span>
               )}
               {product.category === 'fruits_vegetables' && product.isOrganic && (

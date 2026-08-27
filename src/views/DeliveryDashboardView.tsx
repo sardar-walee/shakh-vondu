@@ -22,7 +22,11 @@ import {
   Send,
   ThumbsUp,
   User,
-  Store
+  Store,
+  Edit,
+  Car,
+  Mail,
+  Check
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
@@ -125,6 +129,95 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
             <ShieldCheck className="w-4 h-4 text-teal-600" />
             <span>یاسای شاخ (Shakh Courier Rules)</span>
           </button>
+        </div>
+      </div>
+
+      {/* Captain Profile & Documents Summary Card (زانیارییەکان لە فایربێس و سوپابێس) */}
+      <div className="bg-gradient-to-r from-slate-900 via-teal-950 to-slate-900 text-white p-6 rounded-3xl border border-teal-800/50 shadow-lg space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-teal-500 overflow-hidden border-2 border-teal-400/50 flex items-center justify-center flex-shrink-0 shadow-md">
+              {currentUser?.avatarUrl ? (
+                <img src={currentUser.avatarUrl} alt="Captain Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-8 h-8 text-slate-950" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-lg font-black text-white">{currentUser?.fullName || 'کاپتن ڕێباز'}</h3>
+                <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] font-bold rounded-full border border-emerald-500/30 flex items-center gap-1">
+                  <Check className="w-3 h-3 text-emerald-400" />
+                  زانیاری هەماهەنگە لە Firestore & Supabase
+                </span>
+              </div>
+              <p className="text-xs text-teal-200/80 mt-1 flex items-center gap-3 flex-wrap">
+                <span className="flex items-center gap-1 font-latin">
+                  <Mail className="w-3.5 h-3.5 text-amber-400" />
+                  {currentUser?.email || 'captain@shakh.com'}
+                </span>
+                <span className="flex items-center gap-1 font-latin">
+                  <Phone className="w-3.5 h-3.5 text-teal-400" />
+                  {currentUser?.phone || '07503334455'}
+                </span>
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => onNavigate('profile')}
+            className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl flex items-center gap-2 transition-transform active:scale-95 cursor-pointer shadow-md self-start md:self-auto"
+          >
+            <Edit className="w-4 h-4" />
+            <span>دەستکاریکردنی پڕۆفایل و تەسکەرە</span>
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Tazkara Status */}
+          <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-300 flex items-center justify-center flex-shrink-0">
+              <FileText className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 block">وێنەی تەسکەرە / ID:</span>
+              <span className="text-xs font-black text-white">
+                {currentUser?.idCardFrontUrl ? 'بارکراوە & پشتڕاستکراوە' : 'نێنێردراوە (لە پڕۆفایل دایبنێ)'}
+              </span>
+              {currentUser?.nationalIdNumber && (
+                <span className="text-[10px] text-teal-300 font-latin block mt-0.5">ID: {currentUser.nationalIdNumber}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Vehicle Info */}
+          <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-300 flex items-center justify-center flex-shrink-0">
+              <Car className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 block">ئۆتۆمبێل / ماتۆڕسکیل:</span>
+              <span className="text-xs font-black text-white capitalize">
+                {currentUser?.vehicleType || 'ماتۆڕسکیل'} {currentUser?.vehicleModel ? `(${currentUser.vehicleModel})` : ''}
+              </span>
+              {currentUser?.plateNumber && (
+                <span className="text-[10px] text-amber-300 font-latin block mt-0.5">تابلۆ: {currentUser.plateNumber}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Captain Duty Status */}
+          <div className="p-3.5 bg-white/5 rounded-2xl border border-white/10 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-300 flex items-center justify-center flex-shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="text-[11px] font-bold text-slate-400 block">دۆخی خزمەتگوزاری:</span>
+              <span className="text-xs font-black text-emerald-400">
+                چالاک و لەسەر خەت (On Duty)
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

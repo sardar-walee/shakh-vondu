@@ -15,6 +15,7 @@ export interface CategoryFieldConfig {
   description: string;
   iconName: string;
   color: string;
+  postButtonLabel?: string;
   subcategories: { id: string; label: string; labelEn?: string; labelAr?: string }[];
   fields: {
     name: keyof Product | string;
@@ -37,6 +38,113 @@ export const CLOTHES_SIZE_PRESETS = [
   '41 (Shoe)', '42 (Shoe)', '43 (Shoe)', '44 (Shoe)', '45 (Shoe)', '46 (Shoe)',
   'Free Size (قەبارەی ئازاد)'
 ];
+
+export const MEAT_CUT_PRESETS: Record<string, string[]> = {
+  lamb: [
+    'ڕانی بەرخ (Lamb Leg)',
+    'دەستی بەرخ (Lamb Shoulder)',
+    'پەراسووی بەرخ (Lamb Ribs)',
+    'کەناری بەرخ (Lamb Chops)',
+    'گۆشتی هاڕاوی بەرخ (Minced Lamb)',
+    'لاشەی بەرخی تەواو (Whole Lamb)',
+    'فیلیە و تەندەرلۆین (Lamb Fillet)',
+    'تیکەی کەباب (Kebab Cubes)'
+  ],
+  beef: [
+    'ستیکی گوێرەکە (Beef Steak)',
+    'گۆشتی هاڕاوی گوێرەکە (Minced Beef)',
+    'فیلیەی گوێرەکە (Beef Fillet)',
+    'پەراسووی گوێرەکە (Beef Ribs)',
+    'دەستی گوێرەکە (Beef Shoulder)',
+    'گۆشتی شلە و قۆزی (Stewing Beef)',
+    'بەرگەری سەربڕاوی تازە (Fresh Burger Patty)'
+  ],
+  chicken: [
+    'مریشکی سەربڕاوی تەواو (Whole Slaughtered Chicken)',
+    'سنگی مریشکی بێ ئێسک (Boneless Chicken Breast)',
+    'ڕانی مریشک (Chicken Thigh)',
+    'باڵەکانی مریشک (Chicken Wings)',
+    'دەبڵ ڕان (Chicken Drumsticks)',
+    'فیلیەی سنگی مریشک (Chicken Fillet)',
+    'شیش تاووقی ئامادەکراو (Chicken Shish Tawook)'
+  ],
+  turkey: [
+    'قەلی تەواوی سەربڕاو (Whole Turkey)',
+    'سنگی قەل (Turkey Breast)',
+    'ڕانی قەل (Turkey Drumstick)'
+  ],
+  fish: [
+    'ماسی تازەی روباری تەواو (Fresh Whole River Fish)',
+    'فیلیەی ماسی پاککراوە (Cleaned Fish Fillet)',
+    'ماسی سەلموونی تازە (Fresh Salmon)',
+    'ماسی بۆ برژاندن / مەسگوف (Fresh Masgouf Fish)'
+  ],
+  goat: [
+    'ڕانی بزنی خۆماڵی (Goat Leg)',
+    'دەستی بزن (Goat Shoulder)',
+    'پەراسووی بزن (Goat Ribs)',
+    'لاشەی تەواوی بزن (Whole Goat)'
+  ]
+};
+
+export const MARKET_UNIT_OPTIONS = [
+  { label: 'دانە (Piece)', value: 'دانە' },
+  { label: 'کیلۆگرام (Kg)', value: 'کیلۆگرام' },
+  { label: 'گرام (Gram)', value: 'گرام' },
+  { label: 'لیتر (Liter)', value: 'لیتر' },
+  { label: 'میلیلیتر (Ml)', value: 'میلیلیتر' },
+  { label: 'پاکێج (Pack)', value: 'پاکێج' },
+  { label: 'سندووق / کارتۆن (Box / Carton)', value: 'سندووق' },
+  { label: 'بوتڵ / شووشە (Bottle)', value: 'بوتڵ' },
+  { label: 'دەسک / پۆل (Bundle)', value: 'دەسک' }
+];
+
+export function getCategoryPostButtonLabel(category?: ProductCategory, lang: string = 'ku'): string {
+  if (!category) return 'زیادکردنی کاڵای نوێ';
+  
+  if (lang === 'en') {
+    switch (category) {
+      case 'food': return 'Add Food Item';
+      case 'market': return 'Add Product';
+      case 'fruits_vegetables': return 'Add Fresh Produce';
+      case 'fresh_meat': return 'Add Fresh Meat';
+      case 'dairy': return 'Add Dairy Product';
+      case 'clothes': return 'Add Clothing Item';
+      case 'electronics': return 'Add Electronics';
+      case 'cars': return 'Add Vehicle';
+      case 'beauty': return 'Add Beauty Product';
+      default: return 'Add New Product';
+    }
+  }
+
+  if (lang === 'ar') {
+    switch (category) {
+      case 'food': return 'إضافة وجبة طعام';
+      case 'market': return 'إضافة منتج جديد';
+      case 'fruits_vegetables': return 'إضافة خضار أو فواكه';
+      case 'fresh_meat': return 'إضافة لحوم طازجة';
+      case 'dairy': return 'إضافة منتج ألبان';
+      case 'clothes': return 'إضافة ملابس';
+      case 'electronics': return 'إضافة جهاز إلكتروني';
+      case 'cars': return 'إضافة سيارة';
+      case 'beauty': return 'إضافة منتج تجميل';
+      default: return 'إضافة منتج جديد';
+    }
+  }
+
+  switch (category) {
+    case 'food': return 'زیادکردنی خواردنی نوێ';
+    case 'market': return 'زیادکردنی کاڵای نوێ';
+    case 'fruits_vegetables': return 'زیادکردنی سەوزە یان میوە';
+    case 'fresh_meat': return 'زیادکردنی گۆشتی تازە';
+    case 'dairy': return 'زیادکردنی بەرهەمی شیرەمەنی';
+    case 'clothes': return 'زیادکردنی جلوبەرگ';
+    case 'electronics': return 'زیادکردنی ئامێری ئەلیکترۆنی';
+    case 'cars': return 'زیادکردنی ئۆتۆمبێل';
+    case 'beauty': return 'زیادکردنی بەرهەمی جوانی';
+    default: return 'زیادکردنی کاڵای نوێ';
+  }
+}
 
 export const POPULAR_COLORS = [
   { name: 'ڕەش (Black)', hex: '#111827', value: 'ڕەش / Black' },

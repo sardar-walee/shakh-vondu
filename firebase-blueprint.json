@@ -188,6 +188,20 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["pointsPerIQD"]
+    },
+    "Favorite": {
+      "title": "Favorite Item / Wishlist",
+      "description": "Customer wishlist and favorites items for products and sellers stored in Firestore",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["product", "seller"] },
+        "productId": { "type": "string" },
+        "sellerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "targetType"]
     }
   },
   "firestore": {
@@ -197,6 +211,7 @@
     "/orders/{orderId}": { "schema": "Order", "description": "Orders collection" },
     "/cars/{carId}": { "schema": "Car", "description": "Cars marketplace collection" },
     "/reviews/{reviewId}": { "schema": "Review", "description": "Customer ratings and reviews" },
+    "/favorites/{favoriteId}": { "schema": "Favorite", "description": "Customer wishlist and favorites collection" },
     "/system_settings/points_config": { "schema": "PointsSettings", "description": "Global points conversion rate config" }
   }
 }

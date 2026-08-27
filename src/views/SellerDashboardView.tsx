@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
+import { useLanguage } from '../context/LanguageContext';
 import { Product, Order, ProductCategory, DeliveryZoneSettings, SellerProfile, StoreDriver, DeliveryMode } from '../types';
 import { StatusBadge, CategoryBadge } from '../components/common/Badge';
 import { Modal } from '../components/common/Modal';
@@ -44,6 +45,7 @@ import { ImageUpload } from '../components/common/ImageUpload';
 import { DynamicProductForm } from '../components/products/DynamicProductForm';
 import { getDefaultDeliveryZone, calculateDeliveryFee, CITY_NEIGHBORHOOD_DISTANCES } from '../utils/deliveryUtils';
 import { CaptainManager } from '../components/delivery/CaptainManager';
+import { getCategoryPostButtonLabel } from '../utils/categoryFields';
 
 interface SellerDashboardViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -51,6 +53,7 @@ interface SellerDashboardViewProps {
 
 export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavigate }) => {
   const { currentUser, sellerProfile, canManageCategory, isSeller } = useAuth();
+  const { currentLanguage } = useLanguage();
   const {
     products,
     orders,
@@ -293,7 +296,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
           className="px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 flex items-center gap-2 transition-transform active:scale-95 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>زیادکردنی کاڵای نوێ</span>
+          <span>{getCategoryPostButtonLabel(defaultCategory, currentLanguage)}</span>
         </button>
       </div>
 
@@ -660,7 +663,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
               className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md shadow-orange-500/20 flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
             >
               <Plus className="w-4 h-4" />
-              <span>زیادکردنی کاڵای نوێ</span>
+              <span>{getCategoryPostButtonLabel(defaultCategory, currentLanguage)}</span>
             </button>
           </div>
 

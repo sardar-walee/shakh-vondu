@@ -105,7 +105,7 @@ export const CarMarketplaceView: React.FC<CarMarketplaceViewProps> = ({
 
   // Filter ads logic
   const filtered = useMemo(() => {
-    let result = carAds.filter(c => c.adStatus !== 'rejected' && c.adStatus !== 'hidden' && c.adStatus !== 'deleted');
+    let result = carAds.filter(c => (c.adStatus as string) !== 'rejected' && (c.adStatus as string) !== 'hidden' && (c.adStatus as string) !== 'deleted');
 
     if (selectedStatusFilter !== 'all') {
       result = result.filter(c => c.adStatus === selectedStatusFilter);

@@ -22,11 +22,21 @@ export interface StoreDriver {
   sellerId: string;
   sellerName?: string;
   name: string;
+  email?: string;
+  password?: string;
   phone: string;
+  avatarUrl?: string;
   vehicleType: 'motorcycle' | 'car' | 'bicycle' | 'van' | 'pickup';
   vehicleModel?: string;
+  vehicleColor?: string;
   plateNumber?: string;
   driverPhotoUrl?: string;
+  idCardFrontUrl?: string;
+  idCardBackUrl?: string;
+  nationalIdNumber?: string;
+  vehiclePhotoUrl?: string;
+  driverLicenseUrl?: string;
+  captainStatus?: 'pending_approval' | 'approved' | 'rejected' | 'active' | 'suspended';
   city?: string;
   coverageAreas?: string[];
   isActive: boolean;
@@ -113,6 +123,21 @@ export interface UserProfile {
   driverPoints?: number;
   acceptedShakhRules?: boolean;
   geoLocation?: GeoLocation;
+
+  // Captain Profile & Document Fields (کاپتنی شاخ و بەڵگەنامەکان)
+  idCardFrontUrl?: string;     // وێنەی تەسکەرە / کارتی نیشتمانی (لەپێشەوە)
+  idCardBackUrl?: string;      // وێنەی تەسکەرە / کارتی نیشتمانی (لەپشتەوە)
+  nationalIdNumber?: string;   // ژمارەی تەسکەرە / کارتی نیشتمانی
+  vehicleType?: 'motorcycle' | 'car' | 'bicycle' | 'van' | 'pickup'; // جۆری کەرەستە
+  vehicleModel?: string;       // مۆدێلی ئۆتۆمبێل / ماتۆڕسکیل
+  vehicleColor?: string;       // ڕەنگی ئۆتۆمبێل یان ماتۆڕ
+  plateNumber?: string;        // ژمارەی تابلۆی ئۆتۆمبێل / ماتۆڕ
+  vehiclePhotoUrl?: string;    // وێنەی ئۆتۆمبێل یان ماتۆڕسکیل
+  driverLicenseUrl?: string;   // وێنەی مۆڵەتی شۆفێری
+  captainStatus?: 'pending_approval' | 'approved' | 'rejected' | 'active' | 'suspended';
+  isOnDuty?: boolean;
+  captainNotes?: string;
+
   createdAt: string;
   updatedAt?: string;
 }
@@ -320,6 +345,8 @@ export interface Order {
   sellerName: string;
   sellerPhone?: string;
   sellerAddress?: string;
+  sellerGeoLocation?: GeoLocation;
+  driverGeoLocation?: GeoLocation;
   category: ProductCategory;
   items: OrderItem[];
   subtotal: number;

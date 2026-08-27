@@ -7,7 +7,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  updateEmail,
+  updatePassword
 } from 'firebase/auth';
 
 interface RegisterData {
@@ -364,24 +366,108 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('shakh_current_user');
   };
 
-  const updateProfile = async (data: Partial<UserProfile>) => {
+  const updateProfile = async (data: Partial<UserProfile> & { newPassword?: string }) => {
     if (!currentUser) return;
-    const updated = { ...currentUser, ...data, updatedAt: new Date().toISOString() };
+    const { newPassword, ...profileData } = data;
+    const updated = { ...currentUser, ...profileData, updatedAt: new Date().toISOString() };
     setCurrentUser(updated);
 
+    // 1. Update Firestore 'users' collection
     try {
-      await updateDoc(doc(db, 'users', currentUser.id), data);
-    } catch (e) {}
+      await setDoc(doc(db, 'users', currentUser.id), updated, { merge: true });
+    } catch (e) {
+      console.warn('Firestore update profile error:', e);
+    }
+
+    // 2. If user is a delivery agent/captain, also update Firestore 'drivers' collection
+    if (updated.role === 'delivery_agent' || updated.role === 'store_driver') {
+      try {
+        await setDoc(doc(db, 'drivers', currentUser.id), {
+          id: currentUser.id,
+          name: updated.fullName,
+          phone: updated.phone,
+          email: updated.email,
+          city: updated.city,
+          avatarUrl: updated.avatarUrl,
+          driverPhotoUrl: updated.avatarUrl,
+          idCardFrontUrl: updated.idCardFrontUrl,
+          idCardBackUrl: updated.idCardBackUrl,
+          nationalIdNumber: updated.nationalIdNumber,
+          vehicleType: updated.vehicleType || 'motorcycle',
+          vehicleModel: updated.vehicleModel,
+          vehicleColor: updated.vehicleColor,
+          plateNumber: updated.plateNumber,
+          vehiclePhotoUrl: updated.vehiclePhotoUrl,
+          driverLicenseUrl: updated.driverLicenseUrl,
+          captainStatus: updated.captainStatus || 'active',
+          isOnDuty: updated.isOnDuty !== false,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (e) {
+        console.warn('Firestore update driver doc error:', e);
+      }
+    }
+
+    // 3. Update Supabase 'profiles' table
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('profiles').upsert({
+          id: currentUser.id,
+          email: updated.email,
+          full_name: updated.fullName,
+          phone: updated.phone,
+          city: updated.city,
+          area: updated.area,
+          address: updated.address,
+          avatar_url: updated.avatarUrl,
+          id_card_front_url: updated.idCardFrontUrl,
+          id_card_back_url: updated.idCardBackUrl,
+          national_id_number: updated.nationalIdNumber,
+          vehicle_type: updated.vehicleType,
+          vehicle_model: updated.vehicleModel,
+          vehicle_color: updated.vehicleColor,
+          plate_number: updated.plateNumber,
+          vehicle_photo_url: updated.vehiclePhotoUrl,
+          driver_license_url: updated.driverLicenseUrl,
+          captain_status: updated.captainStatus,
+          is_on_duty: updated.isOnDuty,
+          role: updated.role,
+          updated_at: new Date().toISOString()
+        });
+      } catch (e) {
+        console.warn('Supabase profile upsert error:', e);
+      }
+    }
+
+    // 4. Handle Email & Password changes in Firebase & Supabase Auth if provided
+    if (auth.currentUser) {
+      if (profileData.email && profileData.email !== auth.currentUser.email) {
+        try {
+          await updateEmail(auth.currentUser, profileData.email);
+        } catch (e) {
+          console.warn('Firebase email update notice:', e);
+        }
+      }
+      if (newPassword && newPassword.length >= 6) {
+        try {
+          await updatePassword(auth.currentUser, newPassword);
+        } catch (e) {
+          console.warn('Firebase password update notice:', e);
+        }
+      }
+    }
 
     if (isSupabaseConfigured) {
-      await supabase.from('profiles').update({
-        full_name: updated.fullName,
-        phone: updated.phone,
-        city: updated.city,
-        area: updated.area,
-        address: updated.address,
-        avatar_url: updated.avatarUrl
-      }).eq('id', currentUser.id);
+      if (profileData.email || newPassword) {
+        try {
+          await supabase.auth.updateUser({
+            ...(profileData.email ? { email: profileData.email } : {}),
+            ...(newPassword ? { password: newPassword } : {})
+          });
+        } catch (e) {
+          console.warn('Supabase auth update notice:', e);
+        }
+      }
     }
   };
 
