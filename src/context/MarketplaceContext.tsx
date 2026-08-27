@@ -35,6 +35,7 @@ import { useAuth } from './AuthContext';
 import { useNotification } from './NotificationContext';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { db } from '../firebase';
+import { sendFcmOrderStatusUpdate } from '../lib/fcmService';
 import { cleanTaggedDemoRecords, DemoCleanerResult } from '../lib/firestoreDemoCleaner';
 import {
   collection,
@@ -122,6 +123,9 @@ interface MarketplaceContextType {
     deliveryGeoLocation?: GeoLocation;
     deliveryMode?: DeliveryMode;
     isStoreDelivery?: boolean;
+    pointsUsed?: number;
+    pointsDiscount?: number;
+    pointsEarned?: number;
   }) => Promise<{ success: boolean; orderId?: string; orderNumber?: string; error?: string }>;
   updateOrderStatus: (orderId: string, status: OrderStatus, note?: string) => Promise<{ success: boolean; error?: string }>;
   assignDeliveryAgent: (orderId: string, agentId: string, agentName: string, agentPhone: string) => Promise<void>;
@@ -437,8 +441,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // Compute if update alert should be active
   const isAppUpdateAvailable = Boolean(
-    appVersion?.version &&
-    (appVersion.isMandatory || appVersion.version !== acknowledgedVersion)
+    appVersion?.version && appVersion.version !== acknowledgedVersion
   );
 
   const dismissUpdateNotification = (ver?: string) => {
@@ -1238,6 +1241,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     deliveryGeoLocation?: GeoLocation;
     deliveryMode?: DeliveryMode;
     isStoreDelivery?: boolean;
+    pointsUsed?: number;
+    pointsDiscount?: number;
+    pointsEarned?: number;
   }): Promise<{ success: boolean; orderId?: string; orderNumber?: string; error?: string }> => {
     if (!currentUser) return { success: false, error: 'تکایە بۆ داواکردن بچۆ ژوورەوە' };
     if (!orderData.items || orderData.items.length === 0) {
@@ -1254,6 +1260,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const newOrderId = `ord-${Date.now()}`;
     const calculatedCommissionAmount = Math.round((orderData.subtotal * seller.commissionRate) / 100);
     const calculatedSellerAmount = Math.round(orderData.subtotal - calculatedCommissionAmount);
+    const calculatedPointsEarned = orderData.pointsEarned ?? Math.max(10, Math.round(orderData.subtotal * 0.02));
 
     const newOrder: Order = {
       id: newOrderId,
@@ -1288,6 +1295,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       commissionAmount: calculatedCommissionAmount,
       sellerAmount: calculatedSellerAmount,
       sellerEarnings: calculatedSellerAmount,
+      pointsUsed: orderData.pointsUsed || 0,
+      pointsDiscount: orderData.pointsDiscount || 0,
+      pointsEarned: calculatedPointsEarned,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       statusTimeline: [
@@ -1397,6 +1407,21 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       await updateDoc(doc(db, 'orders', orderId), { status, updatedAt: new Date().toISOString() });
     } catch (e) {}
+
+    // Send FCM Push Notification for real-time status update
+    try {
+      sendFcmOrderStatusUpdate({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        customerId: order.customerId,
+        customerName: order.customerName,
+        status,
+        sellerName: order.sellerName,
+        customMessage: note
+      }).catch(e => console.warn('FCM status update dispatch notice:', e));
+    } catch (fcmErr) {
+      console.warn('FCM dispatch notice:', fcmErr);
+    }
 
     if (status === 'delivered') {
       const commTx: CommissionTransaction = {

@@ -177,8 +177,29 @@ export const CustomerOrdersView: React.FC<CustomerOrdersViewProps> = ({ onNaviga
                     <span className="text-sm font-black text-orange-600 font-latin">
                       {order.total.toLocaleString()} د.ع
                     </span>
+                    {order.pointsDiscount ? (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold block">
+                        (داشکاندنی پۆینت: -{order.pointsDiscount.toLocaleString()} د.ع)
+                      </span>
+                    ) : null}
                   </div>
                 </div>
+
+                {/* Shakh Loyalty Points Badge */}
+                {(order.pointsEarned || order.pointsUsed) && (
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {order.pointsEarned ? (
+                      <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20 flex items-center gap-1">
+                        🪙 <span>+{order.pointsEarned} پۆینتی شاخ بەدەستهاتوو</span>
+                      </span>
+                    ) : null}
+                    {order.pointsUsed ? (
+                      <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20 flex items-center gap-1 font-latin">
+                        🎁 <span>{order.pointsUsed} پۆینتی بەکارهاتوو</span>
+                      </span>
+                    ) : null}
+                  </div>
+                )}
 
                 {/* Items Preview */}
                 <div className="flex items-center gap-3 overflow-x-auto pb-1">

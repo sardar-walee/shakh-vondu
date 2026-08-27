@@ -209,10 +209,25 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                 <span>کرێی گەیاندن:</span>
                 <span className="font-bold text-slate-900 font-latin">{order.deliveryFee.toLocaleString()} د.ع</span>
               </div>
+
+              {Boolean(order.pointsDiscount && order.pointsDiscount > 0) && (
+                <div className="flex justify-between text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 p-1.5 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <span>داشکاندنی پۆینتی شاخ ({order.pointsUsed || 0} Pts):</span>
+                  <span className="font-latin">-{order.pointsDiscount?.toLocaleString()} د.ع</span>
+                </div>
+              )}
+
               <div className="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
                 <span>کۆی گشتی:</span>
                 <span className="text-orange-600 font-latin text-base">{order.total.toLocaleString()} د.ع</span>
               </div>
+
+              {Boolean(order.pointsEarned && order.pointsEarned > 0) && (
+                <div className="mt-2 text-[11px] font-bold text-amber-800 dark:text-amber-300 bg-amber-500/10 p-2 rounded-xl border border-amber-500/20 flex items-center justify-between">
+                  <span>🪙 پۆینتی بەدەستهاتووی لەم داواکارییە:</span>
+                  <span className="font-black font-latin text-xs">+{order.pointsEarned} Pts</span>
+                </div>
+              )}
             </div>
 
             <div className="pt-2 border-t border-slate-100 text-xs text-slate-500 space-y-1">

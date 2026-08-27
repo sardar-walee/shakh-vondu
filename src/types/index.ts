@@ -383,6 +383,9 @@ export interface Order {
   commissionAmount: number;
   sellerAmount: number;
   sellerEarnings?: number;
+  pointsUsed?: number;
+  pointsDiscount?: number;
+  pointsEarned?: number;
   isReviewedSeller?: boolean;
   isReviewedDriver?: boolean;
   sellerRating?: number;
@@ -722,5 +725,31 @@ export interface OccasionBanner {
   startDate?: string; // ISO date or YYYY-MM-DDTHH:mm for scheduling start
   endDate?: string;   // ISO date or YYYY-MM-DDTHH:mm for scheduling end
   updatedAt?: string;
+}
+
+export interface FcmTokenData {
+  id: string;
+  userId: string;
+  token: string;
+  userRole?: string;
+  deviceInfo?: string;
+  permissionGranted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PromotionalOfferData {
+  id: string;
+  title: string;
+  body: string;
+  discountCode?: string;
+  targetUrl?: string;
+  imageUrl?: string;
+  senderId: string;
+  senderName: string;
+  audience: 'all' | 'customers' | 'sellers' | 'captains';
+  category?: string;
+  sentCount?: number;
+  createdAt: string;
 }
 

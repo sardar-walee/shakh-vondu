@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { FcmPushNotificationBanner } from '../components/notifications/FcmPushNotificationBanner';
+import { FcmPromotionalOfferModal } from '../components/notifications/FcmPromotionalOfferModal';
 import {
   ShieldCheck,
   TrendingUp,
@@ -42,7 +44,8 @@ import {
   UserX,
   Layers,
   Languages,
-  Clock
+  Clock,
+  Megaphone
 } from 'lucide-react';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
@@ -255,11 +258,18 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     setEditingSellerId(null);
   };
 
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const pendingCarsCount = carAds.filter(c => c.adStatus === 'pending_approval' || c.adStatus === 'pending_payment' || c.adminApprovalStatus === 'pending').length;
 
   return (
     <div className="space-y-8 pb-16">
       
+      {/* FCM Promotional Offer Modal */}
+      <FcmPromotionalOfferModal
+        isOpen={isPromoModalOpen}
+        onClose={() => setIsPromoModalOpen(false)}
+      />
+
       {/* Super Admin Top Banner */}
       <div className="bg-gradient-to-r from-red-950 via-slate-900 to-red-950 text-white p-6 sm:p-8 rounded-3xl border border-red-900/40 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -279,16 +289,30 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           </div>
         </div>
 
-        {/* Factory Reset / Purge Database Button */}
-        <button
-          type="button"
-          onClick={() => setIsPurgeModalOpen(true)}
-          className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 transition-all cursor-pointer shrink-0 shadow-lg border border-red-400/30"
-        >
-          <RotateCcw className="w-4 h-4 text-white" />
-          <span>ڕێکخستنەوەی کارگە (Factory Reset)</span>
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsPromoModalOpen(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black rounded-2xl text-xs flex items-center gap-2 transition-all cursor-pointer shrink-0 shadow-lg"
+          >
+            <Megaphone className="w-4 h-4 fill-current" />
+            <span>ناردنی ئۆفەری FCM Push</span>
+          </button>
+
+          {/* Factory Reset / Purge Database Button */}
+          <button
+            type="button"
+            onClick={() => setIsPurgeModalOpen(true)}
+            className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-black rounded-2xl text-xs flex items-center gap-2 transition-all cursor-pointer shrink-0 shadow-lg border border-red-400/30"
+          >
+            <RotateCcw className="w-4 h-4 text-white" />
+            <span>ڕێکخستنەوەی کارگە (Factory Reset)</span>
+          </button>
+        </div>
       </div>
+
+      {/* FCM Status Banner */}
+      <FcmPushNotificationBanner />
 
       {/* Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-3 scrollbar-none">

@@ -34,6 +34,7 @@ import { UserProfileView } from './views/UserProfileView';
 import { NotificationCenterView } from './views/NotificationCenterView';
 import { NotificationToast } from './components/notifications/NotificationToast';
 import { AppUpdateAlert } from './components/common/AppUpdateAlert';
+import { listenToFcmMessages } from './lib/fcmService';
 import { ProductCategory } from './types';
 
 const MainApp: React.FC = () => {
@@ -48,6 +49,13 @@ const MainApp: React.FC = () => {
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentView, viewParam]);
+
+  // Listen for real-time FCM Push Messages in foreground
+  useEffect(() => {
+    listenToFcmMessages((payload) => {
+      console.log('Real-time FCM Push payload received in App:', payload);
+    });
+  }, []);
 
   const handleNavigate = (view: string, param?: string) => {
     setCurrentView(view);
@@ -216,7 +224,7 @@ const MainApp: React.FC = () => {
       <NotificationToast onNavigate={handleNavigate} />
 
       {/* Global App Version Update Alert Modal & Floating Banner */}
-      <AppUpdateAlert />
+      <AppUpdateAlert onNavigateHome={() => handleNavigate('home')} />
 
       {/* Cart Slide-Over Drawer */}
       <CartDrawer onCheckout={() => setCurrentView('checkout')} />

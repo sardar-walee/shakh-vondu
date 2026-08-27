@@ -4,6 +4,9 @@ import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { NotificationItem, NotificationType, OrderStatus } from '../types';
+import { FcmPushNotificationBanner } from '../components/notifications/FcmPushNotificationBanner';
+import { FcmPromotionalOfferModal } from '../components/notifications/FcmPromotionalOfferModal';
+import { Megaphone } from 'lucide-react';
 import {
   Bell,
   CheckCheck,
@@ -255,11 +258,21 @@ export const NotificationCenterView: React.FC<NotificationCenterViewProps> = ({ 
     return { title: 'کڕیار (Customer)', bg: 'bg-blue-50 text-[#2563EB] border-blue-200' };
   };
 
+  const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const roleInfo = getRoleLabel();
 
   return (
     <div className="space-y-6 pb-16">
       
+      {/* FCM Real-Time Push Notification Banner */}
+      <FcmPushNotificationBanner />
+
+      {/* FCM Promotional Offer Modal */}
+      <FcmPromotionalOfferModal
+        isOpen={isPromoModalOpen}
+        onClose={() => setIsPromoModalOpen(false)}
+      />
+
       {/* Modern Top Header Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs relative overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -288,6 +301,16 @@ export const NotificationCenterView: React.FC<NotificationCenterViewProps> = ({ 
 
           {/* Quick Header Actions */}
           <div className="flex items-center gap-2.5 flex-wrap flex-shrink-0">
+            {(isSuperAdmin || isSeller) && (
+              <button
+                onClick={() => setIsPromoModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-xs font-black shadow-sm hover:opacity-95 transition-all cursor-pointer"
+              >
+                <Megaphone className="w-4 h-4" />
+                <span>ناردنی ئۆفەری FCM Push</span>
+              </button>
+            )}
+
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}

@@ -15,7 +15,11 @@ import {
   ShieldCheck,
   Navigation,
   Compass,
-  Info
+  Info,
+  Award,
+  Gift,
+  Sparkles,
+  Coins
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useCart } from '../context/CartContext';
@@ -35,7 +39,7 @@ interface CartCheckoutViewProps {
 export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }) => {
   const { items, subtotal, clearCart, primarySellerName, primarySellerId } = useCart();
   const { currentUser, updateUserProfile } = useAuth();
-  const { sellers, createOrder } = useMarketplace();
+  const { sellers, createOrder, getUserPointsWallet, pointsSettings, calculateDiscountFromPoints, redeemPoints } = useMarketplace();
   const { dir } = useLanguage();
 
   const [name, setName] = useState(currentUser?.fullName || '');
@@ -49,6 +53,12 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash_on_delivery');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  // Shakh Loyalty Points state
+  const userPointsWallet = getUserPointsWallet(currentUser?.id || 'cust-demo', currentUser?.role || 'customer');
+  const availablePoints = userPointsWallet?.totalPoints || 0;
+  const [usePoints, setUsePoints] = useState(false);
+  const [pointsToRedeem, setPointsToRedeem] = useState<number>(0);
 
   // Primary seller from cart
   const primarySeller = useMemo(() => {
@@ -68,6 +78,20 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
 
   const activeDeliveryFee = deliveryCalc.deliveryFee;
   const calculatedGrandTotal = subtotal + activeDeliveryFee;
+
+  // Points redemption calculation
+  const pointsRate = pointsSettings?.pointsPerIQD || 150;
+  const maxPossibleDiscount = calculatedGrandTotal;
+  const maxRedeemablePoints = Math.min(availablePoints, Math.floor(maxPossibleDiscount * pointsRate));
+
+  const pointsDiscountIQD = usePoints && pointsToRedeem > 0
+    ? Math.min(maxPossibleDiscount, Math.round(calculateDiscountFromPoints(pointsToRedeem)))
+    : 0;
+
+  const finalGrandTotal = Math.max(0, calculatedGrandTotal - pointsDiscountIQD);
+
+  // Estimated points customer will earn on this order (2% reward)
+  const estimatedEarnedPoints = Math.max(10, Math.round((subtotal * 0.02)));
 
   // Available neighborhood presets for the current city
   const cityNeighborhoods = CITY_NEIGHBORHOOD_DISTANCES[city] || [
@@ -106,6 +130,27 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
 
     setIsSubmitting(true);
 
+    let appliedDiscount = 0;
+    let redeemedPts = 0;
+
+    if (usePoints && pointsToRedeem > 0) {
+      redeemedPts = Math.min(pointsToRedeem, maxRedeemablePoints);
+      if (redeemedPts > 0) {
+        const res = redeemPoints(
+          currentUser?.id || 'cust-demo',
+          redeemedPts,
+          `داشکاندنی سەر داواکاری بە بڕی ${calculateDiscountFromPoints(redeemedPts).toLocaleString()} د.ع`
+        );
+        if (res.success) {
+          appliedDiscount = Math.round(calculateDiscountFromPoints(redeemedPts));
+        } else {
+          setErrorMessage(res.message);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+    }
+
     const orderItems = items.map(item => ({
       id: `item-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
       productId: item.product.id,
@@ -125,12 +170,15 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
       deliveryFee: activeDeliveryFee,
       deliveryDistanceKm: distanceKm,
       deliveryZoneStatus: deliveryCalc.isWithinRadius ? 'within_radius' : 'custom_distance',
-      total: calculatedGrandTotal,
+      total: Math.max(0, calculatedGrandTotal - appliedDiscount),
       paymentMethod,
       customerNotes: notes,
       deliveryAddress: `${city} - ${area} - ${address} (دوری: ${distanceKm} کم)`,
       deliveryCity: city,
-      deliveryGeoLocation: deliveryGeoLocation || undefined
+      deliveryGeoLocation: deliveryGeoLocation || undefined,
+      pointsUsed: redeemedPts,
+      pointsDiscount: appliedDiscount,
+      pointsEarned: estimatedEarnedPoints
     });
 
     setIsSubmitting(false);
@@ -506,21 +554,103 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
               )}
             </div>
 
-            {/* Financial Totals */}
-            <div className="border-t border-slate-100 pt-3 space-y-2 text-xs">
-              <div className="flex justify-between text-slate-600">
-                <span>کۆی نرخی کاڵاکان:</span>
-                <span className="font-bold text-slate-900 font-latin">{subtotal.toLocaleString()} د.ع</span>
+            {/* Shakh Points Rewards & Checkout Redemption Card */}
+            <div className="bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-orange-500/10 p-4 rounded-2xl border border-amber-500/30 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Award className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100">پۆینتی پاداشتی شاخ (Shakh Points)</span>
+                </div>
+                <span className="text-xs font-black font-latin bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2.5 py-1 rounded-xl border border-amber-500/30">
+                  🪙 {availablePoints.toLocaleString()} پۆینت بەردەستە
+                </span>
               </div>
-              <div className="flex justify-between text-slate-600">
+
+              {/* Earn forecast */}
+              <div className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-300 bg-amber-500/10 p-2 rounded-xl border border-amber-500/20">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                <span>پاش تەواوبوونی ئەم داواکارییە: <strong>+{estimatedEarnedPoints.toLocaleString()} پۆینت</strong> دەگەڕێتەوە بۆ هەژمارەکەت!</span>
+              </div>
+
+              {/* Redeem Checkbox */}
+              {availablePoints > 0 && (
+                <div className="pt-1 space-y-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={usePoints}
+                      onChange={(e) => {
+                        setUsePoints(e.target.checked);
+                        if (e.target.checked && pointsToRedeem === 0) {
+                          setPointsToRedeem(Math.min(availablePoints, 300));
+                        }
+                      }}
+                      className="rounded text-amber-500 focus:ring-amber-500 w-4 h-4 cursor-pointer"
+                    />
+                    <span>بەکارهێنانی پۆینت بۆ وەرگرتنی داشکاندنی فوری</span>
+                  </label>
+
+                  {usePoints && (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300">
+                        <span>پۆینتی بەکارهاتوو:</span>
+                        <span className="font-bold text-amber-600 font-latin">{pointsToRedeem.toLocaleString()} Pts = {calculateDiscountFromPoints(pointsToRedeem).toLocaleString()} د.ع</span>
+                      </div>
+                      
+                      <div className="flex gap-1.5 flex-wrap">
+                        {[
+                          { pts: 150, label: '150 پۆینت (1,000 د.ع)' },
+                          { pts: 300, label: '300 پۆینت (2,000 د.ع)' },
+                          { pts: 1500, label: '1.5k پۆینت (10,000 د.ع)' },
+                          { pts: maxRedeemablePoints, label: 'هەمووی' }
+                        ].map((opt, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            disabled={opt.pts > maxRedeemablePoints || opt.pts <= 0}
+                            onClick={() => setPointsToRedeem(opt.pts)}
+                            className={`px-2 py-1 text-[10px] font-bold rounded-lg border transition-all cursor-pointer ${
+                              pointsToRedeem === opt.pts
+                                ? 'bg-amber-500 text-slate-950 border-amber-600 shadow-xs'
+                                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-amber-400'
+                            } ${opt.pts > maxRedeemablePoints || opt.pts <= 0 ? 'opacity-40 cursor-not-allowed' : ''}`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Financial Totals */}
+            <div className="border-t border-slate-100 dark:border-slate-800 pt-3 space-y-2 text-xs">
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span>کۆی نرخی کاڵاکان:</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100 font-latin">{subtotal.toLocaleString()} د.ع</span>
+              </div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
                 <span>کرێی گەیاندن ({distanceKm} کم):</span>
-                <span className="font-bold text-slate-900 font-latin">
+                <span className="font-bold text-slate-900 dark:text-slate-100 font-latin">
                   {deliveryCalc.isFreeDelivery ? 'بەخۆڕایی (Free)' : `${activeDeliveryFee.toLocaleString()} د.ع`}
                 </span>
               </div>
-              <div className="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
+
+              {pointsDiscountIQD > 0 && (
+                <div className="flex justify-between text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 p-1.5 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <span className="flex items-center gap-1">
+                    <Gift className="w-3.5 h-3.5" />
+                    داشکاندنی پۆینتی شاخ ({pointsToRedeem} Pts):
+                  </span>
+                  <span className="font-latin">-{pointsDiscountIQD.toLocaleString()} د.ع</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-sm font-black text-slate-900 dark:text-slate-100 pt-2 border-t border-slate-200 dark:border-slate-700">
                 <span>کۆی گشتی بۆ دان:</span>
-                <span className="text-orange-600 font-latin text-lg">{calculatedGrandTotal.toLocaleString()} د.ع</span>
+                <span className="text-orange-600 dark:text-orange-400 font-latin text-lg">{finalGrandTotal.toLocaleString()} د.ع</span>
               </div>
             </div>
 
