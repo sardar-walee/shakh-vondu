@@ -202,6 +202,40 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "userId", "targetType"]
+    },
+    "FcmToken": {
+      "title": "FCM Push Token Registration",
+      "description": "Firebase Cloud Messaging token registrations for web browser push notifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "token": { "type": "string" },
+        "userRole": { "type": "string" },
+        "deviceInfo": { "type": "string" },
+        "permissionGranted": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "token"]
+    },
+    "PromotionalOffer": {
+      "title": "Promotional Offer Broadcast",
+      "description": "Real-time FCM promotional offer push campaigns sent by admins or sellers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "discountCode": { "type": "string" },
+        "targetUrl": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "audience": { "type": "string", "enum": ["all", "customers", "sellers", "captains"] },
+        "category": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "body", "senderId"]
     }
   },
   "firestore": {
@@ -212,6 +246,8 @@
     "/cars/{carId}": { "schema": "Car", "description": "Cars marketplace collection" },
     "/reviews/{reviewId}": { "schema": "Review", "description": "Customer ratings and reviews" },
     "/favorites/{favoriteId}": { "schema": "Favorite", "description": "Customer wishlist and favorites collection" },
+    "/fcmTokens/{tokenId}": { "schema": "FcmToken", "description": "Device FCM push notification tokens" },
+    "/promotional_offers/{offerId}": { "schema": "PromotionalOffer", "description": "Promotional offer push notification campaigns" },
     "/system_settings/points_config": { "schema": "PointsSettings", "description": "Global points conversion rate config" }
   }
 }

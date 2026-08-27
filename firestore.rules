@@ -77,7 +77,19 @@ service cloud.firestore {
       allow write: if true;
     }
 
-    // 12. System Settings & Banners (Publicly readable)
+    // 12. FCM Device Tokens Collection
+    match /fcmTokens/{tokenId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // 13. Promotional Offers Collection
+    match /promotional_offers/{offerId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // 14. System Settings & Banners (Publicly readable)
     match /settings/{settingId} {
       allow read: if true;
       allow write: if true;
