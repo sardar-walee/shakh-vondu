@@ -101,7 +101,7 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate 
   const handleWhatsapp = () => {
     if (isSold) return;
     const cleanPhone = car.userPhone.replace(/^0/, '964').replace(/\D/g, '');
-    const msg = encodeURIComponent(`سڵاو، لەسەر ڕیکلامی ئۆتۆمبێلی (${car.title}) پەیوەندیت پێوە دەکەم لە شاخی ئۆتۆ.`);
+    const msg = encodeURIComponent(`سڵاو، لەسەر ڕیکلامی ئۆتۆمبێلی (${car.title}) پەیوەندیت پێوە دەکەم لە (شاخ) ئۆتۆ.`);
     window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
   };
 
@@ -171,7 +171,7 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate 
             <div>
               <h3 className="text-base font-black">ئەم ئۆتۆمبێلە فرۆشراوە (SOLD)</h3>
               <p className="text-xs text-rose-100 mt-0.5">
-                زانیاری پەیوەندی و تەلەفۆنی فرۆشیار بەپێی یاساکانی شاخی لابرابوو تاوەکو ناڕەحەتی بۆ فرۆشیار دروست نەبێت.
+                زانیاری پەیوەندی و تەلەفۆنی فرۆشیار بەپێی یاساکانی (شاخ) لابرابوو تاوەکو ناڕەحەتی بۆ فرۆشیار دروست نەبێت.
               </p>
             </div>
           </div>
@@ -475,7 +475,7 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate 
             )}
 
             <div className="pt-2 text-[11px] text-slate-400 text-center font-bold">
-              شاخی بەرپرس نییە لە گرێبەستی کڕین و فرۆشتنی نێوان کڕیار و فرۆشیار.
+              (شاخ) بەرپرس نییە لە گرێبەستی کڕین و فرۆشتنی نێوان کڕیار و فرۆشیار.
             </div>
           </div>
 
@@ -487,7 +487,7 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate 
             </h4>
             <SocialShareBar
               title={car.title}
-              description={`ئۆتۆمبێلی ${car.title} (${car.year}) بە نرخی ${car.priceIqd.toLocaleString()} د.ع لە شاخی ئۆتۆ`}
+              description={`ئۆتۆمبێلی ${car.title} (${car.year}) بە نرخی ${car.priceIqd.toLocaleString()} د.ع لە (شاخ) ئۆتۆ`}
               url={`${window.location.origin}/#car-${car.id}`}
               onOpenModal={() => setShowShareModal(true)}
             />
@@ -502,7 +502,7 @@ export const CarDetailView: React.FC<CarDetailViewProps> = ({ carId, onNavigate 
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         title={car.title}
-        description={`ئۆتۆمبێلی ${car.title} (${car.year}) بە نرخی ${car.priceIqd.toLocaleString()} د.ع لە شاخی ئۆتۆ`}
+        description={`ئۆتۆمبێلی ${car.title} (${car.year}) بە نرخی ${car.priceIqd.toLocaleString()} د.ع لە (شاخ) ئۆتۆ`}
         url={`${window.location.origin}/#car-${car.id}`}
         image={images[0]}
       />

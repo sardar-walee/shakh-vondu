@@ -172,7 +172,7 @@ export const SellerStoreView: React.FC<SellerStoreViewProps> = ({
           <div>
             <h3 className="text-xs font-bold text-slate-400 mb-1">دەربارەی فرۆشگا</h3>
             <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-              {seller.description || 'بەخێربێن بۆ فرۆشگاکەمان لە پلاتفۆرمی شاخی. هەموو کاڵاکان بە کوالیتی بەرز و پاکوخاوێنی دابین دەکرێن.'}
+              {seller.description || 'بەخێربێن بۆ فرۆشگاکەمان لە پلاتفۆرمی (شاخ). هەموو کاڵاکان بە کوالیتی بەرز و پاکوخاوێنی دابین دەکرێن.'}
             </p>
           </div>
 

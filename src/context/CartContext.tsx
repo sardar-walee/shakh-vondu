@@ -102,7 +102,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const grandTotal = subtotal + deliveryFee;
 
   const primarySellerId = items.length > 0 ? items[0].product.sellerId : null;
-  const primarySellerName = items.length > 0 ? (items[0].product.sellerName || 'فرۆشگای شاخی') : null;
+  const primarySellerName = items.length > 0 ? (items[0].product.sellerName || 'فرۆشگای (شاخ)') : null;
 
   return (
     <CartContext.Provider

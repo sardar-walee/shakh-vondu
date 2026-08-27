@@ -78,6 +78,7 @@ const MainApp: React.FC = () => {
         onSelectCity={setSelectedCity}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        onOpenAppDownload={() => setShowAppDownloadModal(true)}
       />
 
       {/* Category Pills Navigation with Left/Right smooth scroll controls */}

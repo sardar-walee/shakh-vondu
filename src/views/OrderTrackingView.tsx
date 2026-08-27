@@ -24,6 +24,7 @@ import { StatusBadge } from '../components/common/Badge';
 import { OrderStatus } from '../types';
 import { OrderRatingModal } from '../components/reviews/OrderRatingModal';
 import { LiveOrderTrackingMap } from '../components/delivery/LiveOrderTrackingMap';
+import { OrderStatusStepper } from '../components/delivery/OrderStatusStepper';
 
 interface OrderTrackingViewProps {
   orderId: string;
@@ -83,81 +84,17 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
   return (
     <div className="max-w-4xl mx-auto space-y-8 pb-16">
       
-      {/* Header & Status Card */}
+      {/* Real-time Order Status Stepper */}
+      <OrderStatusStepper
+        order={order}
+        onAdvanceStatus={handleAdvanceStatus}
+        showDemoControls={true}
+      />
+
+      {/* Real-time Interactive Geolocation Map & Delivery Captain Info */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-400">کۆدی داواکاری:</span>
-              <span className="text-xs font-black text-slate-900 font-latin">{order.orderNumber}</span>
-              <StatusBadge status={order.status} />
-            </div>
-            <p className="text-xs text-slate-500 mt-1">
-              بەروار: {new Date(order.createdAt).toLocaleDateString()} - {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </div>
-
-          {/* Quick Simulation controls for Reviewer */}
-          <div className="flex items-center gap-2">
-            {!isDelivered && !isCancelled && (
-              <button
-                onClick={handleAdvanceStatus}
-                className="px-3.5 py-1.5 rounded-xl bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-bold transition-colors cursor-pointer"
-                title="تاقیکردنەوەی هەنگاوی داهاتوو"
-              >
-                هەنگاوی داهاتوو (Demo Next Step)
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Live Visual Timeline */}
-        {isCancelled ? (
-          <div className="p-6 rounded-2xl bg-rose-50 border border-rose-200 text-center text-rose-700">
-            <AlertCircle className="w-8 h-8 mx-auto mb-2 text-rose-600" />
-            <h4 className="font-bold text-sm">داواکارییەکە هەڵوەشێنراوەتەوە</h4>
-            <p className="text-xs mt-1">ئەم داواکارییە هەڵوەشێنراوەتەوە و هیچ بڕە پارەیەک وەرناگیرێت.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold text-slate-400">هەنگاوەکانی گەیاندن:</h3>
-            
-            {/* Horizontal Timeline on Desktop / Vertical on Mobile */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-              {steps.map((step, idx) => {
-                const isPassed = idx <= currentIndex;
-                const isCurrent = idx === currentIndex;
-
-                return (
-                  <div
-                    key={step.key}
-                    className={`p-3 rounded-2xl border text-center transition-all ${
-                      isCurrent
-                        ? 'bg-orange-500 text-white border-orange-500 shadow-md ring-2 ring-orange-500/20'
-                        : isPassed
-                        ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                        : 'bg-slate-50 text-slate-400 border-slate-100'
-                    }`}
-                  >
-                    <div className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center mb-1.5 ${
-                      isCurrent ? 'bg-white text-orange-600' : isPassed ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-500'
-                    }`}>
-                      {step.icon}
-                    </div>
-                    <h5 className="text-[11px] font-bold">{step.label}</h5>
-                    <p className={`text-[9px] mt-0.5 ${isCurrent ? 'text-orange-100' : isPassed ? 'text-emerald-600' : 'text-slate-400'}`}>
-                      {step.desc}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Real-time Interactive Geolocation Map */}
         {!isCancelled && (
-          <div className="pt-2">
+          <div>
             <h3 className="text-xs font-bold text-slate-400 mb-3 flex items-center gap-1.5">
               <MapPin className="w-4 h-4 text-teal-600" />
               <span>نەخشەی ڕاستەوخۆ و شوێنپێهەڵگرتنی کاپتن (Live GPS Order Map):</span>

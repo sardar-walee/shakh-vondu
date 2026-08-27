@@ -1,20 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  X,
-  Download,
-  Smartphone,
-  CheckCircle,
-  Apple,
-  Share,
-  PlusSquare,
-  Sparkles,
-  QrCode,
-  ShieldCheck,
-  Zap
-} from 'lucide-react';
-import { Logo } from './Logo';
-import { ShakhLogoSVG } from './ShakhLogoSVG';
-import { useNotification } from '../../context/NotificationContext';
+import QRCode from 'qrcode';
+import { Smartphone, Apple, Play, Download, QrCode, Copy, Check, X, ShieldCheck, Sparkles, ExternalLink } from 'lucide-react';
+import { useMarketplace } from '../../context/MarketplaceContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface AppDownloadModalProps {
   isOpen: boolean;
@@ -22,260 +10,177 @@ interface AppDownloadModalProps {
 }
 
 export const AppDownloadModal: React.FC<AppDownloadModalProps> = ({ isOpen, onClose }) => {
-  const { addNotification } = useNotification();
-  const [activeTab, setActiveTab] = useState<'android' | 'ios' | 'qr'>('android');
-  const [downloadProgress, setDownloadProgress] = useState(0);
-  const [isDownloading, setIsDownloading] = useState(false);
-  const [downloadComplete, setDownloadComplete] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const { appVersion } = useMarketplace();
+  const { t } = useLanguage();
+
+  const [activeTab, setActiveTab] = useState<'android' | 'ios'>('android');
+  const [androidQr, setAndroidQr] = useState<string>('');
+  const [iosQr, setIosQr] = useState<string>('');
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Download URLs (can be customized via AppVersion or defaults)
+  const androidUrl = appVersion.androidDownloadUrl || 'https://daim-post.online/download/android/shakh-app.apk';
+  const iosUrl = appVersion.iosDownloadUrl || 'https://apps.apple.com/app/shakh-kurdistan/id640000000';
 
   useEffect(() => {
-    const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-  }, []);
+    if (isOpen) {
+      // Generate QR Code Data URLs
+      QRCode.toDataURL(androidUrl, { width: 220, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } })
+        .then(url => setAndroidQr(url))
+        .catch(err => console.error('Failed to generate Android QR:', err));
+
+      QRCode.toDataURL(iosUrl, { width: 220, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } })
+        .then(url => setIosQr(url))
+        .catch(err => console.error('Failed to generate iOS QR:', err));
+    }
+  }, [isOpen, androidUrl, iosUrl]);
 
   if (!isOpen) return null;
 
-  const triggerDownloadSuccessNotification = () => {
-    addNotification({
-      userId: 'current',
-      title: 'داگرتنی سەرکەوتووانەی ئەپی شاخ 📲',
-      message: 'لەگەڵ شاخ دەگەیتە لوتکە 🏔️ | سوپاس بۆ دابەزاندنی ئەپەکە.',
-      type: 'system',
-      status: 'success'
-    });
-  };
+  const currentUrl = activeTab === 'android' ? androidUrl : iosUrl;
 
-  const handleInstallPwa = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setDeferredPrompt(null);
-        triggerDownloadSuccessNotification();
-        onClose();
-      }
-    } else {
-      // Direct APK download simulation
-      setIsDownloading(true);
-      setDownloadProgress(10);
-      let currentProgress = 10;
-      const interval = setInterval(() => {
-        currentProgress += 25;
-        if (currentProgress >= 100) {
-          clearInterval(interval);
-          setDownloadProgress(100);
-          setIsDownloading(false);
-          setDownloadComplete(true);
-          triggerDownloadSuccessNotification();
-        } else {
-          setDownloadProgress(currentProgress);
-        }
-      }, 350);
-    }
-  };
-
-  const handleSimulateApkDownload = () => {
-    setIsDownloading(true);
-    setDownloadProgress(15);
-    
-    // Trigger actual browser file download for APK
-    try {
-      const dummyApkContent = `SHAKH_APP_INSTALLER_VERSION_2.4\nPlatform: https://daim-post.online\nApp Name: شاخ | Shakh Marketplace & Delivery App\n\nلەگەڵ شاخ دەگەیتە لوتکە 🏔️`;
-      const blob = new Blob([dummyApkContent], { type: 'application/vnd.android.package-archive' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'shakh-marketplace-v2.4.apk';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.warn('File download fallback:', e);
-    }
-
-    let currentProgress = 15;
-    const interval = setInterval(() => {
-      currentProgress += 25;
-      if (currentProgress >= 100) {
-        clearInterval(interval);
-        setDownloadProgress(100);
-        setIsDownloading(false);
-        setDownloadComplete(true);
-        triggerDownloadSuccessNotification();
-      } else {
-        setDownloadProgress(currentProgress);
-      }
-    }, 250);
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(currentUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-fadeIn" dir="rtl">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-6 relative animate-scaleUp max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-0 text-slate-900 dark:text-white">
         
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 left-5 p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        {/* Header with App Branding */}
-        <div className="text-center space-y-3 pt-2 flex flex-col items-center">
-          <div className="relative group cursor-pointer">
-            <ShakhLogoSVG size={120} showGlow={true} />
-          </div>
-
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
-            دابەزاندنی ئەپی فەرمی شاخ (Shakh)
-          </h2>
-          <p className="text-xs font-bold text-[#F97316] font-latin">
-            daim-post.online
-          </p>
-          <p className="text-xs text-slate-500 max-w-xs mx-auto">
-            خێراترین ئەزموونی کڕین، فرۆشتن، داواکردنی خواردن و ئۆتۆمبێل لە کوردستان
-          </p>
-        </div>
-
-        {/* Tabs: Android vs iOS vs QR */}
-        <div className="flex bg-slate-100 p-1 rounded-2xl">
-          <button
-            onClick={() => setActiveTab('android')}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === 'android' ? 'bg-white text-[#F97316] shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Smartphone className="w-4 h-4" />
-            <span>ئەندرۆید (Android)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('ios')}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === 'ios' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Apple className="w-4 h-4" />
-            <span>ئایفۆن (iOS / PWA)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('qr')}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-              activeTab === 'qr' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <QrCode className="w-4 h-4" />
-            <span>کۆدی QR</span>
-          </button>
-        </div>
-
-        {/* Tab Content */}
-        {activeTab === 'android' && (
-          <div className="space-y-4 text-right">
-            <div className="bg-orange-50 border border-orange-200/80 p-4 rounded-2xl text-right space-y-2">
-              <div className="flex items-center gap-2 text-[#F97316] font-bold text-xs">
-                <Zap className="w-4 h-4" />
-                <span>شێوازی پێشنیارکراوی دامەزراندن لەسەر ئەندرۆید:</span>
+        {/* Header */}
+        <div className="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 p-6 text-white relative overflow-hidden">
+          <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none" />
+          <div className="relative z-10 flex items-start justify-between">
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black">
+                <QrCode className="w-4 h-4 text-amber-200" />
+                <span>دابەزاندنی ئەپلیکەیشنی (شاخ)</span>
+                <span className="font-latin bg-white text-orange-600 px-2 py-0.2 rounded-md font-bold text-[11px]">
+                  v{appVersion.version}
+                </span>
               </div>
-              <p className="text-[11px] text-slate-600">
-                ئەپی شاخ وەک <strong>Progressive Web App (PWA)</strong> دروستکراوە. بەبێ پێویستی بە فایلی APK ڕاستەوخۆ دەچێتە سەر شاشەی مۆبایلەکەت و کار دەکات.
+              <h2 className="text-xl font-black text-white mt-1">
+                ئەپەکەت بە سڕینەوەی QR Code دابەزێنە 📲
+              </h2>
+              <p className="text-xs text-white/90">
+                کامێرای مۆبایلەکەت بکەرەوە و لەسەر کۆدەکان ڕابگرە بۆ دابەزاندنی خێرا.
               </p>
             </div>
 
-            {/* Clear Step-by-step for Android Browser */}
-            <div className="bg-slate-50 border border-slate-200 p-4 rounded-2xl space-y-2.5">
-              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <Smartphone className="w-4 h-4 text-orange-500" />
-                <span>هەنگاوەکانی زیادکردن بۆ شاشە لە گۆگڵ کرۆم (Chrome):</span>
-              </h4>
-              <ol className="text-xs text-slate-700 space-y-2 pr-4 list-decimal leading-relaxed">
-                <li>لە ناو براوسەری کرۆم (Chrome)، سێ خاڵەکەی سەرەوە لە لای ڕاست <span className="font-bold text-slate-900">⋮</span> دابگرە.</li>
-                <li>هەڵبژاردەی <strong>"Install app"</strong> یان <strong>"زیادکردن بۆ شاشەی سەرەکی / Add to Home screen"</strong> دابگرە.</li>
-                <li>دوگمەی <strong>"Install / دامەزراندن"</strong> دابگرە. ئایکۆنی شاخ دەکەوێتە سەر شاشە بەبێ هیچ هەڵەیەک!</li>
-              </ol>
+            <button
+              onClick={onClose}
+              className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white cursor-pointer transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content Body */}
+        <div className="p-6 space-y-6">
+          
+          {/* OS Platform Tabs */}
+          <div className="grid grid-cols-2 gap-3 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl">
+            <button
+              onClick={() => setActiveTab('android')}
+              className={`py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                activeTab === 'android'
+                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Play className="w-4 h-4 fill-white" />
+              <span>ئەندرۆید (Android APK)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('ios')}
+              className={`py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                activeTab === 'ios'
+                  ? 'bg-slate-900 dark:bg-slate-700 text-white shadow-lg shadow-slate-900/30'
+                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Apple className="w-4 h-4 fill-white" />
+              <span>ئەپڵ (Apple iOS)</span>
+            </button>
+          </div>
+
+          {/* QR Code Card */}
+          <div className="flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-3xl p-6 text-center space-y-4">
+            
+            <div className="relative group p-3 bg-white rounded-2xl shadow-xl border border-slate-200/80">
+              {activeTab === 'android' ? (
+                androidQr ? (
+                  <img src={androidQr} alt="Android App QR Code" className="w-48 h-48 rounded-lg" />
+                ) : (
+                  <div className="w-48 h-48 bg-slate-100 rounded-lg flex items-center justify-center animate-pulse text-xs text-slate-400">
+                    خەریکی دروستکردنی QR...
+                  </div>
+                )
+              ) : (
+                iosQr ? (
+                  <img src={iosQr} alt="iOS App QR Code" className="w-48 h-48 rounded-lg" />
+                ) : (
+                  <div className="w-48 h-48 bg-slate-100 rounded-lg flex items-center justify-center animate-pulse text-xs text-slate-400">
+                    خەریکی دروستکردنی QR...
+                  </div>
+                )
+              )}
+
+              <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl flex items-center justify-center">
+                <span className="text-[10px] font-bold bg-slate-900 text-white px-2 py-1 rounded-md shadow-md">
+                  QR Code بۆ دابەزاندنی (شاخ)
+                </span>
+              </div>
             </div>
 
-            {/* Note about "غير مدعوم" / Unknown sources error */}
-            <div className="bg-amber-50 border border-amber-200/90 p-3.5 rounded-2xl text-[11px] text-amber-900 space-y-1">
-              <span className="font-bold block flex items-center gap-1">
-                ⚠️ ئەگەر لە کاتی دابەزاندن نوسرا «غير مدعوم» یان «فایلەکە ناکرێتەوە»:
-              </span>
-              <p className="text-amber-800 leading-relaxed">
-                ئەم پەیامە کاتێک دەردەکەوێت کە ڕاستەوخۆ دەتەوێت فایلی APK دابەزێنیت لە کاتێکدا سیستەمی مۆبایلەکەت پارێزراوە. 
-                باشترین چارەسەر ئەوەیە لە ڕێگەی گۆگڵ کرۆم هەڵبژاردەی <strong>Install app (دامەزراندنی ئەپ)</strong> بەکاربهێنیت.
+            <div className="space-y-1">
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">
+                {activeTab === 'android' ? 'فایلی فەرمی APK بۆ ئەندرۆید' : 'ئەپلیکەیشنی فەرمی بۆ ئایفۆن و ئایپاد'}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                {activeTab === 'android'
+                  ? 'کۆدەکە بە کامێرای مۆبایلەکەت سکان بکە یان دوگمەی خوارەوە دابگرە بۆ دابەزاندنی دەستبەجێ.'
+                  : 'لە ڕێگەی App Store یان TestFlight راستەوخۆ دەتوانیت ئەپەکە دابەزێنیت.'}
               </p>
             </div>
 
-            {deferredPrompt && (
-              <button
-                onClick={handleInstallPwa}
-                className="w-full py-3.5 px-6 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer"
+            {/* Direct Action Buttons */}
+            <div className="flex flex-wrap items-center justify-center gap-2.5 w-full pt-2">
+              <a
+                href={currentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex-1 py-3 px-4 rounded-2xl font-black text-xs text-white shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer ${
+                  activeTab === 'android' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' : 'bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white shadow-slate-900/20'
+                }`}
               >
-                <Smartphone className="w-4 h-4" />
-                <span>دامەزراندنی دەستبەجێ (Install App Now)</span>
+                <Download className="w-4 h-4" />
+                <span>{activeTab === 'android' ? 'داگرتنی دەستبەجێی APK' : 'کردنەوە لە App Store'}</span>
+                <ExternalLink className="w-3.5 h-3.5 opacity-70" />
+              </a>
+
+              <button
+                onClick={handleCopyLink}
+                className="py-3 px-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-2xl font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="کۆپیکردنی لێنکی دابەزاندن"
+              >
+                {copiedLink ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                <span>{copiedLink ? 'کۆپی کرا!' : 'کۆپیکردنی لێنک'}</span>
               </button>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'ios' && (
-          <div className="space-y-4 text-right">
-            <div className="bg-blue-50 border border-blue-200 p-4 rounded-2xl space-y-3">
-              <h4 className="text-xs font-bold text-blue-900 flex items-center gap-1.5">
-                <Apple className="w-4 h-4" />
-                <span>چۆنیەتی دابەزاندن بۆ ئایفۆن و ئایپاد (iOS):</span>
-              </h4>
-              <ol className="text-xs text-slate-700 space-y-2.5 pr-4 list-decimal leading-relaxed">
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-blue-600">١.</span>
-                  <span>ماڵپەڕەکە لە براوسەری <strong>Safari</strong> بکەرەوە.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-blue-600">٢.</span>
-                  <span>کرتە لەسەر دوگمەی هاوبەشکردن (<Share className="w-3.5 h-3.5 inline text-blue-500 mx-1" /> Share) لە خوارەوە بکە.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-blue-600">٣.</span>
-                  <span>هەڵبژاردەی (<PlusSquare className="w-3.5 h-3.5 inline text-slate-700 mx-1" /> Add to Home Screen) هەڵبژێرە.</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="font-bold text-blue-600">٤.</span>
-                  <span>ئایکۆنی شاخ دەچێتە سەر شاشەی مۆبایلەکەت هاوشێوەی ئەپ!</span>
-                </li>
-              </ol>
             </div>
-          </div>
-        )}
 
-        {activeTab === 'qr' && (
-          <div className="text-center space-y-4">
-            <p className="text-xs text-slate-600">
-              کامێرای مۆبایلەکەت ڕابگرە لەسەر ئەم کۆدە بۆ کردنەوەی ئەپ و داگرتن:
-            </p>
-            <div className="inline-block p-4 bg-white rounded-3xl border-2 border-slate-200 shadow-md">
-              <img
-                src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://daim-post.online"
-                alt="Shakh QR Code"
-                className="w-44 h-44 rounded-xl mx-auto"
-              />
-            </div>
-            <p className="text-[11px] font-bold text-orange-600 font-latin">
-              daim-post.online
-            </p>
           </div>
-        )}
 
-        {/* Footer Trust Guarantee */}
-        <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-2 text-[11px] text-slate-500 font-semibold">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>ئەپی پشکنراو، سەلامەت و بێ ڤایرۆس بۆ هەموو مۆبایلەکان</span>
+          {/* Guarantee Badge */}
+          <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/40 text-xs text-amber-900 dark:text-amber-200 font-bold">
+            <ShieldCheck className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <span>ئەم ئەپلیکەیشنە پشکنینی ئاسایشی بۆ کراوە و پاکە لە ھەر ڤایرۆس یان زیانێک.</span>
+          </div>
+
         </div>
 
       </div>

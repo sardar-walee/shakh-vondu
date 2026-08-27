@@ -28,17 +28,19 @@ export const AppUpdateManager: React.FC = () => {
 
   const [version, setVersion] = useState(appVersion.version || '2.5.0');
   const [buildNumber, setBuildNumber] = useState(appVersion.buildNumber || 250);
-  const [title, setTitle] = useState(appVersion.title || 'وەشانی نوێی شاخی بەردەستە');
-  const [description, setDescription] = useState(appVersion.description || 'سیستەمی تەواوی بەڕێوەبردنی کاپتنەکان بۆ هەموو ڕۆڵەکان و باشترکردنی فلتەرەکان');
+  const [title, setTitle] = useState(appVersion.title || 'وەشانی نوێی (شاخ) بەردەستە');
+  const [description, setDescription] = useState(appVersion.description || 'سیستەمی تەواوی بەڕێوەبردنی کاپتنەکان بۆ هەموو ڕۆڵەکان و دروستکردنی QR Code ی دابەزاندنی ئەپ');
   const [changelog, setChangelog] = useState<string[]>(appVersion.changelog || [
-    'زیادکردنی بەڕێوەبردنی تەواوی کاپتنانی گەیاندن لە داشبۆردی هەموو ڕۆڵەکان',
-    'پشتیوانی زانیارییە وردەکانی کاپتن (جۆری ئامراز، تابلۆ، پەیوەندی خێرا، چاودێری ئەرک)',
-    'سیستەمی نوێی ئاگادارکردنەوەی بەکارهێنەران بۆ هەر ئەپدەیتێکی نوێ',
-    'چاککردنی فلتەری پۆلە لاوەکییەکان بۆ هەموو ٩ پۆلەکە'
+    'دروستکردنی QR Code بۆ دابەزاندنی خێرای ئەپ بۆ ئەندرۆید و ئەپڵ',
+    'سیستەمی نوێی ئاگاداری ڕاستەوخۆ و ناچاری بۆ بەردەستبوونی هەر ئەپدەیتێکی نوێ',
+    'گۆڕینی ناوی فەرمی پلاتفۆرم بۆ (شاخ)',
+    'زیادکردنی بەڕێوەبردنی تەواوی کاپتنانی گەیاندن لە داشبۆردی هەموو ڕۆڵەکان'
   ]);
   const [newLogItem, setNewLogItem] = useState('');
-  const [isMandatory, setIsMandatory] = useState(appVersion.isMandatory || false);
+  const [isMandatory, setIsMandatory] = useState<boolean>(appVersion.isMandatory || true);
   const [actionUrl, setActionUrl] = useState(appVersion.actionUrl || '');
+  const [androidDownloadUrl, setAndroidDownloadUrl] = useState(appVersion.androidDownloadUrl || 'https://daim-post.online/download/android/shakh-app.apk');
+  const [iosDownloadUrl, setIosDownloadUrl] = useState(appVersion.iosDownloadUrl || 'https://apps.apple.com/app/shakh-kurdistan/id640000000');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishSuccess, setPublishSuccess] = useState<string | null>(null);
 
@@ -71,6 +73,8 @@ export const AppUpdateManager: React.FC = () => {
       changelog: changelog.filter(l => l.trim().length > 0),
       isMandatory,
       actionUrl: actionUrl.trim() || undefined,
+      androidDownloadUrl: androidDownloadUrl.trim() || undefined,
+      iosDownloadUrl: iosDownloadUrl.trim() || undefined,
       publishedBy: 'سوپەر ئەدمین'
     };
 
@@ -174,7 +178,7 @@ export const AppUpdateManager: React.FC = () => {
                 required
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="وەک: وەشانی نوێی شاخی ٢.٥.٠ بەردەستە!"
+                placeholder="وەک: وەشانی نوێی (شاخ) ٢.٥.٠ بەردەستە!"
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-orange-500 font-bold"
               />
             </div>
@@ -298,7 +302,7 @@ export const AppUpdateManager: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-orange-400" />
-                  <span className="text-xs font-black">ئەپدەیتی نوێی شاخی</span>
+                  <span className="text-xs font-black">ئەپدەیتی نوێی (شاخ)</span>
                 </div>
                 <span className="text-[10px] font-latin font-bold bg-orange-500 text-white px-2 py-0.5 rounded-md">
                   v{version}

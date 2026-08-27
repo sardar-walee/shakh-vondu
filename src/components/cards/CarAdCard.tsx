@@ -85,7 +85,7 @@ export const CarAdCard: React.FC<CarAdCardProps> = ({ car, onClick }) => {
     e.stopPropagation();
     if (isSold) return;
     const cleanPhone = car.userPhone.replace(/^0/, '964').replace(/\D/g, '');
-    const msg = encodeURIComponent(`سڵاو، لەسەر ڕیکلامی ئۆتۆمبێلی (${car.title}) لە شاخی ئۆتۆ (Shakh Auto) پەیوەندیت پێوە دەکەم.`);
+    const msg = encodeURIComponent(`سڵاو، لەسەر ڕیکلامی ئۆتۆمبێلی (${car.title}) لە (شاخ) ئۆتۆ (Shakh Auto) پەیوەندیت پێوە دەکەم.`);
     window.open(`https://wa.me/${cleanPhone}?text=${msg}`, '_blank');
   };
 
@@ -147,7 +147,7 @@ export const CarAdCard: React.FC<CarAdCardProps> = ({ car, onClick }) => {
                 <span>{t('فرۆشراوە')} (SOLD)</span>
               </span>
               <span className="text-[11px] font-bold text-rose-100 bg-black/40 px-3 py-1 rounded-xl">
-                پەیوەندی بەپێی یاساکانی شاخی لابرابوو
+                پەیوەندی بەپێی یاساکانی (شاخ) لابرابوو
               </span>
             </div>
           )}
@@ -380,7 +380,7 @@ export const CarAdCard: React.FC<CarAdCardProps> = ({ car, onClick }) => {
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         title={car.title}
-        description={`ئۆتۆمبێلی ${car.title} (${car.year}) بە نرخی ${car.priceIqd.toLocaleString()} د.ع لە شاخی ئۆتۆ`}
+        description={`ئۆتۆمبێلی ${car.title} (${car.year}) بە نرخی ${car.priceIqd.toLocaleString()} د.ع لە (شاخ) ئۆتۆ`}
         url={`${window.location.origin}/#car-${car.id}`}
         image={images[0]}
       />

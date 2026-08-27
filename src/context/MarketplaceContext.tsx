@@ -91,6 +91,9 @@ interface MarketplaceContextType {
   updateSellerProfile: (sellerId: string, updates: Partial<SellerProfile>) => Promise<void>;
   updateSellerCommissionRate: (sellerId: string, newRate: number) => Promise<void>;
   updateSellerCommission: (sellerId: string, newRate: number) => Promise<void>;
+  confirmCommissionAgreement: (sellerId: string) => Promise<{ success: boolean }>;
+  requestCommissionNegotiation: (sellerId: string, proposedRate: number, note: string) => Promise<{ success: boolean }>;
+  respondToCommissionNegotiation: (sellerId: string, approvedRate: number, adminNote?: string) => Promise<{ success: boolean }>;
   toggleSellerVerification: (sellerId: string) => Promise<void>;
   updateSellerDeliveryZone: (sellerId: string, zoneSettings: Partial<SellerProfile['deliveryZone']>) => Promise<void>;
   updateStoreDeliverySettings: (sellerId: string, settings: {
@@ -403,18 +406,20 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const DEFAULT_APP_VERSION: AppVersionInfo = {
     version: '2.5.0',
     buildNumber: 250,
-    releaseDate: '2026-08-24',
-    title: 'وەشانی نوێی شاخی ٢.٥.٠ بەردەستە',
-    description: 'سیستەمی تەواوی بەڕێوەبردنی کاپتنەکان بۆ هەموو ڕۆڵەکان، ئاگادارکردنەوەی ئەپدەیتەکان و خێرایی زیاتری سیستم',
+    releaseDate: '2026-08-27',
+    title: 'وەشانی نوێی (شاخ) ٢.٥.٠ بەردەستە',
+    description: 'سیستەمی تەواوی بەڕێوەبردنی کاپتنەکان بۆ هەموو ڕۆڵەکان، دروستکردنی QR Code ی دابەزاندنی ئەپ بۆ ئەندرۆید و ئەپڵ، و بەرزکردنەوەی ئاسایشی داتاکان',
     changelog: [
+      'دروستکردنی QR Code بۆ دابەزاندنی خێرای ئەپلیکەیشن بۆ ئەندرۆید (APK) و ئەپڵ (iOS)',
+      'سیستەمی زیرەکی ئاگاداری زینوو و ناچاری بۆ بەردەستبوونی هەر ئەپدەیتێکی نوێ لەسەر پلاتفۆرمی (شاخ)',
+      'گۆڕینی ناوی فەرمی پلاتفۆرم بۆ (شاخ)',
       'زیادکردنی بەڕێوەبردنی تەواوی کاپتنانی گەیاندن (Delivery Captains) لە داشبۆردی سەرجەم ڕۆڵەکان و سوپەر ئەدمین',
-      'پشتیوانی تەواوی زانیارییەکانی کاپتن (جۆری ئامراز، تابلۆ، پەیوەندی خێرا، چاودێری ئەرک و دەستکاری)',
-      'سیستەمی زیرەکی ئاگادارکردنەوەی بەکارهێنەران لە کاتی بەردەستبوونی هەر ئەپدەیتێکی نوێ لەسەر ئەپلیکەیشن',
-      'چاککردنی فلتەری بەشە لاوەکییەکان بۆ هەموو ٩ پۆلەکە بە شێوەیەکی زیرەک و فرە-زمان',
-      'بەرزکردنەوەی خێرایی و پاراستنی داتاکان بە کلاود فایەربەیس'
+      'پشتیوانی زانیارییە وردەکانی کاپتن (جۆری ئامراز، تابلۆ، پەیوەندی خێرا، چاودێری ئەرک و دەستکاری)'
     ],
-    isMandatory: false,
-    publishedBy: 'سوپەر ئەدمینی شاخی'
+    isMandatory: true,
+    androidDownloadUrl: 'https://daim-post.online/download/android/shakh-app.apk',
+    iosDownloadUrl: 'https://apps.apple.com/app/shakh-kurdistan/id640000000',
+    publishedBy: 'سوپەر ئەدمینی (شاخ)'
   };
 
   const [appVersion, setAppVersion] = useState<AppVersionInfo>(() => {
@@ -806,7 +811,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           storeName: newProduct.sellerName || currentUser.storeName || currentUser.fullName || 'فرۆشگای شاخ',
           slug: sellerIdToUse,
           category: newProduct.category,
-          description: 'فرۆشگای چالاک لە شاخی',
+          description: 'فرۆشگای چالاک لە (شاخ)',
           logoUrl: currentUser.avatarUrl || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
           coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
           rating: 5.0,
@@ -1124,6 +1129,89 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   const updateSellerCommission = updateSellerCommissionRate;
+
+  const confirmCommissionAgreement = async (sellerId: string): Promise<{ success: boolean }> => {
+    const seller = sellers.find(s => s.id === sellerId);
+    if (!seller) return { success: false };
+
+    const updates = {
+      commissionAgreementStatus: 'agreed' as const,
+      commissionAgreedAt: new Date().toISOString(),
+      commissionAgreedRate: seller.commissionRate
+    };
+
+    setSellers(prev => prev.map(s => (s.id === sellerId ? { ...s, ...updates } : s)));
+    try {
+      await updateDoc(doc(db, 'sellers', sellerId), updates);
+    } catch (e) {}
+
+    addNotification({
+      userId: sellerId,
+      title: 'پەسەندکردنی فەرمی ڕێککەوتنی کۆمسیۆن ✓',
+      message: `تۆ بە فەرمی ڕێککەوتنی کۆمسیۆنی شاخت بە ڕێژەی ${seller.commissionRate}% پەسەند کرد.`,
+      type: 'commission'
+    });
+
+    return { success: true };
+  };
+
+  const requestCommissionNegotiation = async (
+    sellerId: string,
+    proposedRate: number,
+    note: string
+  ): Promise<{ success: boolean }> => {
+    const seller = sellers.find(s => s.id === sellerId);
+    if (!seller) return { success: false };
+
+    const updates = {
+      commissionAgreementStatus: 'requested_negotiation' as const,
+      commissionNegotiationProposedRate: proposedRate,
+      commissionNegotiationNote: note,
+      commissionNegotiationRequestedAt: new Date().toISOString()
+    };
+
+    setSellers(prev => prev.map(s => (s.id === sellerId ? { ...s, ...updates } : s)));
+    try {
+      await updateDoc(doc(db, 'sellers', sellerId), updates);
+    } catch (e) {}
+
+    addNotification({
+      userId: 'admin',
+      title: `داواکاری گۆڕینی ڕێژەی کۆمسیۆن 💬 (${seller.storeName})`,
+      message: `دوکاندار داوای دیاریکردنی کۆمسیۆنی ${proposedRate}% دەکات. هۆکار: ${note}`,
+      type: 'commission'
+    });
+
+    return { success: true };
+  };
+
+  const respondToCommissionNegotiation = async (
+    sellerId: string,
+    approvedRate: number,
+    adminNote?: string
+  ): Promise<{ success: boolean }> => {
+    const updates = {
+      commissionRate: approvedRate,
+      commissionAgreementStatus: 'agreed' as const,
+      commissionAgreedAt: new Date().toISOString(),
+      commissionAgreedRate: approvedRate,
+      commissionAdminResponseNote: adminNote || ''
+    };
+
+    setSellers(prev => prev.map(s => (s.id === sellerId ? { ...s, ...updates } : s)));
+    try {
+      await updateDoc(doc(db, 'sellers', sellerId), updates);
+    } catch (e) {}
+
+    addNotification({
+      userId: sellerId,
+      title: 'پەسەندکردنی داواکاری گۆڕینی کۆمسیۆن 🎉',
+      message: `سوپەر ئەدمینی شاخ ڕێژەی کۆمسیۆنی دوکانەکەت بە فەرمی گۆڕی بۆ ${approvedRate}%.`,
+      type: 'commission'
+    });
+
+    return { success: true };
+  };
 
   const toggleSellerVerification = async (sellerId: string) => {
     const seller = sellers.find(s => s.id === sellerId);
@@ -2752,6 +2840,9 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         updateSellerProfile,
         updateSellerCommissionRate,
         updateSellerCommission,
+        confirmCommissionAgreement,
+        requestCommissionNegotiation,
+        respondToCommissionNegotiation,
         toggleSellerVerification,
         updateSellerDeliveryZone,
         updateStoreDeliverySettings,

@@ -63,6 +63,8 @@ export interface AppVersionInfo {
   isMandatory: boolean;
   minSupportedVersion?: string;
   actionUrl?: string;
+  androidDownloadUrl?: string;
+  iosDownloadUrl?: string;
   publishedBy?: string;
   updatedAt?: string;
 }
@@ -181,6 +183,13 @@ export interface SellerProfile {
   address: string;
   phone: string;
   commissionRate: number;
+  commissionAgreementStatus?: 'agreed' | 'pending_agreement' | 'requested_negotiation';
+  commissionAgreedAt?: string;
+  commissionAgreedRate?: number;
+  commissionNegotiationProposedRate?: number;
+  commissionNegotiationNote?: string;
+  commissionNegotiationRequestedAt?: string;
+  commissionAdminResponseNote?: string;
   isOpen: boolean;
   openingHours?: string;
   rating: number;

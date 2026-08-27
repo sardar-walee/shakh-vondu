@@ -262,7 +262,7 @@ export const CarMarketplaceView: React.FC<CarMarketplaceViewProps> = ({
         <div className="max-w-2xl space-y-4">
           <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 text-xs font-black px-3.5 py-1.5 rounded-2xl border border-amber-500/30">
             <Car className="w-4 h-4 text-amber-400" />
-            <span>شاخی ئۆتۆ (Shakh Auto) • گەورەترین پێشانگای کوردستان</span>
+            <span>(شاخ) ئۆتۆ (Shakh Auto) • گەورەترین پێشانگای کوردستان</span>
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-black leading-tight">
@@ -270,7 +270,7 @@ export const CarMarketplaceView: React.FC<CarMarketplaceViewProps> = ({
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-bold">
-            هەزاران کڕیار و فرۆشیار ڕۆژانە لە شاخی ئۆتۆمبێل دەفرۆشن. ڕیکلامەکەت دابنێ بە پاکێجی ٧ ڕۆژ، ١٥ ڕۆژ یان ٣٠ ڕۆژی VIP لەگەڵ تەسدیقی خێرای پارەدان.
+            هەزاران کڕیار و فرۆشیار ڕۆژانە لە (شاخ) ئۆتۆمبێل دەفرۆشن. ڕیکلامەکەت دابنێ بە پاکێجی ٧ ڕۆژ، ١٥ ڕۆژ یان ٣٠ ڕۆژی VIP لەگەڵ تەسدیقی خێرای پارەدان.
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-3">

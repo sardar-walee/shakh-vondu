@@ -241,7 +241,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const adminUser: UserProfile = {
           id: adminId,
           email: 'shakh8002@gmail.com',
-          fullName: 'سووپەر ئەدمینی شاخی (Super Admin)',
+          fullName: 'سووپەر ئەدمینی (شاخ) (Super Admin)',
           phone: '07504796924',
           city: 'Bardarash (بەردەڕەش)',
           area: 'ناو بازاڕ',
@@ -498,7 +498,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         storeName: currentUser.storeName || currentUser.fullName || 'فرۆشگای من',
         slug: `store-${currentUser.id}`,
         category: sellerCategory || currentUser.category || 'food',
-        description: 'فرۆشگای فەرمی لە شاخی',
+        description: 'فرۆشگای فەرمی لە (شاخ)',
         logoUrl: currentUser.avatarUrl || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
         coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
         rating: 5.0,

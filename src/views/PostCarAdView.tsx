@@ -109,10 +109,10 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
   };
 
   const paymentAccounts: Record<string, { title: string; number: string; owner: string }> = {
-    fastpay: { title: 'فاستپەی (FastPay)', number: '0750 800 2000', owner: 'شاخی ئۆتۆ (Shakh Auto)' },
+    fastpay: { title: 'فاستپەی (FastPay)', number: '0750 800 2000', owner: '(شاخ) ئۆتۆ (Shakh Auto)' },
     fib: { title: 'بانکی یەکەمی عێراقی (FIB)', number: 'IQ99FIBB0000001234567890', owner: 'Shakh Platform LTD' },
-    zaincash: { title: 'زەین کاش (ZainCash)', number: '0780 123 4567', owner: 'شاخی پلاتفۆرم' },
-    asiapay: { title: 'ئاسیاپەی (AsiaPay)', number: '0770 123 4567', owner: 'شاخی ئۆتۆ' }
+    zaincash: { title: 'زەین کاش (ZainCash)', number: '0780 123 4567', owner: '(شاخ) پلاتفۆرم' },
+    asiapay: { title: 'ئاسیاپەی (AsiaPay)', number: '0770 123 4567', owner: '(شاخ) ئۆتۆ' }
   };
 
   const handlePriceIqdChange = (val: number) => {
@@ -744,7 +744,7 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
                   >
                     {pkg.isVip && (
                       <span className="absolute -top-3 right-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full shadow-sm">
-                        ★ پێشنیاری شاخی (VIP)
+                        ★ پێشنیاری (شاخ) (VIP)
                       </span>
                     )}
 
@@ -854,7 +854,7 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
                   </span>
                 </div>
                 <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
-                  تکایە سکرینشۆت یان وێنەی وەسڵی حەواڵەکردنی پارەکە لە ڕێگەی فایلی خوارەوە هەڵبژێرە. پۆستەکەت بە دۆخی <span className="text-amber-600 dark:text-amber-400 font-black">چاوەڕوانی تەسدیق (Pending Approval)</span> تۆمار دەکرێت و دەستبەجێ دوای وردبینی سوپەر ئەدمین، بۆ هەموو کڕیارانی کوردستان لە شاخی ئۆتۆ دەردەکەوێت.
+                  تکایە سکرینشۆت یان وێنەی وەسڵی حەواڵەکردنی پارەکە لە ڕێگەی فایلی خوارەوە هەڵبژێرە. پۆستەکەت بە دۆخی <span className="text-amber-600 dark:text-amber-400 font-black">چاوەڕوانی تەسدیق (Pending Approval)</span> تۆمار دەکرێت و دەستبەجێ دوای وردبینی سوپەر ئەدمین، بۆ هەموو کڕیارانی کوردستان لە (شاخ) ئۆتۆ دەردەکەوێت.
                 </p>
               </div>
             </div>

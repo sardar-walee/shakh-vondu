@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Sparkles, RefreshCw, CheckCircle2, AlertTriangle, ArrowRight, X, Layers, BellRing, Smartphone, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
+import { Sparkles, RefreshCw, CheckCircle2, AlertTriangle, ArrowRight, X, Layers, Download, QrCode, Smartphone, Apple, Play, ShieldAlert } from 'lucide-react';
 import { useMarketplace } from '../../context/MarketplaceContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -15,15 +16,36 @@ export const AppUpdateAlert: React.FC = () => {
 
   const [isUpdating, setIsUpdating] = useState(false);
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  const [showQrOptions, setShowQrOptions] = useState(false);
+  const [androidQr, setAndroidQr] = useState<string>('');
+  const [iosQr, setIosQr] = useState<string>('');
+
+  const androidUrl = appVersion.androidDownloadUrl || 'https://daim-post.online/download/android/shakh-app.apk';
+  const iosUrl = appVersion.iosDownloadUrl || 'https://apps.apple.com/app/shakh-kurdistan/id640000000';
+
+  // Force open update modal when update is available
+  useEffect(() => {
+    if (isAppUpdateAvailable && !isUpdateModalOpen) {
+      setIsUpdateModalOpen(true);
+    }
+  }, [isAppUpdateAvailable, isUpdateModalOpen, setIsUpdateModalOpen]);
+
+  useEffect(() => {
+    if (showQrOptions) {
+      QRCode.toDataURL(androidUrl, { width: 160, margin: 1 }).then(url => setAndroidQr(url)).catch(err => console.warn(err));
+      QRCode.toDataURL(iosUrl, { width: 160, margin: 1 }).then(url => setIosQr(url)).catch(err => console.warn(err));
+    }
+  }, [showQrOptions, androidUrl, iosUrl]);
 
   // If no update is available and modal is closed, render nothing
   if (!isAppUpdateAvailable && !isUpdateModalOpen) {
     return null;
   }
 
+  const isMandatory = appVersion.isMandatory || isAppUpdateAvailable;
+
   const handleApplyUpdate = () => {
     setIsUpdating(true);
-    // Simulate cache clear and refresh
     dismissUpdateNotification(appVersion.version);
     setTimeout(() => {
       setIsUpdating(false);
@@ -38,56 +60,9 @@ export const AppUpdateAlert: React.FC = () => {
 
   return (
     <>
-      {/* 1. Floating Animated Update Pill / Banner (when modal is closed but update is available) */}
-      {isAppUpdateAvailable && !isUpdateModalOpen && (
-        <div className="fixed bottom-20 md:bottom-6 right-4 left-4 md:left-auto md:right-6 z-50 max-w-md animate-bounce-subtle">
-          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 rounded-2xl shadow-2xl border border-orange-500/40 backdrop-blur-lg flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/30 flex items-center justify-center font-black">
-                  <Sparkles className="w-5 h-5 text-orange-400 animate-spin" style={{ animationDuration: '6s' }} />
-                </div>
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-slate-900 animate-ping" />
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-rose-500 rounded-full border-2 border-slate-900" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-white">{t('ئەپدەیتی نوێی شاخی')}</span>
-                  <span className="text-[10px] font-latin font-bold bg-orange-500 text-white px-2 py-0.5 rounded-md">
-                    v{appVersion.version}
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300 line-clamp-1 mt-0.5">
-                  {appVersion.title || t('نوێکاری و تایبەتمەندی نوێ بەردەستە')}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <button
-                onClick={() => setIsUpdateModalOpen(true)}
-                className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow-md transition-transform active:scale-95 cursor-pointer flex items-center gap-1"
-              >
-                <span>{t('نوێکردنەوە')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-              {!appVersion.isMandatory && (
-                <button
-                  onClick={() => dismissUpdateNotification(appVersion.version)}
-                  className="p-1 text-slate-400 hover:text-white rounded-lg cursor-pointer"
-                  title={t('دواتر')}
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 2. Full Update Modal */}
-      {isUpdateModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+      {/* Forced / Blocking Update Modal */}
+      {(isUpdateModalOpen || isAppUpdateAvailable) && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl space-y-0 text-slate-900 dark:text-white">
             
             {/* Header Banner */}
@@ -97,20 +72,20 @@ export const AppUpdateAlert: React.FC = () => {
                 <div className="space-y-1.5">
                   <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-black">
                     <Sparkles className="w-4 h-4 text-amber-200" />
-                    <span>{t('ئەپدەیت و وەشانی فەرمی')}</span>
+                    <span>{t('ئەپدەیت و وەشانی فەرمی (شاخ)')}</span>
                     <span className="font-latin bg-white text-orange-600 px-2 py-0.2 rounded-md font-bold text-[11px]">
                       v{appVersion.version}
                     </span>
                   </div>
                   <h2 className="text-xl font-black text-white mt-1">
-                    {appVersion.title || t('وەشانی نوێی شاخی بەردەستە!')}
+                    {appVersion.title || t('وەشانی نوێی (شاخ) بەردەستە!')}
                   </h2>
                   <p className="text-xs text-white/90">
-                    {t('بەرواری دەرچوون:')} {appVersion.releaseDate || '2026-08-25'}
+                    {t('بەرواری دەرچوون:')} {appVersion.releaseDate || '2026-08-27'}
                   </p>
                 </div>
 
-                {!appVersion.isMandatory && (
+                {!isMandatory && (
                   <button
                     onClick={() => setIsUpdateModalOpen(false)}
                     className="p-2 bg-white/20 hover:bg-white/30 rounded-full text-white cursor-pointer transition-colors"
@@ -124,6 +99,15 @@ export const AppUpdateAlert: React.FC = () => {
             {/* Content Body */}
             <div className="p-6 space-y-5">
               
+              {/* Mandatory Notice Banner */}
+              <div className="p-3.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 rounded-2xl flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200 font-bold leading-relaxed">
+                <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5 animate-pulse" />
+                <div>
+                  <span className="block font-black text-sm mb-0.5">ئاگاداری ئەپدەیتی نوێ 🚀</span>
+                  <span>ئەم وەشانه پێویستە بۆ بەردەوامبوونی کارکردنی سیستم. تکایە ئەپدەیتی بکەرەوە بۆ ئەوەی بتوانیت بەردەوام بیت لە بەکارهێنانی پلاتفۆرمی (شاخ).</span>
+                </div>
+              </div>
+
               {/* Overview Description */}
               {appVersion.description && (
                 <div className="p-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/40 rounded-2xl text-xs text-orange-900 dark:text-orange-200 leading-relaxed font-medium">
@@ -138,13 +122,12 @@ export const AppUpdateAlert: React.FC = () => {
                   <span>{t('تایبەتمەندی و گۆڕانکارییە نوێیەکان لەم وەشانەدا:')}</span>
                 </h4>
 
-                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {(appVersion.changelog && appVersion.changelog.length > 0 ? appVersion.changelog : [
-                    'ڕێکخستن و دیزاینی مۆدێرنی مێنیو و کۆکردنەوەی بەشەکان لە ناو یەک لێبل',
-                    'چاککردنی تەواوی دۆخی تاریک (Dark Mode) لە هەموو بەشەکانی پلاتفۆرم',
-                    'پشتیوانی زانیارییە وردەکانی کاپتن و چاودێری ئەرکەکان',
-                    'سیستەمی زیرەکی ئاگاداری ڕاستەوخۆ بۆ بەردەستبوونی هەر ئەپدەیتێکی نوێ',
-                    'بەرزکردنەوەی خێرایی و پاراستنی داتاکان بە کلاود فایەربەیس'
+                    'دروستکردنی QR Code بۆ دابەزاندنی ئەپ بۆ ئەندرۆید و ئەپڵ',
+                    'سیستەمی زیرەکی ئاگاداری ڕاستەوخۆ و ناچاری بۆ بەردەستبوونی هەر ئەپدەیتێکی نوێ',
+                    'گۆڕینی ناوی فەرمی پلاتفۆرم بۆ (شاخ)',
+                    'نوێکردنەوەی تەواوی داتابەیسی کلاود فایەربەیس و خێرایی سیستم'
                   ]).map((item, idx) => (
                     <div
                       key={idx}
@@ -157,20 +140,66 @@ export const AppUpdateAlert: React.FC = () => {
                 </div>
               </div>
 
-              {/* Mandatory warning if applicable */}
-              {appVersion.isMandatory && (
-                <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 rounded-xl flex items-center gap-2.5 text-xs text-amber-900 dark:text-amber-200 font-bold">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                  <span>{t('ئەم ئەپدەیتە ناچارییە بۆ پاراستنی ئەمنییەت و دروستی کارکردنی ئەپ.')}</span>
-                </div>
-              )}
+              {/* Toggle QR Code Download Panel */}
+              <div className="pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowQrOptions(!showQrOptions)}
+                  className="w-full py-2.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <QrCode className="w-4 h-4 text-orange-500" />
+                  <span>{showQrOptions ? 'شاردنەوەی QR Code ی دابەزاندن' : 'دابەزاندنی ئەپ بۆ مۆبایل لە ڕێگەی QR Code'}</span>
+                </button>
+
+                {showQrOptions && (
+                  <div className="mt-3 grid grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl animate-in fade-in duration-200">
+                    <div className="flex flex-col items-center text-center p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <span className="text-[11px] font-black text-emerald-600 flex items-center gap-1 mb-2">
+                        <Play className="w-3 h-3 fill-emerald-600" /> ئەندرۆید
+                      </span>
+                      {androidQr ? (
+                        <img src={androidQr} alt="Android QR" className="w-28 h-28 rounded-lg" />
+                      ) : (
+                        <div className="w-28 h-28 bg-slate-100 animate-pulse rounded-lg" />
+                      )}
+                      <a
+                        href={androidUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 text-[10px] font-bold text-emerald-600 hover:underline flex items-center gap-1"
+                      >
+                        <Download className="w-3 h-3" /> داگرتنی APK
+                      </a>
+                    </div>
+
+                    <div className="flex flex-col items-center text-center p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <span className="text-[11px] font-black text-slate-900 dark:text-white flex items-center gap-1 mb-2">
+                        <Apple className="w-3 h-3 fill-current" /> ئەپڵ (iOS)
+                      </span>
+                      {iosQr ? (
+                        <img src={iosQr} alt="iOS QR" className="w-28 h-28 rounded-lg" />
+                      ) : (
+                        <div className="w-28 h-28 bg-slate-100 animate-pulse rounded-lg" />
+                      )}
+                      <a
+                        href={iosUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 text-[10px] font-bold text-blue-500 hover:underline flex items-center gap-1"
+                      >
+                        <Download className="w-3 h-3" /> App Store
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Actions */}
               <div className="flex items-center gap-3 pt-2">
                 <button
                   onClick={handleApplyUpdate}
                   disabled={isUpdating || updateSuccess}
-                  className="flex-1 py-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-xs shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-4 bg-[#FF5500] hover:bg-orange-600 text-white rounded-2xl font-black text-xs shadow-xl shadow-orange-500/30 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
                 >
                   {isUpdating ? (
                     <>
@@ -190,13 +219,13 @@ export const AppUpdateAlert: React.FC = () => {
                   )}
                 </button>
 
-                {!appVersion.isMandatory && (
+                {!isMandatory && (
                   <button
                     onClick={() => {
                       dismissUpdateNotification(appVersion.version);
                       setIsUpdateModalOpen(false);
                     }}
-                    className="px-5 py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl text-xs font-bold cursor-pointer transition-colors"
+                    className="px-5 py-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl text-xs font-bold cursor-pointer transition-colors"
                   >
                     {t('دواتر')}
                   </button>

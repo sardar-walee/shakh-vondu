@@ -290,7 +290,7 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
       <div className={`relative overflow-hidden rounded-3xl bg-gradient-to-r ${headerInfo.bannerGradient} text-white p-8 sm:p-10 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6`}>
         <div className="max-w-2xl space-y-2 text-right">
           <div className="flex items-center gap-2 text-xs font-bold bg-white/20 backdrop-blur-md w-fit px-3 py-1 rounded-full">
-            <span>شاخی</span>
+            <span>(شاخ)</span>
             <span>•</span>
             <span>{t(`cat.${category}`)}</span>
           </div>

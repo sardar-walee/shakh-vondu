@@ -331,7 +331,7 @@ BEGIN
     INSERT INTO public.notifications (user_id, title, message, type, link_url)
     VALUES (
       NEW.customer_id, 'داواکارییەکەت بە سەرکەوتوویی گەیەندرا', 
-      'داواکاری ژمارە ' || NEW.order_number || ' گەیشتە دەستت. سوپاس بۆ کڕینەکەت لە پلاتفۆرمی شاخی!', 
+      'داواکاری ژمارە ' || NEW.order_number || ' گەیشتە دەستت. سوپاس بۆ کڕینەکەت لە پلاتفۆرمی (شاخ)!', 
       'order', '/orders'
     );
   END IF;

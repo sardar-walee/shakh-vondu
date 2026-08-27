@@ -43,6 +43,7 @@ import { Modal } from '../components/common/Modal';
 import { EmptyState } from '../components/common/EmptyState';
 import { ImageUpload } from '../components/common/ImageUpload';
 import { DynamicProductForm } from '../components/products/DynamicProductForm';
+import { CommissionAgreementCard } from '../components/seller/CommissionAgreementCard';
 import { getDefaultDeliveryZone, calculateDeliveryFee, CITY_NEIGHBORHOOD_DISTANCES } from '../utils/deliveryUtils';
 import { CaptainManager } from '../components/delivery/CaptainManager';
 import { getCategoryPostButtonLabel } from '../utils/categoryFields';
@@ -57,6 +58,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
   const {
     products,
     orders,
+    sellers,
     updateOrderStatus,
     addProduct,
     updateProduct,
@@ -86,6 +88,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
 
   // Filter products and orders belonging to this seller
   const sellerId = sellerProfile?.id || (products[0]?.sellerId ?? 'store-rest-1');
+  const activeSeller = sellers.find(s => s.id === sellerId) || sellerProfile || sellers[0];
   const myProducts = products.filter(p => p.sellerId === sellerId);
   const myOrders = orders.filter(o => o.sellerId === sellerId);
 
@@ -286,7 +289,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              بەش: <span className="font-bold text-slate-800">{defaultCategory}</span> • ڕێژەی کۆمسیۆنی شاخی: <span className="font-bold text-orange-600 font-latin">{sellerProfile?.commissionRate || 10}%</span>
+              بەش: <span className="font-bold text-slate-800">{defaultCategory}</span> • ڕێژەی کۆمسیۆنی (شاخ): <span className="font-bold text-orange-600 font-latin">{sellerProfile?.commissionRate || 10}%</span>
             </p>
           </div>
         </div>
@@ -335,6 +338,11 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
 
         return (
           <div className="space-y-6">
+            
+            {/* Interactive Commission Rate & Agreement Card */}
+            {activeSeller && (
+              <CommissionAgreementCard seller={activeSeller} />
+            )}
             
             {/* Main Agreement Banner */}
             <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white p-6 sm:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -505,7 +513,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
             </div>
 
             <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-1">
-              <span className="text-xs text-slate-400 font-bold">کۆمسیۆنی شاخی (Shakh Fee)</span>
+              <span className="text-xs text-slate-400 font-bold">کۆمسیۆنی (شاخ) (Shakh Fee)</span>
               <h3 className="text-xl font-black text-orange-600 font-latin">{totalCommissionDeducted.toLocaleString()} د.ع</h3>
               <p className="text-[11px] text-slate-400">لێبڕینی ئۆتۆماتیک لە کاتی گەیاندن</p>
             </div>
@@ -1073,21 +1081,27 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
 
       {/* Wallet Tab */}
       {activeTab === 'wallet' && (
-        <div className="bg-white p-6 rounded-3xl border border-slate-200 space-y-6">
-          <h3 className="text-sm font-black text-slate-900">جزدانی دارایی و مێژووی کۆمسیۆنەکان</h3>
-          
-          <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <span className="text-xs text-slate-400">باڵانسی ئامادە بۆ ڕاکێشان</span>
-              <h2 className="text-3xl font-black text-orange-400 font-latin">{netDeliveredEarnings.toLocaleString()} د.ع</h2>
-              <p className="text-[11px] text-slate-300 mt-1">ئۆتۆماتیک لە کاتی گەیاندن هەژمار دەکرێت.</p>
+        <div className="space-y-6">
+          {activeSeller && (
+            <CommissionAgreementCard seller={activeSeller} />
+          )}
+
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6">
+            <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">جزدانی دارایی و مێژووی کۆمسیۆنەکان</h3>
+            
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 to-slate-800 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <span className="text-xs text-slate-400">باڵانسی ئامادە بۆ ڕاکێشان</span>
+                <h2 className="text-3xl font-black text-orange-400 font-latin">{netDeliveredEarnings.toLocaleString()} د.ع</h2>
+                <p className="text-[11px] text-slate-300 mt-1">ئۆتۆماتیک لە کاتی گەیاندن هەژمار دەکرێت.</p>
+              </div>
+              <button
+                onClick={() => alert('داواکاری ڕاکێشانی پارە بۆ ئەدمین نێردرا.')}
+                className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow cursor-pointer"
+              >
+                داواکردنی ڕاکێشانی پارە (Payout)
+              </button>
             </div>
-            <button
-              onClick={() => alert('داواکاری ڕاکێشانی پارە بۆ ئەدمین نێردرا.')}
-              className="px-6 py-3 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold rounded-xl shadow cursor-pointer"
-            >
-              داواکردنی ڕاکێشانی پارە (Payout)
-            </button>
           </div>
         </div>
       )}

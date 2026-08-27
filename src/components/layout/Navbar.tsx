@@ -64,6 +64,7 @@ interface NavbarProps {
   onSelectCity: (city: string) => void;
   searchQuery: string;
   onSearchChange: (query: string) => void;
+  onOpenAppDownload?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -72,7 +73,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   selectedCity,
   onSelectCity,
   searchQuery,
-  onSearchChange
+  onSearchChange,
+  onOpenAppDownload
 }) => {
   const { currentUser, isSuperAdmin, isSeller, isDeliveryAgent, logout } = useAuth();
   const { totalItems, setIsOpen: setCartOpen } = useCart();
@@ -691,6 +693,18 @@ export const Navbar: React.FC<NavbarProps> = ({
               )}
             </div>
 
+            {/* App QR Download Button */}
+            {onOpenAppDownload && (
+              <button
+                onClick={onOpenAppDownload}
+                className="hidden lg:flex items-center gap-1.5 px-3 py-2 rounded-full bg-orange-50 dark:bg-orange-950/50 hover:bg-orange-100 dark:hover:bg-orange-900/50 text-[#FF5500] border border-orange-200 dark:border-orange-800 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+                title="دابەزاندنی ئەپ بۆ مۆبایل"
+              >
+                <Smartphone className="w-4 h-4 text-[#FF5500]" />
+                <span>دابەزاندنی ئەپ 📲</span>
+              </button>
+            )}
+
             {/* Cart Drawer Trigger */}
             <button
               onClick={() => setCartOpen(true)}
@@ -1073,7 +1087,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                       <User className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-black">{t('بەخێربێیت بۆ بازاڕی شاخی')}</p>
+                      <p className="text-xs font-black">{t('بەخێربێیت بۆ بازاڕی (شاخ)')}</p>
                       <p className="text-[10px] text-orange-100">{t('چێشتخانە، مارکێت، مۆدە و ئۆتۆمبێل')}</p>
                     </div>
                   </div>

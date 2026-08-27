@@ -70,6 +70,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     carAds,
     commissionTransactions,
     updateSellerCommission,
+    respondToCommissionNegotiation,
     toggleSellerVerification,
     updateOrderStatus,
     updateCarAdStatus,
@@ -273,7 +274,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
               </span>
             </div>
             <p className="text-xs text-red-200 mt-1">
-              پلاتفۆرمی شاخی (Shakh) • خاوەن موڵک: <span className="font-latin font-bold">shakh8002@gmail.com</span> • دۆمەین: <span className="font-latin">daim-post.online</span>
+              پلاتفۆرمی (شاخ) (Shakh) • خاوەن موڵک: <span className="font-latin font-bold">shakh8002@gmail.com</span> • دۆمەین: <span className="font-latin">daim-post.online</span>
             </p>
           </div>
         </div>
@@ -1152,7 +1153,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
           {/* Main Financial KPI Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-              <span className="text-xs font-bold text-slate-400">کۆی داهاتی پلاتفۆرمی شاخی</span>
+              <span className="text-xs font-bold text-slate-400">کۆی داهاتی پلاتفۆرمی (شاخ)</span>
               <h3 className="text-2xl font-black text-emerald-600 font-latin">
                 {totalPlatformEarnings.toLocaleString()} د.ع
               </h3>
@@ -1233,6 +1234,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                   <th className="p-3">بەش</th>
                   <th className="p-3">شار</th>
                   <th className="p-3">ڕێژەی کۆمسیۆن</th>
+                  <th className="p-3">دۆخی ڕێککەوتنی کۆمسیۆن</th>
                   <th className="p-3">پشتڕاستکردنەوە</th>
                   <th className="p-3">کردار</th>
                 </tr>
@@ -1270,6 +1272,31 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                       ) : (
                         <span className="font-black text-orange-600 font-latin text-sm">
                           {s.commissionRate}%
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-3">
+                      {s.commissionAgreementStatus === 'requested_negotiation' ? (
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                            💬 داوای {s.commissionNegotiationProposedRate}% dەکات
+                          </span>
+                          {s.commissionNegotiationProposedRate && (
+                            <button
+                              onClick={() => respondToCommissionNegotiation(s.id, s.commissionNegotiationProposedRate!)}
+                              className="px-2 py-0.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold cursor-pointer transition-all"
+                            >
+                              پەسەندکردنی {s.commissionNegotiationProposedRate}%
+                            </button>
+                          )}
+                        </div>
+                      ) : s.commissionAgreementStatus === 'agreed' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">
+                          ✓ پەسەندکراوە
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-bold">
+                          چاوەڕوانی پەسەندکردن
                         </span>
                       )}
                     </td>
@@ -1714,7 +1741,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
                     <th className="p-3">کۆدی داواکاری</th>
                     <th className="p-3">فرۆشگا</th>
                     <th className="p-3">کۆی پارە</th>
-                    <th className="p-3">کۆمسیۆنی شاخی</th>
+                    <th className="p-3">کۆمسیۆنی (شاخ)</th>
                     <th className="p-3">دۆخی داواکاری</th>
                     <th className="p-3">شار</th>
                     <th className="p-3">کردار</th>
@@ -1757,7 +1784,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             <div>
               <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Car className="w-5 h-5 text-amber-500" />
-                <span>داشبۆردی سەرپەرشتیاری شاخی ئۆتۆ (Car Ads & Payment Moderation)</span>
+                <span>داشبۆردی سەرپەرشتیاری (شاخ) ئۆتۆ (Car Ads & Payment Moderation)</span>
               </h3>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">
                 پێداچوونەوە و تەسدیقکردنی وەسڵی پارەدان (FastPay, FIB, ZainCash, AsiaPay) پێش بڵاوبوونەوەی ڕیکلامەکان
@@ -2410,7 +2437,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
         <div className="space-y-6">
           <CaptainManager
             sellerId="platform-all"
-            sellerName="سەکۆی شاخی"
+            sellerName="سەکۆی (شاخ)"
             drivers={allPlatformCaptains}
             isPlatformAdmin={true}
             onAddDriver={async (d) => {
