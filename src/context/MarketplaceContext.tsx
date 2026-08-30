@@ -27,7 +27,9 @@ import {
   DeliveryMode,
   OccasionBanner,
   PointsSettings,
-  AppVersionInfo
+  AppVersionInfo,
+  UserSubscription,
+  SubscriptionPlan
 } from '../types';
 import { CAR_PACKAGES } from '../data/seedData';
 import { DEFAULT_MAWLID_BANNER } from '../data/occasionPresets';
@@ -242,6 +244,14 @@ interface MarketplaceContextType {
 
   // Platform Drivers & Captains Management across all roles
   allPlatformCaptains: StoreDriver[];
+
+  // Subscriptions & Custom Agreements Management (Sellers, Captains, Super Admin)
+  userSubscriptions: UserSubscription[];
+  requestUserSubscription: (subData: Omit<UserSubscription, 'id' | 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'> & { durationDays?: number }) => Promise<{ success: boolean; subscriptionId?: string }>;
+  adminUpdateUserSubscription: (subscriptionId: string, updates: Partial<UserSubscription>) => Promise<{ success: boolean }>;
+  adminCreateCustomSubscription: (subData: Omit<UserSubscription, 'id' | 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'> & { durationDays?: number }) => Promise<{ success: boolean; subscriptionId?: string }>;
+  adminDeleteUserSubscription: (subscriptionId: string) => Promise<{ success: boolean }>;
+  getUserSubscription: (userId: string) => UserSubscription | undefined;
 }
 
 const MarketplaceContext = createContext<MarketplaceContextType | undefined>(undefined);
@@ -348,6 +358,59 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
     return {};
   });
+
+  // User Subscriptions State
+  const INITIAL_SUBSCRIPTIONS: UserSubscription[] = [
+    {
+      id: 'sub-seller-pro-1',
+      userId: 'seller-rest-1',
+      userName: 'ڕێستۆرانتی خانی',
+      storeOrVehicleName: 'ڕێستۆرانتی خانی',
+      target: 'seller',
+      planId: 'seller_pro_monthly',
+      planName: 'پلانی فرۆشیاری پێشکەوتوو (Pro Store)',
+      billingCycle: 'monthly',
+      pricePaid: 25000,
+      status: 'active',
+      commissionRateOverride: 5,
+      startDate: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
+      endDate: new Date(Date.now() + 25 * 24 * 3600 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: 'sub-captain-pro-1',
+      userId: 'rebaz-driver',
+      userName: 'ڕێباز عەلی (کاپتنی خێرای شاخ)',
+      storeOrVehicleName: 'کاپتنی شاخ (Toyota Camry)',
+      target: 'captain',
+      planId: 'captain_pro_monthly',
+      planName: 'ئابوونەی کاپتنی زێڕین (VIP Captain 100%)',
+      billingCycle: 'monthly',
+      pricePaid: 20000,
+      status: 'active',
+      commissionRateOverride: 0,
+      startDate: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString(),
+      endDate: new Date(Date.now() + 27 * 24 * 3600 * 1000).toISOString(),
+      createdAt: new Date(Date.now() - 3 * 24 * 3600 * 1000).toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ];
+
+  const [userSubscriptions, setUserSubscriptions] = useState<UserSubscription[]>(() => {
+    const saved = localStorage.getItem('shakh_user_subscriptions');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return INITIAL_SUBSCRIPTIONS;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('shakh_user_subscriptions', JSON.stringify(userSubscriptions));
+  }, [userSubscriptions]);
 
   // Points Settings Config (Default 150 points = 1 IQD)
   const [pointsSettings, setPointsSettings] = useState<PointsSettings>(() => {
@@ -609,6 +672,40 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
               const data = docSnap.data() as SellerProfile;
               list.push({ ...data, id: data.id || docSnap.id });
             });
+            if (!list.some(s => s.id === 'admin-store')) {
+              list.unshift({
+                id: 'admin-store',
+                userId: 'admin-super',
+                storeName: 'بەڕێوەبەرایەتی شاخ (Shakh Official)',
+                slug: 'admin-store',
+                category: 'food',
+                description: 'تۆڕی فەرمیی بەڕێوەبەرایەتی پلاتفۆرمی شاخ',
+                logoUrl: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
+                coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
+                rating: 5.0,
+                totalReviews: 18,
+                totalSales: 250,
+                city: 'گشت شارەکان (All Kurdistan Cities)',
+                address: 'کوردستان - بەڕێوەبەرایەتی گشتی شاخ',
+                phone: '07504796924',
+                isOpen: true,
+                isVerified: true,
+                commissionRate: 0,
+                createdAt: new Date().toISOString(),
+                deliveryZone: {
+                  minDistanceKm: 0,
+                  maxDistanceKm: 100,
+                  baseFee: 2500,
+                  baseDistanceThresholdKm: 10,
+                  perKmExtraFee: 150,
+                  freeDeliveryThreshold: 50000,
+                  isStrictRadius: false,
+                  estimatedMinutesBase: 25,
+                  estimatedMinutesPerKm: 1.0,
+                  coveredNeighborhoods: ['گشت شار و گەڕەکەکان']
+                }
+              });
+            }
             setSellers(list);
           },
           (err) => {
@@ -725,6 +822,20 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
             }
           },
           (err) => console.warn('App version onSnapshot error:', err)
+        );
+
+        // 10. Subscriptions Listener
+        const subsCol = collection(db, 'subscriptions');
+        const unsubSubs = onSnapshot(
+          subsCol,
+          (snapshot) => {
+            if (!snapshot.empty) {
+              const list: UserSubscription[] = [];
+              snapshot.forEach((docSnap) => list.push(docSnap.data() as UserSubscription));
+              setUserSubscriptions(list);
+            }
+          },
+          (err) => console.warn('Subscriptions onSnapshot error:', err)
         );
       } catch (err) {
         console.error('Firestore real-time sync init error:', err);
@@ -854,28 +965,41 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     // 2. Ensure seller profile exists in Firestore 'sellers' collection for customers
     try {
       const sellerIdToUse = newProduct.sellerId || (currentUser ? `store-${currentUser.id}` : 'store-main');
+      const isAdminStore = sellerIdToUse === 'admin-store' || sellerIdToUse === 'store-main' || isSuperAdmin;
       const sellerDocRef = doc(db, 'sellers', sellerIdToUse);
       const sellerDocSnap = await getDoc(sellerDocRef);
       if (!sellerDocSnap.exists()) {
         const newSeller: SellerProfile = {
           id: sellerIdToUse,
           userId: currentUser.id,
-          storeName: newProduct.sellerName || currentUser.storeName || currentUser.fullName || 'فرۆشگای شاخ',
+          storeName: newProduct.sellerName || currentUser.storeName || currentUser.fullName || 'بەڕێوەبەرایەتی شاخ',
           slug: sellerIdToUse,
           category: newProduct.category,
-          description: 'فرۆشگای چالاک لە (شاخ)',
+          description: isAdminStore ? 'فرۆشگای فەرمیی پلاتفۆرمی شاخ' : 'فرۆشگای چالاک لە (شاخ)',
           logoUrl: currentUser.avatarUrl || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
           coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
           rating: 5.0,
-          totalReviews: 0,
-          totalSales: 0,
-          city: currentUser.city || 'Erbil (هەولێر)',
-          address: currentUser.address || 'ناوبازاڕ',
-          phone: currentUser.phone || '07501234567',
+          totalReviews: 12,
+          totalSales: 100,
+          city: isAdminStore ? 'گشت شارەکان (All Kurdistan Cities)' : (currentUser.city || 'Erbil (هەولێر)'),
+          address: currentUser.address || (isAdminStore ? 'کوردستان - بەڕێوەبەرایەتی شاخ' : 'ناوبازاڕ'),
+          phone: currentUser.phone || '07504796924',
           isOpen: true,
           isVerified: true,
-          commissionRate: 10,
-          createdAt: new Date().toISOString()
+          commissionRate: isAdminStore ? 0 : 10,
+          createdAt: new Date().toISOString(),
+          deliveryZone: isAdminStore ? {
+            minDistanceKm: 0,
+            maxDistanceKm: 100,
+            baseFee: 2500,
+            baseDistanceThresholdKm: 10,
+            perKmExtraFee: 150,
+            freeDeliveryThreshold: 50000,
+            isStrictRadius: false,
+            estimatedMinutesBase: 25,
+            estimatedMinutesPerKm: 1.0,
+            coveredNeighborhoods: ['گشت شار و گەڕەکەکان']
+          } : undefined
         };
         await setDoc(sellerDocRef, newSeller, { merge: true });
         setSellers(prev => {
@@ -909,9 +1033,33 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     addNotification({
       userId: currentUser.id,
-      title: 'کاڵای نوێ زیادکرا',
-      message: `کاڵای (${newProduct.title}) بە سەرکەوتوویی خرایە بازاڕەوە.`,
-      type: 'system'
+      title: 'کاڵای نوێ بڵاوکرایەوە 🎉',
+      message: `کاڵای (${newProduct.title}) بە سەرکەوتوویی لە فرۆشگای (${newProduct.sellerName}) خرایە بازاڕەوە. کلیک بکە بۆ بینینی پەڕەی کاڵاکە.`,
+      type: 'system',
+      linkUrl: 'product-detail',
+      actionLabel: 'بینینی کاڵای نوێ',
+      metadata: {
+        productId: newProduct.id,
+        title: newProduct.title,
+        category: newProduct.category,
+        storeName: newProduct.sellerName
+      }
+    });
+
+    // Also broadcast to public feed / customers so their notifications jump directly to this item
+    addNotification({
+      userId: 'all',
+      title: `کاڵای نوێ لە (${newProduct.sellerName}) 🛍️`,
+      message: `بەرهەمی نوێی (${newProduct.title}) ئێستا لە پلاتفۆرمی شاخ بەردەستە!`,
+      type: 'system',
+      linkUrl: 'product-detail',
+      actionLabel: 'بینینی کاڵاکە',
+      metadata: {
+        productId: newProduct.id,
+        title: newProduct.title,
+        category: newProduct.category,
+        storeName: newProduct.sellerName
+      }
     });
 
     return { success: true };
@@ -1326,9 +1474,22 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const isStoreDel = Boolean(orderData.isStoreDelivery || orderData.deliveryMode === 'store_delivery');
     const deliveryMode: DeliveryMode = isStoreDel ? 'store_delivery' : 'shakh_delivery';
 
+    // Seller commission logic (Excluding cars - 0% on cars):
+    const sellerSub = userSubscriptions.find(s => (s.userId === seller.userId || s.userId === seller.id) && (s.status === 'active' || s.status === 'custom_agreed'));
+    let effectiveCommissionRate = seller.commissionRate ?? 10;
+    if (seller.category === 'cars') {
+      effectiveCommissionRate = 0;
+    } else if (sellerSub?.commissionRateOverride !== undefined) {
+      effectiveCommissionRate = sellerSub.commissionRateOverride;
+    } else if (sellerSub?.planId === 'seller_vip_enterprise') {
+      effectiveCommissionRate = 0;
+    } else if (sellerSub?.planId === 'seller_pro_monthly') {
+      effectiveCommissionRate = 5;
+    }
+
     const orderNumber = `SHK-${Math.floor(1000 + Math.random() * 9000)}`;
     const newOrderId = `ord-${Date.now()}`;
-    const calculatedCommissionAmount = Math.round((orderData.subtotal * seller.commissionRate) / 100);
+    const calculatedCommissionAmount = Math.round((orderData.subtotal * effectiveCommissionRate) / 100);
     const calculatedSellerAmount = Math.round(orderData.subtotal - calculatedCommissionAmount);
     const calculatedPointsEarned = orderData.pointsEarned ?? Math.max(10, Math.round(orderData.subtotal * 0.02));
 
@@ -1361,7 +1522,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       paymentMethod: orderData.paymentMethod,
       isPaid: orderData.paymentMethod !== 'cash_on_delivery',
       commissionCalculated: true,
-      commissionRate: seller.commissionRate,
+      commissionRate: effectiveCommissionRate,
       commissionAmount: calculatedCommissionAmount,
       sellerAmount: calculatedSellerAmount,
       sellerEarnings: calculatedSellerAmount,
@@ -1555,10 +1716,18 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       const customerPointsEarned = Math.max(10, Math.round((order.subtotal * sellerAgreement.customerRewardPercent) / 100));
       const sellerPointsEarned = Math.max(10, Math.round((order.subtotal * sellerAgreement.sellerRewardPercent) / 100));
 
-      // 2. If Shakh Captain Delivery, apply 20% Shakh Platform Cut & Driver Points
+      // 2. If Shakh Captain Delivery, apply 70% courier / 30% Shakh Platform Cut (or 100% net if VIP Captain)
       const dId = order.driverId || order.deliveryAgentId || currentUser?.id || 'rebaz-driver';
-      const shakhDeliveryCut = isStoreDel ? 0 : Math.round(delFee * 0.20); // 20% cut for Shakh platform
-      const driverNetEarnings = isStoreDel ? delFee : Math.round(delFee * 0.80);  // 80% net for Shakh driver
+      const captainSub = userSubscriptions.find(s => s.userId === dId && (s.status === 'active' || s.status === 'custom_agreed'));
+      let shakhDeliveryCutPercent = 0.30; // 30% for Shakh platform, 70% for Captain
+      if (captainSub?.planId === 'captain_pro_monthly') {
+        shakhDeliveryCutPercent = 0; // 0% Shakh, 100% Captain
+      } else if (captainSub?.commissionRateOverride !== undefined) {
+        shakhDeliveryCutPercent = captainSub.commissionRateOverride / 100;
+      }
+
+      const shakhDeliveryCut = isStoreDel ? 0 : Math.round(delFee * shakhDeliveryCutPercent);
+      const driverNetEarnings = isStoreDel ? delFee : Math.round(delFee * (1 - shakhDeliveryCutPercent));
       const driverPointsEarned = isStoreDel ? 10 : (25 + Math.round(delFee / 500) + (sellerAgreement.driverBonusPoints || 10));
 
       // Update Driver Stats
@@ -2470,8 +2639,17 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const completedOrders = orders.filter(o => o.status === 'delivered' && (o.driverId === dId || o.deliveryAgentId === dId || dId.includes('rebaz')));
     const totalDeliveries = Math.max(completedOrders.length, 1);
     const totalDeliveryFees = completedOrders.reduce((sum, o) => sum + (o.deliveryFee || 3000), 3000);
-    const totalShakhCommission = Math.round(totalDeliveryFees * 0.20);
-    const totalNetEarnings = Math.round(totalDeliveryFees * 0.80);
+
+    const captainSub = userSubscriptions.find(s => s.userId === dId && (s.status === 'active' || s.status === 'custom_agreed'));
+    let shakhCutPercent = 0.30;
+    if (captainSub?.planId === 'captain_pro_monthly') {
+      shakhCutPercent = 0;
+    } else if (captainSub?.commissionRateOverride !== undefined) {
+      shakhCutPercent = captainSub.commissionRateOverride / 100;
+    }
+
+    const totalShakhCommission = Math.round(totalDeliveryFees * shakhCutPercent);
+    const totalNetEarnings = Math.round(totalDeliveryFees * (1 - shakhCutPercent));
     const points = (totalDeliveries * 25) + Math.round(totalDeliveryFees / 500);
 
     const driverReviewsList = getDriverReviews(dId);
@@ -2692,6 +2870,119 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     try {
       await updateDoc(doc(db, 'feedbacks', feedbackId), { status, adminResponse });
     } catch (e) {}
+  };
+
+  // Subscriptions & Custom Agreements Management Methods
+  const requestUserSubscription = async (
+    subData: Omit<UserSubscription, 'id' | 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'> & { durationDays?: number }
+  ): Promise<{ success: boolean; subscriptionId?: string }> => {
+    const now = new Date();
+    const duration = subData.durationDays || (subData.billingCycle === 'yearly' ? 365 : 30);
+    const endDate = new Date(now.getTime() + duration * 24 * 60 * 60 * 1000);
+    const subId = `sub-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const newSub: UserSubscription = {
+      ...subData,
+      id: subId,
+      startDate: now.toISOString(),
+      endDate: endDate.toISOString(),
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString()
+    };
+
+    setUserSubscriptions(prev => [newSub, ...prev.filter(s => s.userId !== newSub.userId)]);
+
+    // If commission override is set and active, sync with seller profile commissionRate
+    if (newSub.status === 'active' && newSub.commissionRateOverride !== undefined && newSub.target === 'seller') {
+      const sellerToUpdate = sellers.find(s => s.userId === newSub.userId || s.id === newSub.userId);
+      if (sellerToUpdate) {
+        updateSellerCommissionRate(sellerToUpdate.id, newSub.commissionRateOverride);
+      }
+    }
+
+    try {
+      await setDoc(doc(db, 'subscriptions', newSub.id), newSub);
+    } catch (e) {
+      console.warn('Error saving subscription to Firestore:', e);
+    }
+
+    addNotification({
+      userId: newSub.userId,
+      title: 'داواکاری ئابوونە تۆمار کرا ✓',
+      message: `داواکاری بەشداریکردن لە ${newSub.planName} بە سەرکەوتوویی تۆمار کرا.`,
+      type: 'system'
+    });
+
+    addNotification({
+      userId: 'admin-super',
+      title: `داواکاری ئابوونەی نوێ (${newSub.userName})`,
+      message: `بەکارهێنەر ${newSub.userName} داوای ئابوونەی ${newSub.planName} کردووە.`,
+      type: 'system',
+      linkUrl: 'admin-subscriptions',
+      actionLabel: 'بینینی ئابوونەکان'
+    });
+
+    return { success: true, subscriptionId: subId };
+  };
+
+  const adminUpdateUserSubscription = async (subscriptionId: string, updates: Partial<UserSubscription>): Promise<{ success: boolean }> => {
+    let updatedSub: UserSubscription | undefined;
+    setUserSubscriptions(prev => prev.map(s => {
+      if (s.id === subscriptionId) {
+        updatedSub = { ...s, ...updates, updatedAt: new Date().toISOString() };
+        return updatedSub;
+      }
+      return s;
+    }));
+
+    if (updatedSub) {
+      // Sync seller commission rate if active
+      if (updatedSub.commissionRateOverride !== undefined && updatedSub.target === 'seller') {
+        const sellerToUpdate = sellers.find(s => s.userId === updatedSub!.userId || s.id === updatedSub!.userId);
+        if (sellerToUpdate) {
+          updateSellerCommissionRate(sellerToUpdate.id, updatedSub.commissionRateOverride);
+        }
+      }
+
+      try {
+        await updateDoc(doc(db, 'subscriptions', subscriptionId), {
+          ...updates,
+          updatedAt: new Date().toISOString()
+        });
+      } catch (e) {
+        console.warn('Error updating subscription in Firestore:', e);
+      }
+
+      addNotification({
+        userId: updatedSub.userId,
+        title: 'نوێکردنەوەی ئابوونە لەلایەن بەڕێوەبەرایەتی شاخ 👑',
+        message: `ئابوونەکەت بە سەرکەوتوویی نوێکرایەوە. نیسبەی فرۆش/شاخ: ${updatedSub.commissionRateOverride !== undefined ? `${updatedSub.commissionRateOverride}%` : 'ستاندارد'}`,
+        type: 'system'
+      });
+    }
+
+    return { success: true };
+  };
+
+  const adminCreateCustomSubscription = async (
+    subData: Omit<UserSubscription, 'id' | 'startDate' | 'endDate' | 'createdAt' | 'updatedAt'> & { durationDays?: number }
+  ): Promise<{ success: boolean; subscriptionId?: string }> => {
+    return requestUserSubscription(subData);
+  };
+
+  const adminDeleteUserSubscription = async (subscriptionId: string): Promise<{ success: boolean }> => {
+    setUserSubscriptions(prev => prev.filter(s => s.id !== subscriptionId));
+    try {
+      await safeDeleteFirestoreDoc('subscriptions', subscriptionId);
+    } catch (e) {
+      console.warn('Error deleting subscription:', e);
+    }
+    return { success: true };
+  };
+
+  const getUserSubscription = (userId: string): UserSubscription | undefined => {
+    return userSubscriptions.find(s => s.userId === userId && (s.status === 'active' || s.status === 'custom_agreed')) ||
+      userSubscriptions.find(s => s.userId === userId);
   };
 
   const purgeAllDemoData = async (): Promise<{ success: boolean; message: string }> => {
@@ -3017,7 +3308,13 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         setIsGlitchModalOpen,
         openGlitchModal,
         detectedGlitchError,
-        allPlatformCaptains
+        allPlatformCaptains,
+        userSubscriptions,
+        requestUserSubscription,
+        adminUpdateUserSubscription,
+        adminCreateCustomSubscription,
+        adminDeleteUserSubscription,
+        getUserSubscription
       }}
     >
       {children}

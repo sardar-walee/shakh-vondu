@@ -143,18 +143,20 @@ export interface UserProfile {
 
   createdAt: string;
   updatedAt?: string;
+  subscription?: UserSubscription;
 }
 
 export interface DriverStats {
   driverId: string;
   totalDeliveries: number;
   totalDeliveryFees: number;
-  totalShakhCommission: number; // 20% cut for Shakh platform
-  totalNetEarnings: number;      // 80% net for courier
+  totalShakhCommission: number; // 30% cut for Shakh platform
+  totalNetEarnings: number;      // 70% net for courier
   points: number;                // Captain points earned
   rating?: number;               // Average star rating (1-5)
   totalReviews?: number;         // Total customer ratings received
   lastUpdated?: string;
+  subscription?: UserSubscription;
 }
 
 export interface DeliveryZoneSettings {
@@ -205,6 +207,7 @@ export interface SellerProfile {
   storeDeliveryTimeMin?: number;
   geoLocation?: GeoLocation;
   createdAt: string;
+  subscription?: UserSubscription;
 }
 
 export interface Product {
@@ -625,6 +628,9 @@ export interface NotificationItem {
     paymentMethod?: string;
     reason?: string;
     sellerId?: string;
+    productId?: string;
+    category?: string;
+    title?: string;
     daysLeft?: number;
     pointsEarned?: number;
   };
@@ -759,5 +765,39 @@ export interface PromotionalOfferData {
   category?: string;
   sentCount?: number;
   createdAt: string;
+}
+
+export interface SubscriptionPlan {
+  id: string;
+  target: 'seller' | 'captain';
+  name: string;
+  nameEn: string;
+  price: number;
+  billingCycle: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
+  commissionRateDiscount?: number;
+  captainCommissionCut?: number;
+  maxProducts?: number;
+  features: string[];
+  isPopular?: boolean;
+}
+
+export interface UserSubscription {
+  id: string;
+  userId: string;
+  userName?: string;
+  storeOrVehicleName?: string;
+  target: 'seller' | 'captain';
+  planId: string;
+  planName: string;
+  billingCycle: 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
+  pricePaid: number;
+  status: 'active' | 'expired' | 'pending_approval' | 'custom_agreed' | 'paused';
+  commissionRateOverride?: number;
+  startDate: string;
+  endDate: string;
+  paymentMethod?: string;
+  customAgreementNote?: string;
+  createdAt?: string;
+  updatedAt: string;
 }
 

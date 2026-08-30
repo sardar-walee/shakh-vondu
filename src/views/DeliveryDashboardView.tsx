@@ -31,6 +31,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { StatusBadge } from '../components/common/Badge';
+import { SubscriptionManagementPanel } from '../components/subscription/SubscriptionManagementPanel';
 
 interface DeliveryDashboardViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -44,15 +45,18 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
     assignDriverToOrder,
     getDriverStats,
     getDriverReviews,
-    replyToReview
+    replyToReview,
+    getUserSubscription
   } = useMarketplace();
 
-  const [activeTab, setActiveTab] = useState<'deliveries' | 'reviews' | 'history'>('deliveries');
+  const [activeTab, setActiveTab] = useState<'deliveries' | 'reviews' | 'subscriptions' | 'history'>('deliveries');
   const [showShakhRulesModal, setShowShakhRulesModal] = useState(false);
   const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<string>('');
 
   const driverId = currentUser?.id || 'rebaz-driver';
+  const driverSub = getUserSubscription(driverId);
+  const isVipCaptain = driverSub?.status === 'active';
 
   // Orders ready for pickup or on the way (Central Shakh Captain pool only, not in-house store deliveries)
   const availableOrders = orders.filter(o => o.status === 'ready' && !o.driverId && !o.isStoreDelivery && o.deliveryMode !== 'store_delivery');
@@ -108,7 +112,7 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              کاپتن: <span className="font-bold text-slate-800 dark:text-slate-200">{currentUser?.fullName || 'ڕێباز کاپتن'}</span> • شار: {currentUser?.city || 'هەولێر'} • ٨٠٪ قازانجی خاوێن بۆ کاپتن + پۆینت
+              کاپتن: <span className="font-bold text-slate-800 dark:text-slate-200">{currentUser?.fullName || 'ڕێباز کاپتن'}</span> • شار: {currentUser?.city || 'هەولێر'} • {isVipCaptain ? '👑 ئابوونەی VIP چالاکە (١٠٠٪ قازانج بۆ کاپتن)' : '٧٠٪ قازانجی خاوێن بۆ کاپتن + ٣٠٪ پلاتفۆرم + پۆینت'}
             </p>
           </div>
         </div>
@@ -273,10 +277,12 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
           </div>
         </div>
 
-        {/* Net Driver Earnings (80%) */}
+        {/* Net Driver Earnings (70% or 100% VIP) */}
         <div className="bg-white p-5 rounded-3xl border border-emerald-200 bg-emerald-50/40 shadow-xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-800">قازانجی خاوێن (٨٠٪)</span>
+            <span className="text-xs font-bold text-emerald-800">
+              {isVipCaptain ? 'قازانجی خاوێن (١٠٠٪ VIP)' : 'قازانجی خاوێن (٧٠٪)'}
+            </span>
             <CheckCircle className="w-5 h-5 text-emerald-600" />
           </div>
           <div className="mt-3">
@@ -284,17 +290,17 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
               {driverStats.totalNetEarnings.toLocaleString()} <span className="text-xs font-sans text-emerald-600">د.ع</span>
             </h2>
             <p className="text-[11px] text-emerald-700 font-medium mt-1">
-              بڕڕاوی شاخ (٢٠٪): {driverStats.totalShakhCommission.toLocaleString()} د.ع
+              {isVipCaptain ? '👑 لێبڕینی شاخ ٠٪ بەهۆی ئابوونە' : `بڕڕاوی شاخ (٣٠٪): ${driverStats.totalShakhCommission.toLocaleString()} د.ع`}
             </p>
           </div>
         </div>
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto scrollbar-none">
         <button
           onClick={() => setActiveTab('deliveries')}
-          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'deliveries'
               ? 'bg-teal-600 text-white shadow-md'
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -305,8 +311,20 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
         </button>
 
         <button
+          onClick={() => setActiveTab('subscriptions')}
+          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
+            activeTab === 'subscriptions'
+              ? 'bg-teal-600 text-white shadow-md'
+              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <Award className="w-4 h-4 text-amber-400" />
+          <span>👑 بەشی ئابوونەی کاپتن (VIP 100% Net)</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('reviews')}
-          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'reviews'
               ? 'bg-teal-600 text-white shadow-md'
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -318,7 +336,7 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
 
         <button
           onClick={() => setActiveTab('history')}
-          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+          className={`px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
             activeTab === 'history'
               ? 'bg-teal-600 text-white shadow-md'
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
@@ -639,6 +657,11 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
         </div>
       )}
 
+      {/* TAB: CAPTAIN SUBSCRIPTION & VIP PLANS */}
+      {activeTab === 'subscriptions' && (
+        <SubscriptionManagementPanel defaultRole="captain" onNavigate={onNavigate} />
+      )}
+
       {/* TAB 3: COMPLETED DELIVERIES HISTORY */}
       {activeTab === 'history' && (
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 space-y-4">
@@ -650,24 +673,28 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
             <p className="text-xs text-slate-400 py-6 text-center">هیچ داواکارییەکی گەیەندراو تۆمار نەکراوە لە ئێستادا.</p>
           ) : (
             <div className="space-y-3">
-              {completedDeliveries.map(order => (
-                <div key={order.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <span className="text-xs font-bold font-latin">{order.orderNumber}</span>
-                    <h4 className="text-xs font-bold text-slate-800">{order.sellerName}</h4>
-                    <p className="text-[11px] text-slate-500">گەیاندن بۆ: {order.deliveryAddress}</p>
-                  </div>
+              {completedDeliveries.map(order => {
+                const netRate = isVipCaptain ? 1.0 : 0.70;
+                const netEarn = Math.round((order.deliveryFee || 3000) * netRate);
+                return (
+                  <div key={order.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs font-bold font-latin">{order.orderNumber}</span>
+                      <h4 className="text-xs font-bold text-slate-800">{order.sellerName}</h4>
+                      <p className="text-[11px] text-slate-500">گەیاندن بۆ: {order.deliveryAddress}</p>
+                    </div>
 
-                  <div className="text-left">
-                    <span className="text-xs font-black text-emerald-600 font-latin block">
-                      +{(Math.round((order.deliveryFee || 3000) * 0.80)).toLocaleString()} د.ع قازانج
-                    </span>
-                    <span className="text-[10px] text-amber-600 font-bold">
-                      ⭐ +{25 + Math.round((order.deliveryFee || 3000) / 500)} پۆینت
-                    </span>
+                    <div className="text-left">
+                      <span className="text-xs font-black text-emerald-600 font-latin block">
+                        +{netEarn.toLocaleString()} د.ع قازانج {isVipCaptain && '(VIP ١٠٠٪)'}
+                      </span>
+                      <span className="text-[10px] text-amber-600 font-bold">
+                        ⭐ +{25 + Math.round((order.deliveryFee || 3000) / 500)} پۆینت
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -702,10 +729,10 @@ export const DeliveryDashboardView: React.FC<DeliveryDashboardViewProps> = ({ on
               <div className="p-4 bg-teal-50/60 border border-teal-200 rounded-2xl space-y-2">
                 <h3 className="text-sm font-black text-teal-900 flex items-center gap-2">
                   <Percent className="w-4 h-4 text-teal-600" />
-                  یاسای ١: بڕینی ڕێژەی ٢٠٪ی گەیاندن و ٨٠٪ی قازانجی کاپتن
+                  یاسای ١: دابەشکردنی کرێی گەیاندن (٧٠٪ بۆ کاپتن وە ٣٠٪ بۆ سەکۆی شاخ)
                 </h3>
                 <p className="text-slate-600">
-                  لە هەر داواکارییەکی گەیاندندا لەسەر سیستەمی شاخ، ۲۰٪ لە کرێی دیاریکراوی گەیاندن دەبڕدرێت و دەچێت بۆ خەرجەکانی پشتیوانی تەکنیکی و سێرڤەرەکانی شاخ. ٨٠٪ی کرێی گەیاندنەکە ڕاستەوخۆ بە نێت دەبێتە قازانجی کاپتنی گەیاندن.
+                  لە هەر داواکارییەکی گەیاندندا لەسەر سیستەمی فەرمی شاخ، ٣٠٪ لە کرێی گەیاندن دەبڕدرێت وەک خەرجی سەکۆ و سێرڤەر. ٧٠٪ی کرێی گەیاندنەکە ڕاستەوخۆ دەبێتە قازانجی خاوێنی کاپتنی بەڕێز. کاپتان دەتوانن لە بەشی ئابوونە بەشدار بن لە پلانی VIP بۆ وەرگرتنی ١٠٠٪ی تەواوی کرێی گەیاندن بەبێ بڕین.
                 </p>
               </div>
 

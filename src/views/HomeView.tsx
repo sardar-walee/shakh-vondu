@@ -66,14 +66,26 @@ export const HomeView: React.FC<HomeViewProps> = ({
   // Excluded categories list as per request
   const hiddenCategories = ['clothes', 'fresh_meat', 'beauty'];
 
-  // Filter products to exclude hidden categories
-  const activeProducts = products.filter(
-    p => p.isAvailable !== false && p.productStatus !== 'hidden' && !hiddenCategories.includes(p.category)
-  );
+  // Filter products to exclude hidden categories and respect selected city
+  const activeProducts = products.filter(p => {
+    if (p.isAvailable === false || p.productStatus === 'hidden' || hiddenCategories.includes(p.category)) return false;
+    if (!selectedCity || selectedCity === 'all') return true;
+    const cityPrefix = selectedCity.split(' ')[0].toLowerCase();
+    if (p.sellerId === 'admin-store' || p.sellerId === 'store-main' || (p.sellerName && p.sellerName.includes('شاخ'))) return true;
+    if ((p as any).city && ((p as any).city.toLowerCase().includes(cityPrefix) || (p as any).city.includes('گشت') || (p as any).city.includes('کوردستان'))) return true;
+    if ((p as any).sellerCity && ((p as any).sellerCity.toLowerCase().includes(cityPrefix) || (p as any).sellerCity.includes('گشت') || (p as any).sellerCity.includes('کوردستان'))) return true;
+    const seller = sellers.find(s => s.id === p.sellerId || s.userId === p.sellerId || `store-${s.userId}` === p.sellerId || s.id === `store-${p.sellerId}`);
+    if (seller && (seller.id === 'admin-store' || seller.id === 'store-main' || (seller.city && (seller.city.toLowerCase().includes(cityPrefix) || seller.city.includes('گشت') || seller.city.includes('کوردستان'))))) return true;
+    if (!seller) return true;
+    return false;
+  });
 
   // Filter by selected city if applicable
   const filteredSellers = selectedCity
-    ? sellers.filter(s => s.city.includes(selectedCity.split(' ')[0]) && !hiddenCategories.includes(s.category as string))
+    ? sellers.filter(s =>
+        (s.id === 'admin-store' || s.id === 'store-main' || (s.city && (s.city.includes('گشت') || s.city.includes('کوردستان') || s.city.toLowerCase().includes(selectedCity.split(' ')[0].toLowerCase())))) &&
+        !hiddenCategories.includes(s.category as string)
+      )
     : sellers.filter(s => !hiddenCategories.includes(s.category as string));
 
   const filteredCarAds = selectedCity

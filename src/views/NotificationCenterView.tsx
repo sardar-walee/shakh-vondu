@@ -774,16 +774,32 @@ export const NotificationCenterView: React.FC<NotificationCenterViewProps> = ({ 
               )}
 
               {/* Navigation Action */}
-              {selectedItem.linkUrl && (
+              {(selectedItem.linkUrl || selectedItem.metadata?.productId || selectedItem.metadata?.carAdId || selectedItem.metadata?.orderId) && (
                 <div className="pt-4 border-t border-slate-100">
                   <button
                     onClick={() => {
+                      if (selectedItem.metadata?.productId) {
+                        onNavigate('product-detail', selectedItem.metadata.productId);
+                        return;
+                      }
+                      if (selectedItem.metadata?.carAdId) {
+                        onNavigate('car-detail', selectedItem.metadata.carAdId);
+                        return;
+                      }
+                      if (selectedItem.metadata?.orderId) {
+                        onNavigate('order-tracking', selectedItem.metadata.orderId);
+                        return;
+                      }
                       const cleanUrl = selectedItem.linkUrl?.replace('/', '') || 'orders';
+                      if (cleanUrl === 'product' || cleanUrl === 'product-detail' || cleanUrl === 'products') {
+                        onNavigate('product-detail', selectedItem.metadata?.productId);
+                        return;
+                      }
                       onNavigate(cleanUrl, selectedItem.metadata?.orderId || selectedItem.metadata?.carAdId);
                     }}
-                    className="w-full py-3 rounded-2xl bg-slate-100 hover:bg-blue-50 hover:text-[#2563EB] text-slate-700 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+                    className="w-full py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
                   >
-                    <span>{selectedItem.actionLabel || t('بینینی پەڕەی پەیوەندیدار')}</span>
+                    <span>{selectedItem.actionLabel || (selectedItem.metadata?.productId ? 'بینینی کاڵای نوێ' : selectedItem.metadata?.carAdId ? 'بینینی ئۆتۆمبێلەکە' : t('بینینی پەڕەی پەیوەندیدار'))}</span>
                     {isRtl ? <ArrowLeft className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
                   </button>
                 </div>

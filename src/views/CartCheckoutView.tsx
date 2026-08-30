@@ -124,7 +124,7 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
     }
 
     if (deliveryCalc.statusType === 'out_of_range') {
-      setErrorMessage(`داواکاری ناکرێت: ناونیشانەکەت (${distanceKm} کم) لە دەرەوەی سنوری گەیاندنی ئەم فرۆشگایەیە (${primarySeller?.deliveryZone?.maxDistanceKm || 15} کم).`);
+      setErrorMessage(`داواکاری ناکرێت: بۆ ئێرە بەردەست نییە! (ناونیشانی دیاریکراو ${distanceKm} کم لە دەرەوەی سنوری گەیاندنی فرۆشگایەیە کە ${primarySeller?.deliveryZone?.maxDistanceKm || 12} کم).`);
       return;
     }
 
@@ -373,16 +373,48 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
               </div>
             </div>
 
-            {/* Distance Slider & Custom Input */}
-            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
+            {/* Distance Slider & Custom Manual Zone Input */}
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   <Navigation className="w-3.5 h-3.5 text-orange-500" />
-                  دوری دیاریکراو لە فرۆشگاوە:
+                  <span>دەستنیشانکردنی دەستیی زۆنی گەیاندن و دوری:</span>
                 </span>
-                <span className="text-sm font-black text-orange-600 dark:text-orange-400 font-latin bg-white dark:bg-slate-800 px-3 py-1 rounded-xl border border-orange-200 dark:border-orange-800 shadow-2xs">
-                  {distanceKm} کیلۆمەتر (km)
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-500">دوری بە کم:</span>
+                  <input
+                    type="number"
+                    min={0.1}
+                    max={60}
+                    step={0.5}
+                    value={distanceKm}
+                    onChange={(e) => setDistanceKm(Math.max(0.1, Number(e.target.value)))}
+                    className="w-16 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg p-1 text-center text-xs font-black font-latin text-orange-600 dark:text-orange-400 focus:outline-hidden focus:border-orange-500"
+                  />
+                </div>
+              </div>
+
+              {/* Preset Zone Buttons */}
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: 'زۆنی ۱ (٠ - ٣ کم)', km: 2 },
+                  { label: 'زۆنی ۲ (٣ - ٧ کم)', km: 5 },
+                  { label: 'زۆنی ۳ (٧ - ١٢ کم)', km: 9 },
+                  { label: `زۆنی ٤ (+١٢ کم - دەرەوە)`, km: (primarySeller?.deliveryZone?.maxDistanceKm || 12) + 3 }
+                ].map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setDistanceKm(preset.km)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      distanceKm === preset.km
+                        ? 'bg-orange-500 text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-orange-400'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
 
               <input
@@ -396,24 +428,38 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
               />
 
               {/* Status Banner */}
-              <div className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between gap-2 ${
-                deliveryCalc.statusType === 'in_range'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-                  : deliveryCalc.statusType === 'warning'
-                  ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-              }`}>
-                <div className="flex items-center gap-2">
-                  {deliveryCalc.statusType === 'in_range' && <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
-                  {deliveryCalc.statusType === 'warning' && <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />}
-                  {deliveryCalc.statusType === 'out_of_range' && <AlertCircle className="w-4 h-4 text-rose-600 flex-shrink-0" />}
-                  <span>{deliveryCalc.statusText}</span>
+              {deliveryCalc.statusType === 'out_of_range' ? (
+                <div className="bg-rose-50 dark:bg-rose-950/70 border-2 border-rose-500 p-3.5 rounded-xl text-xs font-bold flex items-center justify-between gap-3 text-rose-800 dark:text-rose-200 shadow-xs animate-pulse">
+                  <div className="flex items-center gap-2.5">
+                    <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+                    <div>
+                      <span className="font-black text-rose-700 dark:text-rose-300 text-sm block">🔴 بۆ ئێرە بەردەست نییە</span>
+                      <span className="text-[11px] font-normal text-rose-600 dark:text-rose-400">
+                        دوری دیاریکراو ({distanceKm} کم) لە سنوری گەیاندنی ئەم فرۆشگایەیە ({primarySeller?.deliveryZone?.maxDistanceKm || 12} کم) زیاترە.
+                      </span>
+                    </div>
+                  </div>
+                  <span className="bg-rose-600 text-white text-[10px] font-black px-2.5 py-1 rounded-md flex-shrink-0">
+                    بەردەست نییە
+                  </span>
                 </div>
+              ) : (
+                <div className={`p-3 rounded-xl text-xs font-bold flex items-center justify-between gap-2 ${
+                  deliveryCalc.statusType === 'in_range'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                    : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {deliveryCalc.statusType === 'in_range' && <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
+                    {deliveryCalc.statusType === 'warning' && <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0" />}
+                    <span>{deliveryCalc.statusText}</span>
+                  </div>
 
-                <span className="text-[11px] font-latin font-black flex-shrink-0">
-                  ~{deliveryCalc.estimatedMinutes} خولەک
-                </span>
-              </div>
+                  <span className="text-[11px] font-latin font-black flex-shrink-0">
+                    ~{deliveryCalc.estimatedMinutes} خولەک
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Custom Neighborhood / Street text */}
@@ -669,7 +715,7 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
               {isSubmitting ? (
                 <span>لە پرۆسەی تۆمارکردندایە...</span>
               ) : deliveryCalc.statusType === 'out_of_range' ? (
-                <span>لە دەرەوەی سنوری گەیاندنە</span>
+                <span>🔴 بۆ ئێرە بەردەست نییە</span>
               ) : (
                 <>
                   <span>پەسەندکردن و ناردنی داواکاری</span>

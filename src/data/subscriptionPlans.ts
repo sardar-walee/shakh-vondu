@@ -1,136 +1,126 @@
-import { SubscriptionPlan, PromoCoupon } from '../types';
+import { SubscriptionPlan } from '../types';
 
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+export const DEFAULT_SELLER_SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
-    id: 'free_trial',
-    name: '3-Month Free Trial',
-    nameKu: 'تاقیکردنەوەی ۳ مانگ بێبەرامبەر',
-    nameAr: 'تجربة مجانية لمدة 3 أشهر',
-    description: 'Complimentary full-access trial for all retail store types (Mobile, Pharmacy, Clothing, Supermarket, Cosmetics, Auto Parts).',
-    badge: 'دیاری سەرەتایی',
-    priceMonthly: 0,
-    priceYearly: 0,
-    priceIqd: 0,
-    durationMonths: 3,
-    limits: {
-      branches: 1,
-      staffSeats: 'Unlimited',
-      smsMonthly: 500,
-      productsMax: 'Unlimited',
-      aiInsights: true,
-      customWebhook: false,
-      dedicatedSmsSender: false,
-      prioritySupport: false
-    },
-    highlightFeatures: [
-      'تەواوی تایبەتمەندییەکان بۆ ماوەی ۳ مانگ بێبەرامبەر',
-      'بەڕێوەبردنی تەواوی فرۆشگا و کۆگا و فرۆشتن',
-      'پشتیوانی بەرهەمی مۆبایل، دەرمان، جلوبەرگ، مارکێت و جوانکاری',
-      'سیستەمی کاشێری خێرا و ئایمای/دەرمان/بەرهەم',
-      '٥٠٠ نامەی SMS ی بێبەرامبەر بۆ ئاگادارکردنەوەی کڕیار',
-      'یانەی خاڵەکان و خەڵاتی کڕیاران'
-    ],
-    popular: false
+    id: 'seller_free_starter',
+    target: 'seller',
+    name: 'پلانی بنەڕەتی (Starter)',
+    nameEn: 'Starter Store',
+    price: 0,
+    billingCycle: 'monthly',
+    commissionRateDiscount: 0,
+    maxProducts: 50,
+    isPopular: false,
+    features: [
+      'دانانی هەتا ٥٠ کاڵا و بەرهەم',
+      'ڕێژەی کۆمسیۆنی ستاندارد (١٠٪ بۆ شاخ)',
+      'داشبۆردی سەرەتایی بەڕێوەبردنی فرۆشگا',
+      'وەرگرتنی داواکاری لە کاتی ڕاستەقینە',
+      'پشتیوانی گشتی پلاتفۆرمی شاخ'
+    ]
   },
   {
-    id: 'starter',
-    name: '3-Month Renewal Plan',
-    nameKu: 'پالانی نوێکردنەوەی ۳ مانگ',
-    nameAr: 'تجديد لمدة 3 أشهر (25,000 دينار)',
-    description: 'Quarterly store access for single or multi-branch retail businesses.',
-    badge: 'سێ مانگ - 25,000',
-    priceMonthly: 8333,
-    priceYearly: 25000,
-    priceIqd: 25000,
-    durationMonths: 3,
-    limits: {
-      branches: 2,
-      staffSeats: 'Unlimited',
-      smsMonthly: 1000,
-      productsMax: 'Unlimited',
-      aiInsights: true,
-      customWebhook: false,
-      dedicatedSmsSender: false,
-      prioritySupport: true
-    },
-    highlightFeatures: [
-      'نوێکردنەوەی ۳ مانگ بە 25,000 دیناری عێراقی',
-      'دەستڕاگەیشتنی تەواوی خاوەن کار و کارمەندان',
-      'بەڕێوەبردنی بەرهەم، کۆگا، فرۆشتن و قەرزەکان',
-      'دەرهێنانی فایلی ئێکسڵ (CSV) و باکئەپی سەر گۆگڵ/گیمەیل',
-      'پشتیوانی و وەڵامدانەوەی خێرا'
-    ],
-    popular: false
+    id: 'seller_pro_monthly',
+    target: 'seller',
+    name: 'پلانی فرۆشیاری پێشکەوتوو (Pro Store)',
+    nameEn: 'Pro Store Merchant',
+    price: 25000,
+    billingCycle: 'monthly',
+    commissionRateDiscount: 5, // lowers to 5%
+    maxProducts: 9999,
+    isPopular: true,
+    features: [
+      'دانانی بەرهەمی بێسنوور (Unlimited Products)',
+      'نیسبەی کەمکراوە: تەنها ٥٪ کۆمسیۆن بۆ شاخ!',
+      'نیشانەی فرۆشگای باوەڕپێکراو (Verified Pro Badge)',
+      'پێشینە لە ئەنجامی گەڕان و بەشی سەرەکی ئەپ',
+      'شیکاری وردی فرۆش، کڕیاران و داهات',
+      'ڕیکلامی ناوبەناو لە پەیج و نۆتیفیکەیشنی شاخ'
+    ]
   },
   {
-    id: 'pro',
-    name: '6-Month Renewal Plan',
-    nameKu: 'پالانی نوێکردنەوەی ٦ مانگ',
-    nameAr: 'تجديد لمدة 6 أشهر (45,000 دينار)',
-    description: 'Half-year store renewal plan with discounted rate.',
-    badge: 'پێشنیازی تایبەت',
-    priceMonthly: 7500,
-    priceYearly: 45000,
-    priceIqd: 45000,
-    durationMonths: 6,
-    limits: {
-      branches: 5,
-      staffSeats: 'Unlimited',
-      smsMonthly: 2500,
-      productsMax: 'Unlimited',
-      aiInsights: true,
-      customWebhook: true,
-      dedicatedSmsSender: true,
-      prioritySupport: true
-    },
-    highlightFeatures: [
-      'نوێکردنەوەی ٦ مانگ بە 45,000 دیناری عێراقی',
-      'داشکاندنی 5,000 دینار بە بەراورد بە سێ مانگی',
-      'ناردنی نامەی ئۆتۆماتیکی (SMS) بۆ بەسەرچوونی قەرز و گەرەنتی',
-      'پشتیوانی ڕاستەوخۆ و ڕاپۆرتی زۆر پێشکەوتووی دارایی'
-    ],
-    popular: true
+    id: 'seller_vip_enterprise',
+    target: 'seller',
+    name: 'پلانی زێڕین ڤی ئای پی (VIP Enterprise)',
+    nameEn: 'VIP Enterprise Store',
+    price: 60000,
+    billingCycle: 'monthly',
+    commissionRateDiscount: 10, // lowers to 0%
+    maxProducts: 99999,
+    isPopular: false,
+    features: [
+      'سفر ٠٪ کۆمسیۆن لە فرۆش (Zero Commission - هەموو قازانج بۆ خۆت!)',
+      'بەرهەم و فرۆشگای بێسنوور',
+      'نیشانەی زێڕینی VIP لە تەنیشت ناوی دوکان',
+      'پیشاندانی تایبەت لە بەشی سەرەکی و بانەری بەرهەمەکان',
+      'ئاگاداری ڕاستەوخۆ (FCM Push Notifications) بۆ کڕیاران لە کاتی کاڵای نوێ',
+      'بەڕێوەبەری تایبەت لە شاخ و پشتیوانی ٢٤ کاتژمێری'
+    ]
   },
   {
-    id: 'enterprise',
-    name: '1-Year Renewal Plan',
-    nameKu: 'پالانی نوێکردنەوەی ۱ ساڵە (١٢ مانگ)',
-    nameAr: 'تجديد لمدة سنة كاملة (60,000 دينار)',
-    description: 'Full-year VIP store renewal with maximum savings and unlimited features.',
-    badge: 'باشترین داشکاندن',
-    priceMonthly: 5000,
-    priceYearly: 60000,
-    priceIqd: 60000,
-    durationMonths: 12,
-    limits: {
-      branches: 'Unlimited',
-      staffSeats: 'Unlimited',
-      smsMonthly: 'Unlimited',
-      productsMax: 'Unlimited',
-      aiInsights: true,
-      customWebhook: true,
-      dedicatedSmsSender: true,
-      prioritySupport: true
-    },
-    highlightFeatures: [
-      'نوێکردنەوەی ۱ ساڵ (١٢ مانگ) بە 60,000 دیناری عێراقی',
-      'گەورەترین داشکاندن (تەنها 5,000 دینار لە مانگێکدا!)',
-      'دەستڕاگەیشتنی تەواو و بێسنوور بۆ هەموو لۆکەیشن و کارمەندەکان',
-      'باکئەپی ئۆتۆماتیکی ڕۆژانە بۆ ئیمەیل و بەستنەوە بە دەروازەی SMS'
-    ],
-    popular: false
+    id: 'seller_custom_agreement',
+    target: 'seller',
+    name: 'ڕێککەوتنی تایبەتی شاخ (Custom Agreement)',
+    nameEn: 'Custom Negotiated Agreement',
+    price: 0,
+    billingCycle: 'custom',
+    commissionRateDiscount: 0,
+    maxProducts: 99999,
+    isPopular: false,
+    features: [
+      'دیاریکردنی نرخ و کۆمسیۆن بەپێی ڕێککەوتنی دووقۆڵی لەگەڵ بەڕێوەبەرایەتی شاخ',
+      'دەسەڵاتی تەواوی ئەدمین بۆ دەستکاریکردنی نیسبە و مەرجەکان',
+      'مەرجی تایبەتی لۆجستی و گەیاندن'
+    ]
   }
 ];
 
-export const PROMO_COUPONS: PromoCoupon[] = [
+export const DEFAULT_CAPTAIN_SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
-    code: 'KURDISTAN2026',
-    discountPercent: 25,
-    description: '25% Special Kurdistan Launch Discount'
+    id: 'captain_standard',
+    target: 'captain',
+    name: 'پلانی کاپتنی ستاندارد (Standard Captain)',
+    nameEn: 'Standard Courier (70/30 Split)',
+    price: 0,
+    billingCycle: 'monthly',
+    captainCommissionCut: 30, // 30% to Shakh, 70% to Captain
+    isPopular: false,
+    features: [
+      '٧٠٪ قازانجی خاوێن لە هەر گەیاندنێک بۆ کاپتن',
+      '٣٠٪ نیسبەی پلاتفۆرمی شاخ بۆ خزمەتگوزاری و بیمە',
+      'وەرگرتنی داواکارییە ناوخۆییەکانی شار',
+      'کۆکردنەوەی پۆینتی کاپتن و گۆڕینەوە بە پاداشت'
+    ]
   },
   {
-    code: 'MOBIPRO',
-    discountFixed: 5000,
-    description: '5,000 IQD Discount Coupon'
+    id: 'captain_pro_monthly',
+    target: 'captain',
+    name: 'ئابوونەی کاپتنی زێڕین (VIP Captain 100%)',
+    nameEn: 'Pro VIP Courier (100% Net)',
+    price: 20000,
+    billingCycle: 'monthly',
+    captainCommissionCut: 0, // 0% to Shakh, 100% to Captain!
+    isPopular: true,
+    features: [
+      '١٠٠٪ تەواوی کرێی گەیاندن بۆ کاپتن (٠٪ لێبڕین بۆ شاخ!)',
+      'پێشینەی سەرەکی لە وەرگرتنی داواکارییە گەورەکان و فرۆشگاکان',
+      'پۆینت و خەڵاتی دوو هێندە لەسەر هەر گەیاندنێک',
+      'نیشانەی کاپتنی خێرا و ئەستێرەی زێڕین',
+      'بیمەی تایبەتی پشتیوانی لە کاتی کێشە لە گەیاندن'
+    ]
+  },
+  {
+    id: 'captain_custom_agreement',
+    target: 'captain',
+    name: 'ڕێککەوتنی تایبەتی کاپتن (Custom Agreement)',
+    nameEn: 'Custom Captain Agreement',
+    price: 0,
+    billingCycle: 'custom',
+    captainCommissionCut: 0,
+    isPopular: false,
+    features: [
+      'ڕێککەوتنی تایبەت لەگەڵ بەڕێوەبەرایەتی شاخ بۆ شفت، زۆن و نیسبە',
+      'دیاریکردنی مووچە یان کرێی جێگیر بەپێی ڕێککەوتن'
+    ]
   }
 ];

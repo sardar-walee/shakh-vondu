@@ -16,7 +16,10 @@ import {
   Clock,
   Sparkles,
   Eye,
-  Flame
+  Flame,
+  AlertCircle,
+  MapPin,
+  Navigation
 } from 'lucide-react';
 import { Product } from '../types';
 import { CategoryBadge } from '../components/common/Badge';
@@ -25,6 +28,7 @@ import { ShareModal, SocialShareBar } from '../components/common/ShareModal';
 import { useCart } from '../context/CartContext';
 import { useMarketplace } from '../context/MarketplaceContext';
 import { useAuth } from '../context/AuthContext';
+import { getDefaultDeliveryZone, calculateDeliveryFee } from '../utils/deliveryUtils';
 
 interface ProductDetailViewProps {
   productId: string;
@@ -56,6 +60,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const [newComment, setNewComment] = useState('');
   const [addedToast, setAddedToast] = useState(false);
 
+  // Delivery Zone & Distance Calculation State
+  const [manualDistanceKm, setManualDistanceKm] = useState<number>(3);
+
   if (!product) {
     return (
       <div className="text-center py-20">
@@ -78,13 +85,34 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     ? Math.round(((product.price - product.discountPrice) / product.price) * 100)
     : 0;
 
+  // Food delivery zone checks
+  const isFoodCategory = ['food', 'market', 'fresh_meat', 'dairy', 'fruits_vegetables'].includes(product.category) || seller?.category === 'food';
+  const deliveryZone = seller?.deliveryZone || getDefaultDeliveryZone(product.category === 'cars' ? 'food' : (product.category as any));
+  const maxDistanceLimit = deliveryZone?.maxDistanceKm || 12;
+
+  const deliveryCalc = calculateDeliveryFee({
+    seller,
+    distanceKm: manualDistanceKm,
+    subtotal: effectivePrice * quantity
+  });
+
+  const isOutOfDeliveryRange = deliveryCalc.statusType === 'out_of_range' || (isFoodCategory && manualDistanceKm > maxDistanceLimit);
+
   const handleAddToCart = () => {
+    if (isOutOfDeliveryRange) {
+      alert(`داواکاری ناکرێت: بۆ ئێرە بەردەست نییە! (دوری: ${manualDistanceKm} کم لە سنوری گەیاندنی فرۆشگا ${maxDistanceLimit} کم زیاترە).`);
+      return;
+    }
     addToCart(product, quantity, selectedSize, selectedColor, specialInstructions);
     setAddedToast(true);
     setTimeout(() => setAddedToast(false), 3000);
   };
 
   const handleInstantBuy = () => {
+    if (isOutOfDeliveryRange) {
+      alert(`داواکاری ناکرێت: بۆ ئێرە بەردەست نییە! (دوری: ${manualDistanceKm} کم لە سنوری گەیاندنی فرۆشگا ${maxDistanceLimit} کم زیاترە).`);
+      return;
+    }
     addToCart(product, quantity, selectedSize, selectedColor, specialInstructions);
     onNavigate('checkout');
   };
@@ -572,7 +600,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                       {seller.city} • {seller.isOpen ? 'کراوەیە ئێستا' : 'داخراوە'}
                       {seller.deliveryZone && (
                         <span className="font-bold text-orange-600 mr-1">
-                          (گەیاندن: ٠ - {seller.deliveryZone.maxDistanceKm} کم)
+                          (سنوری گەیاندن: ٠ - {seller.deliveryZone.maxDistanceKm} کم)
                         </span>
                       )}
                     </p>
@@ -583,6 +611,83 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 </span>
               </div>
             )}
+
+            {/* Manual Delivery Zone & Distance Checker */}
+            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Navigation className="w-4 h-4 text-orange-500" />
+                  <span>دەستنیشانکردنی دەستیی شوێن و دوری گەیاندن:</span>
+                </span>
+                <span className={`text-xs font-black font-latin px-2.5 py-1 rounded-lg border ${
+                  isOutOfDeliveryRange
+                    ? 'bg-rose-100 text-rose-700 border-rose-300 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
+                    : 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                }`}>
+                  {manualDistanceKm} کم
+                </span>
+              </div>
+
+              {/* Distance Presets */}
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { label: '٢ کم (زۆنی نزیک)', km: 2 },
+                  { label: '٥ کم (ناو شار)', km: 5 },
+                  { label: '١٠ کم (مامناوەند)', km: 10 },
+                  { label: `${maxDistanceLimit} کم (ئەقصا سنور)`, km: maxDistanceLimit },
+                  { label: `${maxDistanceLimit + 4} کم (دەرەوە)`, km: maxDistanceLimit + 4 }
+                ].map((preset, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setManualDistanceKm(preset.km)}
+                    className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                      manualDistanceKm === preset.km
+                        ? 'bg-orange-500 text-white shadow-xs'
+                        : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-orange-400'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Manual Range Slider */}
+              <input
+                type="range"
+                min={0.5}
+                max={Math.max(25, maxDistanceLimit + 8)}
+                step={0.5}
+                value={manualDistanceKm}
+                onChange={(e) => setManualDistanceKm(Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+              />
+
+              {/* Out of Range Banner or Delivery Fee status */}
+              {isOutOfDeliveryRange ? (
+                <div className="bg-rose-50 dark:bg-rose-950/70 border-2 border-rose-500 rounded-xl p-3 flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-200 shadow-sm animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+                    <div>
+                      <span className="font-black text-rose-700 dark:text-rose-300 block">🔴 بۆ ئێرە بەردەست نییە</span>
+                      <span className="text-[11px] text-rose-600 dark:text-rose-400 font-normal">
+                        دوری دیاریکراو ({manualDistanceKm} کم) لە سنوری گەیاندنی فرۆشگای خۆراکەکە ({maxDistanceLimit} کم) زیاترە.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl p-2.5 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-emerald-600" />
+                    <span>لە سنوری گەیاندندایە ({manualDistanceKm} کم)</span>
+                  </div>
+                  <span className="font-latin text-[11px] font-black">
+                    کرێ: {deliveryCalc.isFreeDelivery ? 'بەخۆڕایی' : `${deliveryCalc.deliveryFee.toLocaleString()} د.ع`} • ~{deliveryCalc.estimatedMinutes} خولەک
+                  </span>
+                </div>
+              )}
+            </div>
 
           </div>
 
@@ -619,17 +724,27 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={handleAddToCart}
-                className="py-3.5 px-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer"
+                disabled={isOutOfDeliveryRange}
+                className={`py-3.5 px-4 rounded-xl text-white text-xs font-bold shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer ${
+                  isOutOfDeliveryRange
+                    ? 'bg-rose-600 hover:bg-rose-700 opacity-80 cursor-not-allowed shadow-none'
+                    : 'bg-orange-500 hover:bg-orange-600 shadow-orange-500/20'
+                }`}
               >
                 <ShoppingCart className="w-4 h-4" />
-                <span>زیادکردن بۆ سەبەتە</span>
+                <span>{isOutOfDeliveryRange ? 'بۆ ئێرە بەردەست نییە' : 'زیادکردن بۆ سەبەتە'}</span>
               </button>
 
               <button
                 onClick={handleInstantBuy}
-                className="py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer"
+                disabled={isOutOfDeliveryRange}
+                className={`py-3.5 px-4 rounded-xl text-white text-xs font-bold shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer ${
+                  isOutOfDeliveryRange
+                    ? 'bg-slate-400 opacity-60 cursor-not-allowed shadow-none'
+                    : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'
+                }`}
               >
-                <span>داواکردنی دەستبەجێ</span>
+                <span>{isOutOfDeliveryRange ? 'بۆ ئێرە بەردەست نییە' : 'داواکردنی دەستبەجێ'}</span>
               </button>
             </div>
 

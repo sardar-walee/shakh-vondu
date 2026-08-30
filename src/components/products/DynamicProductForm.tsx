@@ -53,6 +53,7 @@ import {
 } from '../../utils/categoryFields';
 import { useLanguage } from '../../context/LanguageContext';
 import { useMarketplace } from '../../context/MarketplaceContext';
+import { useAuth } from '../../context/AuthContext';
 
 interface DynamicProductFormProps {
   initialData?: Product | null;
@@ -77,16 +78,17 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
 }) => {
   const { t, currentLanguage } = useLanguage();
   const { sellers } = useMarketplace();
+  const { currentUser, sellerProfile } = useAuth();
   const [activeStep, setActiveStep] = useState<1 | 2 | 3 | 4 | 5>(1);
   const [hasDraftLoaded, setHasDraftLoaded] = useState(false);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
 
   // Super Admin store assignment state
   const [currentSellerId, setCurrentSellerId] = useState<string>(
-    initialData?.sellerId || sellerId || (isSuperAdmin ? 'admin-store' : 'store-1')
+    initialData?.sellerId || sellerId || (isSuperAdmin ? 'admin-store' : (sellerProfile?.id || (currentUser ? `store-${currentUser.id}` : 'store-1')))
   );
   const [currentSellerName, setCurrentSellerName] = useState<string>(
-    initialData?.sellerName || sellerName || (isSuperAdmin ? 'بەڕێوەبەرایەتی شاخ' : 'فرۆشگای من')
+    initialData?.sellerName || sellerName || (isSuperAdmin ? 'بەڕێوەبەرایەتی شاخ' : (sellerProfile?.storeName || currentUser?.fullName || 'فرۆشگای شاخ'))
   );
   const [customSellerName, setCustomSellerName] = useState<string>('');
 
@@ -443,8 +445,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
     }
 
     const payload: Omit<Product, 'id' | 'createdAt'> = {
-      sellerId: isSuperAdmin ? (currentSellerId === 'custom' ? `custom-${Date.now()}` : currentSellerId) : (sellerId || currentSellerId),
-      sellerName: isSuperAdmin ? (currentSellerName || 'بەڕێوەبەرایەتی شاخ') : (sellerName || currentSellerName || 'فرۆشگای شاخ'),
+      sellerId: isSuperAdmin ? (currentSellerId === 'custom' ? `custom-${Date.now()}` : currentSellerId) : (sellerId || currentSellerId || sellerProfile?.id || (currentUser ? `store-${currentUser.id}` : 'store-1')),
+      sellerName: isSuperAdmin ? (currentSellerName || 'بەڕێوەبەرایەتی شاخ') : (sellerName || currentSellerName || sellerProfile?.storeName || currentUser?.fullName || 'فرۆشگای شاخ'),
       category,
       subcategory: subcategory || undefined,
       title: title.trim(),
@@ -453,10 +455,11 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
       price: Number(price),
       discountPrice: discountPrice ? Number(discountPrice) : undefined,
       stock: Number(stock),
-      unit: (category === 'market' || category === 'fruits_vegetables' || category === 'fresh_meat' || category === 'dairy') ? (unit.trim() || 'دانە') : undefined,
+      unit: (category === 'market' || category === 'fruits_vegetables' || category === 'fresh_meat' || category === 'dairy' || category === 'food') ? (unit.trim() || 'دانە') : undefined,
       rewardPoints: Number(rewardPoints || 0),
       images,
-      isAvailable,
+      isAvailable: isAvailable !== false,
+      productStatus: initialData?.productStatus || 'active',
       isFeatured,
       rating: initialData?.rating || 5.0,
       reviewCount: initialData?.reviewCount || 0,

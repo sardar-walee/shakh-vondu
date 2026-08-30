@@ -47,6 +47,7 @@ import { CommissionAgreementCard } from '../components/seller/CommissionAgreemen
 import { getDefaultDeliveryZone, calculateDeliveryFee, CITY_NEIGHBORHOOD_DISTANCES } from '../utils/deliveryUtils';
 import { CaptainManager } from '../components/delivery/CaptainManager';
 import { getCategoryPostButtonLabel } from '../utils/categoryFields';
+import { SubscriptionManagementPanel } from '../components/subscription/SubscriptionManagementPanel';
 
 interface SellerDashboardViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -77,7 +78,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
     replyToReview
   } = useMarketplace();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'reviews' | 'captains' | 'agreement' | 'wallet' | 'delivery' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'orders' | 'reviews' | 'captains' | 'subscriptions' | 'agreement' | 'wallet' | 'delivery' | 'settings'>('overview');
   const [deliverySection, setDeliverySection] = useState<'shakh_express' | 'store_inhouse' | 'drivers_team'>('shakh_express');
   const [replyingReviewId, setReplyingReviewId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<string>('');
@@ -311,6 +312,7 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
           { id: 'products', label: `لیستی کاڵاکان (${myProducts.length})`, icon: <Package className="w-4 h-4" /> },
           { id: 'reviews', label: `ڕا و هەڵسەنگاندن (${getSellerReviews(sellerId).length})`, icon: <Star className="w-4 h-4 text-amber-500" /> },
           { id: 'captains', label: `کاپتنەکانی گەیاندن (${storeDriversList.length})`, icon: <UserCheck className="w-4 h-4 text-emerald-500" /> },
+          { id: 'subscriptions', label: '👑 ئابوونەی فرۆشگا و داشکاندنی نیسبە', icon: <Award className="w-4 h-4 text-amber-500" /> },
           { id: 'agreement', label: 'ڕێککەوتنی پۆینتی شاخ و خاوەن کار', icon: <Award className="w-4 h-4 text-amber-500" /> },
           { id: 'delivery', label: 'ناوچە و دوری گەیاندن (Delivery Radius)', icon: <MapPin className="w-4 h-4 text-orange-500" /> },
           { id: 'wallet', label: 'جزدان و قازانج', icon: <DollarSign className="w-4 h-4" /> },
@@ -330,6 +332,11 @@ export const SellerDashboardView: React.FC<SellerDashboardViewProps> = ({ onNavi
           </button>
         ))}
       </div>
+
+      {/* Subscription Plans & Commission Discounts Tab */}
+      {activeTab === 'subscriptions' && (
+        <SubscriptionManagementPanel defaultRole="seller" onNavigate={onNavigate} />
+      )}
 
       {/* Shakh & Business Owner Agreement Tab */}
       {activeTab === 'agreement' && (() => {

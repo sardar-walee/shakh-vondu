@@ -13,6 +13,7 @@ import {
   Truck,
   Navigation,
   CheckCircle,
+  Check,
   AlertCircle,
   MessageSquare,
   Sparkles
@@ -34,9 +35,29 @@ export const SellerStoreView: React.FC<SellerStoreViewProps> = ({
 }) => {
   const { sellers, products, favoriteSellerIds, toggleFavoriteSeller, getSellerReviews } = useMarketplace();
 
-  const seller = sellers.find(s => s.id === sellerId || s.userId === sellerId || `store-${s.userId}` === sellerId || s.id === `store-${sellerId}`) || sellers[0];
+  const seller = sellers.find(s => s.id === sellerId || s.userId === sellerId || `store-${s.userId}` === sellerId || s.id === `store-${sellerId}`) || (sellerId === 'admin-store' ? {
+    id: 'admin-store',
+    userId: 'admin-super',
+    storeName: 'بەڕێوەبەرایەتی شاخ (Shakh Official)',
+    slug: 'admin-store',
+    category: 'food' as const,
+    description: 'تۆڕی فەرمیی بەڕێوەبەرایەتی پلاتفۆرمی شاخ',
+    logoUrl: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
+    coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
+    rating: 5.0,
+    totalReviews: 18,
+    totalSales: 250,
+    city: 'گشت شارەکان (All Kurdistan Cities)',
+    address: 'کوردستان - بەڕێوەبەرایەتی گشتی شاخ',
+    phone: '07504796924',
+    isOpen: true,
+    isVerified: true,
+    commissionRate: 0,
+    createdAt: new Date().toISOString()
+  } : sellers[0]);
+
   const storeProducts = products.filter(p => 
-    (p.sellerId === seller?.id || p.sellerId === sellerId || p.sellerId === seller?.userId || p.sellerId === `store-${seller?.userId}`) &&
+    (p.sellerId === seller?.id || p.sellerId === sellerId || p.sellerId === seller?.userId || p.sellerId === `store-${seller?.userId}` || (sellerId === 'admin-store' && (p.sellerId === 'admin-store' || p.sellerName?.includes('شاخ')))) &&
     p.isAvailable !== false &&
     p.productStatus !== 'hidden'
   );
@@ -176,26 +197,89 @@ export const SellerStoreView: React.FC<SellerStoreViewProps> = ({
             </p>
           </div>
 
-          {/* Delivery Zone Information Banner for non-car stores */}
+          {/* Delivery Zone Information Banner & Interactive Calculator for non-car stores */}
           {!isCar && deliveryZone && (
-            <div className="bg-orange-50/70 border border-orange-200/80 rounded-2xl p-4 space-y-2">
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-orange-950 flex items-center gap-1.5">
+                <span className="text-xs font-black text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                   <Navigation className="w-4 h-4 text-orange-600" />
-                  سنوری دوری گەیاندنی فرۆشگا:
+                  <span>سنور و دەستنیشانکردنی دەستیی گەیاندنی فرۆشگا:</span>
                 </span>
-                <span className="text-xs font-black text-orange-700 font-latin bg-white px-2.5 py-0.5 rounded-lg border border-orange-200">
-                  لە ٠ کم تا {deliveryZone.maxDistanceKm} کم
+                <span className="text-xs font-black text-orange-700 font-latin bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200">
+                  سنور: ٠ - {deliveryZone.maxDistanceKm} کم
                 </span>
               </div>
-              <p className="text-xs text-orange-900 leading-relaxed">
-                {deliveryZone.deliveryAvailabilityNote || `ئەم فرۆشگایە خزمەتگوزاری گەیاندنی خێرا لە ٠ کم تا ${deliveryZone.maxDistanceKm} کم پێشکەش دەکات بە نرخی سەرەتایی ${deliveryZone.baseFee.toLocaleString()} د.ع.`}
-              </p>
+
+              {/* Presets and Range Slider */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-600 dark:text-slate-400 font-bold">دیاریکردنی دەستیی دوری لە فرۆشگاوە:</span>
+                  <span className="font-black text-orange-600 dark:text-orange-400 font-latin text-sm">{checkDistance} کم</span>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: '٢ کم (نزیک)', km: 2 },
+                    { label: '٥ کم (مامناوەند)', km: 5 },
+                    { label: `${deliveryZone.maxDistanceKm} کم (ئەقصا سنور)`, km: deliveryZone.maxDistanceKm },
+                    { label: `${deliveryZone.maxDistanceKm + 4} کم (دەرەوە)`, km: deliveryZone.maxDistanceKm + 4 }
+                  ].map((preset, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setCheckDistance(preset.km)}
+                      className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
+                        checkDistance === preset.km
+                          ? 'bg-orange-500 text-white shadow-xs'
+                          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:border-orange-400'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+
+                <input
+                  type="range"
+                  min={0.5}
+                  max={Math.max(25, deliveryZone.maxDistanceKm + 8)}
+                  step={0.5}
+                  value={checkDistance}
+                  onChange={(e) => setCheckDistance(Number(e.target.value))}
+                  className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-orange-500"
+                />
+              </div>
+
+              {/* Status Banner */}
+              {checkResult?.statusType === 'out_of_range' ? (
+                <div className="bg-rose-50 dark:bg-rose-950/70 border-2 border-rose-500 rounded-xl p-3 flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-200 animate-pulse">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-rose-600 flex-shrink-0" />
+                    <div>
+                      <span className="font-black text-rose-700 dark:text-rose-300 text-sm block">🔴 بۆ ئێرە بەردەست نییە</span>
+                      <span className="text-[11px] text-rose-600 dark:text-rose-400 font-normal">
+                        دوری دیاریکراو ({checkDistance} کم) لە سنوری گەیاندنی فرۆشگای خۆراکەکە ({deliveryZone.maxDistanceKm} کم) زیاترە.
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 rounded-xl p-2.5 flex items-center justify-between text-xs font-bold text-emerald-800 dark:text-emerald-300">
+                  <div className="flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-emerald-600" />
+                    <span>لە سنوری گەیاندندایە ({checkDistance} کم)</span>
+                  </div>
+                  <span className="font-latin text-[11px] font-black">
+                    ~{checkResult?.estimatedMinutes} خولەک • کرێ: {checkResult?.deliveryFee.toLocaleString()} د.ع
+                  </span>
+                </div>
+              )}
+
               {deliveryZone.coveredNeighborhoods && deliveryZone.coveredNeighborhoods.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-1">
-                  <span className="text-[11px] font-bold text-orange-800 ml-1">گەڕەکە سەرەکییەکان:</span>
-                  {deliveryZone.coveredNeighborhoods.slice(0, 8).map((n, i) => (
-                    <span key={i} className="text-[10px] bg-white text-orange-800 px-2 py-0.5 rounded-md border border-orange-200">
+                <div className="flex flex-wrap gap-1 pt-1 border-t border-slate-200/60 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 ml-1">گەڕەکە سەرەکییەکان:</span>
+                  {deliveryZone.coveredNeighborhoods.slice(0, 10).map((n, i) => (
+                    <span key={i} className="text-[10px] bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
                       {n}
                     </span>
                   ))}

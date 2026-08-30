@@ -267,7 +267,7 @@ export function calculateDeliveryFee({
     statusText = `لە دەرەوەی سنوری ئاساییە (${zone.maxDistanceKm} کم)، نرخی گەیاندنی زیادە هەژمارکراوە`;
   } else {
     statusType = 'out_of_range';
-    statusText = `لە دەرەوەی سنوری گەیاندنی ئەم فرۆشگایەیە (تەنها لە ٠ تا ${zone.maxDistanceKm} کم دەگەیەنێت)`;
+    statusText = `بۆ ئێرە بەردەست نییە (دووری: ${roundedDistance} کم - سنوری فرۆشگا: ٠ تا ${zone.maxDistanceKm} کم)`;
   }
 
   return {

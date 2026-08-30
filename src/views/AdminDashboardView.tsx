@@ -60,6 +60,7 @@ import { OccasionBannerAdminPanel } from '../components/common/OccasionBannerAdm
 import { I18nAdminManager } from '../components/admin/I18nAdminManager';
 import { CaptainManager } from '../components/delivery/CaptainManager';
 import { AppUpdateManager } from '../components/admin/AppUpdateManager';
+import { SubscriptionManagementPanel } from '../components/subscription/SubscriptionManagementPanel';
 
 interface AdminDashboardViewProps {
   onNavigate: (view: string, param?: string) => void;
@@ -108,11 +109,12 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
     updateStoreDriver,
     deleteStoreDriver,
     approveCarAd,
-    rejectCarAd
+    rejectCarAd,
+    userSubscriptions
   } = useMarketplace();
   const { currentUser, isSuperAdmin } = useAuth();
 
-  const [tab, setTab] = useState<'overview' | 'super_omni' | 'captains' | 'app_updates' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances' | 'i18n'>('super_omni');
+  const [tab, setTab] = useState<'overview' | 'super_omni' | 'subscriptions' | 'captains' | 'app_updates' | 'sellers' | 'orders' | 'products' | 'cars' | 'agreements' | 'feedback' | 'occasions' | 'finances' | 'i18n'>('super_omni');
 
   // Super Admin Omni Control State
   const [omniSection, setOmniSection] = useState<'users' | 'products' | 'cars' | 'posts'>('users');
@@ -331,6 +333,7 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
       <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 pb-3 scrollbar-none">
         {[
           { id: 'super_omni', label: `⚡ بەشی سوپەر ئەدمین (کۆنترۆڵی سەرجەم بەکارهێنەر/کالا/پۆست)`, icon: <Crown className="w-4 h-4 text-amber-300" /> },
+          { id: 'subscriptions', label: `👑 بەشی ئابوونە و ڕێککەوتنی نیسبەکان (${userSubscriptions.length})`, icon: <CreditCard className="w-4 h-4 text-emerald-400" /> },
           { id: 'app_updates', label: 'ئەپدەیتی نوێ و وەشانەکان (Live Updates)', icon: <Sparkles className="w-4 h-4 text-orange-400" /> },
           { id: 'captains', label: `کاپتنەکانی گەیاندن (${allPlatformCaptains.length})`, icon: <UserCheck className="w-4 h-4 text-emerald-400" /> },
           { id: 'overview', label: 'پوختەی دارایی و گشتی', icon: <TrendingUp className="w-4 h-4" /> },
@@ -2457,6 +2460,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
             ))}
           </div>
         </div>
+      )}
+
+      {tab === 'subscriptions' && (
+        <SubscriptionManagementPanel onNavigate={onNavigate} />
       )}
 
       {tab === 'i18n' && (

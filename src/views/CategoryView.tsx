@@ -252,10 +252,12 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
   if (selectedCity && selectedCity !== 'all') {
     const cityPrefix = selectedCity.split(' ')[0].toLowerCase();
     filteredProducts = filteredProducts.filter(p => {
-      if ((p as any).city && (p as any).city.toLowerCase().includes(cityPrefix)) return true;
-      if ((p as any).sellerCity && (p as any).sellerCity.toLowerCase().includes(cityPrefix)) return true;
+      // Super Admin official store or products marked for all cities
+      if (p.sellerId === 'admin-store' || p.sellerId === 'store-main' || (p.sellerName && p.sellerName.includes('شاخ'))) return true;
+      if ((p as any).city && ((p as any).city.toLowerCase().includes(cityPrefix) || (p as any).city.includes('گشت') || (p as any).city.includes('کوردستان'))) return true;
+      if ((p as any).sellerCity && ((p as any).sellerCity.toLowerCase().includes(cityPrefix) || (p as any).sellerCity.includes('گشت') || (p as any).sellerCity.includes('کوردستان'))) return true;
       const seller = sellers.find(s => s.id === p.sellerId || s.userId === p.sellerId || `store-${s.userId}` === p.sellerId || s.id === `store-${p.sellerId}`);
-      if (seller && seller.city && seller.city.toLowerCase().includes(cityPrefix)) return true;
+      if (seller && (seller.id === 'admin-store' || seller.id === 'store-main' || (seller.city && (seller.city.toLowerCase().includes(cityPrefix) || seller.city.includes('گشت') || seller.city.includes('کوردستان'))))) return true;
       if (!seller) return true;
       return false;
     });
@@ -271,10 +273,14 @@ export const CategoryView: React.FC<CategoryViewProps> = ({
   }
 
   // Filter sellers by category
-  let categorySellers = sellers.filter(s => s.category === category);
+  let categorySellers = sellers.filter(s => s.category === category || s.id === 'admin-store');
   if (selectedCity && selectedCity !== 'all') {
     const cityPrefix = selectedCity.split(' ')[0].toLowerCase();
-    categorySellers = categorySellers.filter(s => s.city && s.city.toLowerCase().includes(cityPrefix));
+    categorySellers = categorySellers.filter(s =>
+      s.id === 'admin-store' ||
+      s.id === 'store-main' ||
+      (s.city && (s.city.toLowerCase().includes(cityPrefix) || s.city.includes('گشت') || s.city.includes('کوردستان')))
+    );
   }
 
   // Helper to get friendly Kurdish short title for subcategory tabs

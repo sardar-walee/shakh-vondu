@@ -63,8 +63,24 @@ export const NotificationToast: React.FC<NotificationToastProps> = ({ onNavigate
   const handleAction = () => {
     markAsRead(activeToast.id);
     dismissToast();
+    if (activeToast.metadata?.productId) {
+      onNavigate('product-detail', activeToast.metadata.productId);
+      return;
+    }
+    if (activeToast.metadata?.carAdId) {
+      onNavigate('car-detail', activeToast.metadata.carAdId);
+      return;
+    }
+    if (activeToast.metadata?.orderId) {
+      onNavigate('order-tracking', activeToast.metadata.orderId);
+      return;
+    }
     if (activeToast.linkUrl) {
-      const cleanUrl = activeToast.linkUrl.replace('/', '');
+      let cleanUrl = activeToast.linkUrl.replace('/', '');
+      if (cleanUrl === 'product' || cleanUrl === 'product-detail' || cleanUrl === 'products') {
+        onNavigate('product-detail', activeToast.metadata?.productId);
+        return;
+      }
       onNavigate(cleanUrl, activeToast.metadata?.orderId || activeToast.metadata?.carAdId);
     }
   };
