@@ -78,13 +78,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onSelectCategory }) 
                 </button>
               </li>
               <li>
-                <button onClick={() => onSelectCategory?.('clothes')} className="hover:text-[#F97316] transition-colors cursor-pointer">
-                  {t('category.clothes')}
+                <button onClick={() => onSelectCategory?.('fruits_vegetables')} className="hover:text-[#F97316] transition-colors cursor-pointer">
+                  {t('category.fruits_vegetables')}
                 </button>
               </li>
               <li>
-                <button onClick={() => onSelectCategory?.('fresh_meat')} className="hover:text-[#F97316] transition-colors cursor-pointer">
-                  {t('category.fresh_meat')}
+                <button onClick={() => onSelectCategory?.('dairy')} className="hover:text-[#F97316] transition-colors cursor-pointer">
+                  {t('category.dairy')}
                 </button>
               </li>
               <li>

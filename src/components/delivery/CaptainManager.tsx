@@ -26,7 +26,11 @@ import {
   FileText,
   Lock,
   Mail,
-  Car
+  Car,
+  Eye,
+  EyeOff,
+  Copy,
+  Check
 } from 'lucide-react';
 import { StoreDriver } from '../../types';
 import { Modal } from '../common/Modal';
@@ -199,9 +203,16 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
   const [customDeliveryFee, setCustomDeliveryFee] = useState<number>(2000);
   const [commissionRate, setCommissionRate] = useState<number>(10);
   const [nationalIdOrLicense, setNationalIdOrLicense] = useState('');
+  const [address, setAddress] = useState('');
   const [notes, setNotes] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [isOnDuty, setIsOnDuty] = useState(true);
+  const [visiblePasswords, setVisiblePasswords] = useState<{ [driverId: string]: boolean }>({});
+  const [copiedDriverId, setCopiedDriverId] = useState<string | null>(null);
+
+  const togglePasswordVisibility = (driverId: string) => {
+    setVisiblePasswords(prev => ({ ...prev, [driverId]: !prev[driverId] }));
+  };
 
   const openAddModal = () => {
     setEditingDriver(null);
@@ -209,6 +220,7 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
     setEmail('');
     setPassword('');
     setPhone('');
+    setAddress('');
     setVehicleType('motorcycle');
     setVehicleModel('');
     setVehicleColor('');
@@ -238,6 +250,7 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
     setEmail(driver.email || '');
     setPassword(driver.password || '');
     setPhone(driver.phone || '');
+    setAddress(driver.address || '');
     setVehicleType(driver.vehicleType || 'motorcycle');
     setVehicleModel(driver.vehicleModel || '');
     setVehicleColor(driver.vehicleColor || '');
@@ -277,6 +290,7 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
         email: email.trim() || undefined,
         password: password.trim() || undefined,
         phone: phone.trim(),
+        address: address.trim() || undefined,
         vehicleType,
         vehicleModel: vehicleModel.trim() || undefined,
         vehicleColor: vehicleColor.trim() || undefined,
@@ -592,44 +606,177 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
                   </div>
                 </div>
 
-                {/* Badges / Vehicle Info */}
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl space-y-0.5">
-                    <span className="text-slate-400 text-[10px] block">ئامرازی گواستنەوە:</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
-                      <span>{getVehicleIcon(drv.vehicleType)}</span>
-                      <span>{getVehicleLabel(drv.vehicleType)}</span>
+                {/* Super Admin / Manager Driver Credentials (Email & Password) */}
+                <div className="p-2.5 bg-amber-50/80 dark:bg-amber-950/40 rounded-2xl border border-amber-200/80 dark:border-amber-900/50 space-y-1 text-[11px]">
+                  <div className="flex items-center justify-between font-bold text-amber-950 dark:text-amber-200">
+                    <span className="flex items-center gap-1">
+                      <Lock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      <span>وشەی تێپەڕی کاپتن (Password):</span>
                     </span>
-                    {drv.vehicleModel && (
-                      <span className="text-[10px] text-slate-500 block truncate">{drv.vehicleModel}</span>
-                    )}
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility(drv.id)}
+                        className="p-1 hover:bg-amber-200/50 dark:hover:bg-amber-900/60 rounded-lg transition-colors cursor-pointer text-amber-800 dark:text-amber-300"
+                        title={visiblePasswords[drv.id] ? 'داخستنی وشەی تێپەڕ' : 'پیشاندانی وشەی تێپەڕ'}
+                      >
+                        {visiblePasswords[drv.id] ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                      {drv.password && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(drv.password || '');
+                            setCopiedDriverId(drv.id);
+                            setTimeout(() => setCopiedDriverId(null), 2000);
+                          }}
+                          className="p-1 hover:bg-amber-200/50 dark:hover:bg-amber-900/60 rounded-lg transition-colors cursor-pointer text-amber-800 dark:text-amber-300"
+                          title="کۆپیکردنی وشەی تێپەڕ"
+                        >
+                          {copiedDriverId === drv.id ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl space-y-0.5">
-                    <span className="text-slate-400 text-[10px] block">تابلۆ و گەیاندن:</span>
-                    <span className="font-bold text-slate-800 dark:text-slate-200 font-latin truncate block">
-                      {drv.plateNumber || 'تابلۆ دیاری نەکراوە'}
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-latin">
+                    <span className="text-slate-600 dark:text-slate-300 font-medium">
+                      {drv.email || `${drv.phone}@shakh.com`}
                     </span>
-                    <span className="text-[10px] text-emerald-600 font-bold block font-latin">
-                      {drv.totalDeliveries || 0} گەیاندن
+                    <span className="font-mono font-bold text-slate-900 dark:text-amber-100 bg-white/80 dark:bg-slate-900 px-2 py-0.5 rounded-md border border-amber-200 dark:border-amber-800">
+                      {visiblePasswords[drv.id] ? (drv.password || '12345678') : '••••••••'}
                     </span>
                   </div>
                 </div>
 
-                {/* City & Covered Areas */}
-                {(drv.city || (drv.coverageAreas && drv.coverageAreas.length > 0)) && (
-                  <div className="text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
-                    <div className="flex items-center gap-1">
+                {/* Address & City */}
+                {(drv.address || drv.city || (drv.coverageAreas && drv.coverageAreas.length > 0)) && (
+                  <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 text-[11px] space-y-1">
+                    <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                       <MapPin className="w-3.5 h-3.5 text-orange-500 shrink-0" />
                       <span className="font-bold">{drv.city || 'هەولێر'}</span>
-                      {drv.coverageAreas && drv.coverageAreas.length > 0 && (
-                        <span className="text-slate-400 line-clamp-1">
-                          ({drv.coverageAreas.join('، ')})
-                        </span>
-                      )}
+                      {drv.address && <span className="text-slate-500 truncate">• {drv.address}</span>}
                     </div>
+                    {drv.coverageAreas && drv.coverageAreas.length > 0 && (
+                      <p className="text-[10px] text-slate-400 line-clamp-1 pr-5">
+                        گەڕەکەکان: {drv.coverageAreas.join('، ')}
+                      </p>
+                    )}
                   </div>
                 )}
+
+                {/* Badges / Vehicle Info & Vehicle Photo */}
+                <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-slate-800 text-[11px]">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl space-y-0.5">
+                      <span className="text-slate-400 text-[10px] block">ئامرازی گواستنەوە:</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                        <span>{getVehicleIcon(drv.vehicleType)}</span>
+                        <span>{getVehicleLabel(drv.vehicleType)}</span>
+                      </span>
+                      {drv.vehicleModel && (
+                        <span className="text-[10px] text-slate-500 block truncate">{drv.vehicleModel}</span>
+                      )}
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-xl space-y-0.5">
+                      <span className="text-slate-400 text-[10px] block">تابلۆ و گەیاندن:</span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200 font-latin truncate block">
+                        {drv.plateNumber || 'تابلۆ دیاری نەکراوە'}
+                      </span>
+                      <span className="text-[10px] text-emerald-600 font-bold block font-latin">
+                        {drv.totalDeliveries || 0} گەیاندن
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Vehicle Photo (وێنەی ئۆتۆمبێل / ماتۆڕسکیل) */}
+                  {drv.vehiclePhotoUrl && (
+                    <div className="p-2 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                      <img
+                        src={drv.vehiclePhotoUrl}
+                        alt="Vehicle"
+                        className="w-16 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shadow-xs"
+                      />
+                      <div className="text-[11px]">
+                        <span className="font-extrabold text-slate-800 dark:text-slate-200 block">وێنەی ئۆتۆمبێل / ماتۆڕسکیل</span>
+                        <span className="text-[10px] text-slate-400 block font-latin">{drv.plateNumber || 'پلاک تۆمارکراوە'}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Personal ID (زێنەی کەسی / تەسکەرە / کارتی نیشتمانی) Section */}
+                <div className="p-2.5 bg-teal-50/60 dark:bg-teal-950/30 rounded-2xl border border-teal-200/80 dark:border-teal-900/40 space-y-2">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="font-extrabold text-teal-950 dark:text-teal-300 flex items-center gap-1">
+                      <FileText className="w-3.5 h-3.5 text-teal-600" />
+                      <span>زێنەی کەسی / کارتی نیشتمانی:</span>
+                    </span>
+                    {drv.nationalIdNumber && (
+                      <span className="font-mono font-bold text-teal-800 dark:text-teal-300 font-latin">
+                        {drv.nationalIdNumber}
+                      </span>
+                    )}
+                  </div>
+
+                  {drv.idCardFrontUrl || drv.idCardBackUrl ? (
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      {drv.idCardFrontUrl ? (
+                        <a
+                          href={drv.idCardFrontUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group relative rounded-xl overflow-hidden border border-teal-300 dark:border-teal-800 block bg-white"
+                        >
+                          <img
+                            src={drv.idCardFrontUrl}
+                            alt="ID Front"
+                            className="w-full h-16 object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <span className="absolute bottom-0 inset-x-0 bg-teal-900/80 text-white text-[9px] font-bold text-center py-0.5 backdrop-blur-xs">
+                            پێشەوەی زێنەی کەسی 👁️
+                          </span>
+                        </a>
+                      ) : (
+                        <div className="h-16 rounded-xl bg-teal-100/50 border border-dashed border-teal-300 flex items-center justify-center text-[10px] text-teal-700">
+                          پێشەوە دیاری نەکراوە
+                        </div>
+                      )}
+
+                      {drv.idCardBackUrl ? (
+                        <a
+                          href={drv.idCardBackUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group relative rounded-xl overflow-hidden border border-teal-300 dark:border-teal-800 block bg-white"
+                        >
+                          <img
+                            src={drv.idCardBackUrl}
+                            alt="ID Back"
+                            className="w-full h-16 object-cover group-hover:scale-105 transition-transform"
+                          />
+                          <span className="absolute bottom-0 inset-x-0 bg-teal-900/80 text-white text-[9px] font-bold text-center py-0.5 backdrop-blur-xs">
+                            پشتەوەی زێنەی کەسی 👁️
+                          </span>
+                        </a>
+                      ) : (
+                        <div className="h-16 rounded-xl bg-teal-100/50 border border-dashed border-teal-300 flex items-center justify-center text-[10px] text-teal-700">
+                          پشتەوە دیاری نەکراوە
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(drv)}
+                      className="w-full py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-[11px] font-bold cursor-pointer flex items-center justify-center gap-1.5 shadow-xs transition-colors"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>ئەپلۆدکردنی زێنەی کەسی کاپتن (ID Upload)</span>
+                    </button>
+                  )}
+                </div>
 
                 {/* Custom Fee or Commission */}
                 {drv.customDeliveryFee !== undefined && drv.customDeliveryFee > 0 && (
@@ -823,8 +970,8 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
             </div>
           </div>
 
-          {/* City & Coverage Areas */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* City & Address & Delivery Fee */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
                 شار
@@ -838,6 +985,19 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+                ناونیشان / شوێنی نیشتەجێبوون
+              </label>
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="وەک: عەنکاوە، جادەی گشتی"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-orange-500"
+              />
             </div>
 
             <div>

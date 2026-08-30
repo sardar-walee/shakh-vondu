@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FcmPushNotificationBanner } from '../components/notifications/FcmPushNotificationBanner';
 import { FcmPromotionalOfferModal } from '../components/notifications/FcmPromotionalOfferModal';
 import {
@@ -63,9 +63,11 @@ import { AppUpdateManager } from '../components/admin/AppUpdateManager';
 
 interface AdminDashboardViewProps {
   onNavigate: (view: string, param?: string) => void;
+  initialTab?: string;
+  initialCarId?: string;
 }
 
-export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNavigate }) => {
+export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNavigate, initialTab, initialCarId }) => {
   const {
     products,
     sellers,
@@ -128,6 +130,17 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
   const [carSearchQuery, setCarSearchQuery] = useState('');
   const [rejectingCarId, setRejectingCarId] = useState<string | null>(null);
   const [rejectReasonText, setRejectReasonText] = useState('وەسڵی پارەدان ڕوون نییە یان بڕی پارەکە تەواو نییە');
+
+  // Auto-switch tab if initialTab or initialCarId is passed
+  useEffect(() => {
+    if (initialTab === 'cars' || initialCarId) {
+      setTab('cars');
+      setCarFilterTab('all');
+      if (initialCarId) {
+        setCarSearchQuery(initialCarId);
+      }
+    }
+  }, [initialTab, initialCarId]);
 
   // Purge database state
   const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
@@ -2241,13 +2254,10 @@ export const AdminDashboardView: React.FC<AdminDashboardViewProps> = ({ onNaviga
               <option value="all">گشت بەشەکان ({products.length})</option>
               <option value="food">خواردن</option>
               <option value="market">مارکێت</option>
-              <option value="clothes">جلوبەرگ</option>
               <option value="electronics">ئەلیکترۆنیات</option>
               <option value="cars">ئۆتۆمبێل</option>
               <option value="fruits_vegetables">سەوزە و میوە</option>
-              <option value="fresh_meat">گۆشت</option>
               <option value="dairy">شیرەمەنی</option>
-              <option value="beauty">جوانی و تەندروستی</option>
             </select>
           </div>
 

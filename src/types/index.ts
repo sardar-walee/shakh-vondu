@@ -46,6 +46,7 @@ export interface StoreDriver {
   commissionRate?: number;
   nationalIdOrLicense?: string;
   notes?: string;
+  address?: string;
   totalDeliveries?: number;
   totalEarnings?: number;
   rating?: number;
@@ -378,6 +379,13 @@ export interface Order {
   storeDriverName?: string;
   storeDriverPhone?: string;
   storeDriverVehicle?: string;
+  driverPhotoUrl?: string;
+  driverVehicleType?: string;
+  driverVehicleModel?: string;
+  driverVehiclePhotoUrl?: string;
+  driverPlateNumber?: string;
+  driverDistanceKm?: number;
+  driverAddress?: string;
   commissionCalculated: boolean;
   commissionRate: number;
   commissionAmount: number;

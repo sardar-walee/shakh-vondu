@@ -56,12 +56,9 @@ export const PostProductView: React.FC<PostProductViewProps> = ({
   const categories = [
     { id: 'food' as ProductCategory, label: 'چێشتخانە و خواردن (Food)', icon: Utensils, color: 'text-orange-600 bg-orange-50 border-orange-200' },
     { id: 'electronics' as ProductCategory, label: 'ئەلیکترۆنیات و مۆبایل (Electronics)', icon: Smartphone, color: 'text-blue-600 bg-blue-50 border-blue-200' },
-    { id: 'clothes' as ProductCategory, label: 'جلوبەرگ و مۆدە (Fashion & Clothes)', icon: Shirt, color: 'text-purple-600 bg-purple-50 border-purple-200' },
     { id: 'market' as ProductCategory, label: 'مارکێت و سوپەرمارکێت (Supermarket)', icon: ShoppingBag, color: 'text-indigo-600 bg-indigo-50 border-indigo-200' },
     { id: 'fruits_vegetables' as ProductCategory, label: 'سەوزە و میوەی فرێش (Fruits & Veg)', icon: Apple, color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-    { id: 'fresh_meat' as ProductCategory, label: 'گۆشتی تازە و مریشک (Fresh Meat)', icon: Beef, color: 'text-rose-600 bg-rose-50 border-rose-200' },
     { id: 'dairy' as ProductCategory, label: 'شیرەمەنی و ماست (Dairy)', icon: Milk, color: 'text-cyan-600 bg-cyan-50 border-cyan-200' },
-    { id: 'beauty' as ProductCategory, label: 'جوانی و مکیاژ (Beauty & Cosmetics)', icon: Sparkles, color: 'text-pink-600 bg-pink-50 border-pink-200' },
     { id: 'cars' as ProductCategory, label: 'ئۆتۆمبێل و گواستنەوە (Cars & Auto)', icon: Car, color: 'text-amber-600 bg-amber-50 border-amber-200' }
   ];
 

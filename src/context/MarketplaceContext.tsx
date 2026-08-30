@@ -1076,8 +1076,13 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     driverPhone: string,
     vehicleType: string = 'motorcycle'
   ) => {
-    setOrders(prev => prev.map(o => (o.id === orderId ? {
-      ...o,
+    const matchedDriver = allPlatformCaptains.find(d => d.id === driverId) ||
+      sellers.flatMap(s => s.ownDrivers || []).find(d => d.id === driverId);
+
+    const existingOrder = orders.find(o => o.id === orderId);
+    const distanceKm = existingOrder?.deliveryDistanceKm || 1.8;
+
+    const driverUpdates = {
       deliveryMode: 'store_delivery' as DeliveryMode,
       isStoreDelivery: true,
       storeDriverId: driverId,
@@ -1087,22 +1092,19 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       driverId: driverId,
       driverName: driverName,
       driverPhone: driverPhone,
-      status: 'picked_up'
-    } : o)));
+      driverPhotoUrl: matchedDriver?.driverPhotoUrl || matchedDriver?.avatarUrl || undefined,
+      driverVehicleType: matchedDriver?.vehicleType || vehicleType,
+      driverVehicleModel: matchedDriver?.vehicleModel || undefined,
+      driverVehiclePhotoUrl: matchedDriver?.vehiclePhotoUrl || undefined,
+      driverPlateNumber: matchedDriver?.plateNumber || undefined,
+      driverDistanceKm: distanceKm,
+      status: 'picked_up' as OrderStatus
+    };
+
+    setOrders(prev => prev.map(o => (o.id === orderId ? { ...o, ...driverUpdates } : o)));
 
     try {
-      await updateDoc(doc(db, 'orders', orderId), {
-        deliveryMode: 'store_delivery',
-        isStoreDelivery: true,
-        storeDriverId: driverId,
-        storeDriverName: driverName,
-        storeDriverPhone: driverPhone,
-        storeDriverVehicle: vehicleType,
-        driverId: driverId,
-        driverName: driverName,
-        driverPhone: driverPhone,
-        status: 'picked_up'
-      });
+      await updateDoc(doc(db, 'orders', orderId), driverUpdates);
     } catch (e) {}
 
     addNotification({
@@ -1111,6 +1113,25 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       message: `تۆ وەک شۆفێری تایبەتی فرۆشگا بۆ گەیاندنی ئەم داواکارییە دانرایت.`,
       type: 'delivery'
     });
+
+    if (existingOrder) {
+      const vehicleDesc = matchedDriver?.vehicleModel || (vehicleType === 'car' ? 'ئۆتۆمبێل' : 'ماتۆڕسکیل');
+      const plateDesc = matchedDriver?.plateNumber ? ` (پلاک: ${matchedDriver.plateNumber})` : '';
+      addNotification({
+        id: `notif-${orderId}-cust-driver-assigned`,
+        userId: existingOrder.customerId,
+        recipientId: existingOrder.customerId,
+        orderId: existingOrder.id,
+        orderNumber: existingOrder.orderNumber,
+        title: 'کاپتنی گەیاندن دیاریکرا 🛵',
+        message: `کاپتن (${driverName}) بە ${vehicleDesc}${plateDesc} داواکاری #${existingOrder.orderNumber} دەهێنێت. دووری: ${distanceKm} ک.م`,
+        type: 'delivery',
+        category: 'update',
+        status: 'info',
+        linkUrl: 'order-tracking',
+        actionLabel: 'شوێنپێهەڵگرتن'
+      });
+    }
   };
 
   const updateSellerCommissionRate = async (sellerId: string, newRate: number) => {
@@ -1790,29 +1811,32 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return;
     }
 
-    setOrders(prev => prev.map(o => (o.id === orderId ? {
-      ...o,
+    const matchedDriver = allPlatformCaptains.find(d => d.id === agentId) ||
+      sellers.flatMap(s => s.ownDrivers || []).find(d => d.id === agentId);
+
+    const distanceKm = existingOrder?.deliveryDistanceKm || 1.8;
+
+    const agentUpdates = {
       deliveryAgentId: agentId,
       deliveryAgentName: agentName,
       deliveryAgentPhone: agentPhone,
       driverId: agentId,
       driverName: agentName,
       driverPhone: agentPhone,
-      status: 'picked_up',
+      driverPhotoUrl: matchedDriver?.driverPhotoUrl || matchedDriver?.avatarUrl || undefined,
+      driverVehicleType: matchedDriver?.vehicleType || 'motorcycle',
+      driverVehicleModel: matchedDriver?.vehicleModel || undefined,
+      driverVehiclePhotoUrl: matchedDriver?.vehiclePhotoUrl || undefined,
+      driverPlateNumber: matchedDriver?.plateNumber || undefined,
+      driverDistanceKm: distanceKm,
+      status: 'picked_up' as OrderStatus,
       updatedAt: new Date().toISOString()
-    } : o)));
+    };
+
+    setOrders(prev => prev.map(o => (o.id === orderId ? { ...o, ...agentUpdates } : o)));
 
     try {
-      await updateDoc(doc(db, 'orders', orderId), {
-        deliveryAgentId: agentId,
-        deliveryAgentName: agentName,
-        deliveryAgentPhone: agentPhone,
-        driverId: agentId,
-        driverName: agentName,
-        driverPhone: agentPhone,
-        status: 'picked_up',
-        updatedAt: new Date().toISOString()
-      });
+      await updateDoc(doc(db, 'orders', orderId), agentUpdates);
     } catch (e) {}
 
     // 1. Captain notification
@@ -1835,6 +1859,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     // 2. Customer notification
     if (existingOrder) {
+      const vehicleDesc = matchedDriver?.vehicleModel || (matchedDriver?.vehicleType === 'car' ? 'ئۆتۆمبێل' : 'ماتۆڕسکیل');
+      const plateDesc = matchedDriver?.plateNumber ? ` (پلاک: ${matchedDriver.plateNumber})` : '';
       addNotification({
         id: `notif-${orderId}-cust-captain-assigned`,
         userId: existingOrder.customerId,
@@ -1842,7 +1868,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         orderId: existingOrder.id,
         orderNumber: existingOrder.orderNumber,
         title: 'کاپتنی گەیاندن دیاریکرا 🛵',
-        message: `کاپتن (${agentName}) داواکاری #${existingOrder.orderNumber} لە فرۆشگا وەردەگرێت و دەیهێنێت بۆت.`,
+        message: `کاپتن (${agentName}) بە ${vehicleDesc}${plateDesc} داواکاری #${existingOrder.orderNumber} دەهێنێت. دووری نێوان: ${distanceKm} ک.م`,
         type: 'delivery',
         category: 'update',
         status: 'info',

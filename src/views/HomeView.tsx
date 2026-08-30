@@ -63,35 +63,40 @@ export const HomeView: React.FC<HomeViewProps> = ({
     }
   };
 
+  // Excluded categories list as per request
+  const hiddenCategories = ['clothes', 'fresh_meat', 'beauty'];
+
+  // Filter products to exclude hidden categories
+  const activeProducts = products.filter(
+    p => p.isAvailable !== false && p.productStatus !== 'hidden' && !hiddenCategories.includes(p.category)
+  );
+
   // Filter by selected city if applicable
   const filteredSellers = selectedCity
-    ? sellers.filter(s => s.city.includes(selectedCity.split(' ')[0]))
-    : sellers;
+    ? sellers.filter(s => s.city.includes(selectedCity.split(' ')[0]) && !hiddenCategories.includes(s.category as string))
+    : sellers.filter(s => !hiddenCategories.includes(s.category as string));
 
   const filteredCarAds = selectedCity
     ? carAds.filter(c => c.city.includes(selectedCity.split(' ')[0]))
     : carAds;
 
-  const specialOffers = products.filter(p => p.isAvailable !== false && p.productStatus !== 'hidden' && p.discountPrice && p.discountPrice < p.price).slice(0, 8);
-  const featuredRestaurants = sellers.filter(s => s.category === 'food').slice(0, 8);
-  const featuredMarkets = sellers.filter(s => s.category === 'market').slice(0, 8);
+  const specialOffers = activeProducts.filter(p => p.discountPrice && p.discountPrice < p.price).slice(0, 8);
+  const featuredRestaurants = filteredSellers.filter(s => s.category === 'food').slice(0, 8);
+  const featuredMarkets = filteredSellers.filter(s => s.category === 'market').slice(0, 8);
   const activeCarAds = filteredCarAds.filter(c => (c.adStatus as string) !== 'rejected' && (c.adStatus as string) !== 'hidden' && (c.adStatus as string) !== 'deleted').slice(0, 8);
-  const trendingProducts = products.filter(p => p.isAvailable !== false && p.productStatus !== 'hidden').slice(0, 12);
+  const trendingProducts = activeProducts.slice(0, 12);
 
   // Best sellers computation (filtered by category if selected)
-  const bestSellers = products
-    .filter(p => (bestSellerCategory === 'all' || p.category === bestSellerCategory) && p.isAvailable !== false && p.productStatus !== 'hidden')
+  const bestSellers = activeProducts
+    .filter(p => (bestSellerCategory === 'all' || p.category === bestSellerCategory))
     .slice(0, 12);
 
   const mainCategories = [
     { id: 'food' as ProductCategory, name: t('چێشتخانە و خواردن'), subtitle: t('خواردنی بەتام و خێرا'), icon: <Utensils className="w-5 h-5" />, count: '١٢٠+' },
     { id: 'market' as ProductCategory, name: t('مارکێت و پێداویستی'), subtitle: t('هەموو کەلوپەلی ماڵ'), icon: <ShoppingBag className="w-5 h-5" />, count: '٤٥+' },
-    { id: 'clothes' as ProductCategory, name: t('جلوبەرگ و مۆدە'), subtitle: t('مۆدێلی پیاوان و ئافرەتان'), icon: <Shirt className="w-5 h-5" />, count: '٣٠+' },
     { id: 'fruits_vegetables' as ProductCategory, name: t('سەوزە و میوە'), subtitle: t('فرێش و سروشتی'), icon: <Apple className="w-5 h-5" />, count: t('فرێش') },
-    { id: 'fresh_meat' as ProductCategory, name: t('گۆشتی تازە'), subtitle: t('بەرخ و مریشکی ڕۆژانە'), icon: <Beef className="w-5 h-5" />, count: t('گۆشت') },
     { id: 'dairy' as ProductCategory, name: t('شیرەمەنی و ماست'), subtitle: t('ماستی خۆماڵی و پەنیر'), icon: <Milk className="w-5 h-5" />, count: t('شیرەمەنی') },
     { id: 'electronics' as ProductCategory, name: t('ئەلیکترۆنیات'), subtitle: t('مۆبایل و کۆمپیوتەر'), icon: <Smartphone className="w-5 h-5" />, count: '١٥+' },
-    { id: 'beauty' as ProductCategory, name: t('جوانی و مکیاژ'), subtitle: t('عەتر و چاودێری پێست'), icon: <Sparkles className="w-5 h-5" />, count: t('جوانی') },
     { id: 'cars' as ProductCategory, name: t('ئۆتۆمبێل و گواستنەوە'), subtitle: t('کڕین و فرۆشتنی ئۆتۆمبێل'), icon: <Car className="w-5 h-5" />, count: '٨٥+' }
   ];
 
@@ -122,7 +127,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </h1>
 
             <p className="text-base sm:text-lg opacity-95 leading-relaxed max-w-xl font-medium">
-              {t('خێراترین گەیاندن بۆ خواردن، سوپەرمارکێت، جلوبەرگ و کڕین و فرۆشتنی ئۆتۆمبێل بە بەرزترین کوالیتی.')}
+              {t('خێراترین گەیاندن بۆ خواردن، سوپەرمارکێت، ئەلیکترۆنیات، سەوزە و میوە و کڕین و فرۆشتنی ئۆتۆمبێل بە بەرزترین کوالیتی.')}
             </p>
 
             <div className="pt-2 flex flex-wrap items-center justify-center md:justify-start gap-3">

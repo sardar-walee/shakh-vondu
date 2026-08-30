@@ -32,12 +32,9 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
     { id: 'all', name: t('هەموو بەشەکان'), icon: <Layers className="w-3.5 h-3.5" /> },
     { id: 'food', name: t('category.food'), icon: <Utensils className="w-3.5 h-3.5" />, badge: t('خێرا') },
     { id: 'market', name: t('category.market'), icon: <ShoppingBag className="w-3.5 h-3.5" /> },
-    { id: 'clothes', name: t('category.clothes'), icon: <Shirt className="w-3.5 h-3.5" /> },
     { id: 'fruits_vegetables', name: t('category.fruits_vegetables'), icon: <Apple className="w-3.5 h-3.5" />, badge: t('فرێش') },
-    { id: 'fresh_meat', name: t('category.fresh_meat'), icon: <Beef className="w-3.5 h-3.5" /> },
     { id: 'dairy', name: t('category.dairy'), icon: <Milk className="w-3.5 h-3.5" /> },
     { id: 'electronics', name: t('category.electronics'), icon: <Smartphone className="w-3.5 h-3.5" /> },
-    { id: 'beauty', name: t('category.beauty'), icon: <Sparkles className="w-3.5 h-3.5" /> },
     { id: 'cars', name: t('category.cars'), icon: <Car className="w-3.5 h-3.5" />, badge: t('VIP') }
   ];
 

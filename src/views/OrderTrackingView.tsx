@@ -105,25 +105,74 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
 
         {/* Live Delivery Captain Card (if assigned or on the way) */}
         {order.driverName && (
-          <div className="p-4 rounded-2xl bg-teal-50/70 border border-teal-200 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-bold">
-                <Truck className="w-6 h-6" />
+          <div className="p-4 rounded-3xl bg-teal-50/80 dark:bg-teal-950/40 border border-teal-200 dark:border-teal-800 space-y-3 shadow-xs">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                {order.driverPhotoUrl ? (
+                  <img
+                    src={order.driverPhotoUrl}
+                    alt={order.driverName}
+                    className="w-14 h-14 rounded-2xl object-cover border-2 border-teal-500 shadow-xs"
+                  />
+                ) : (
+                  <div className="w-14 h-14 rounded-2xl bg-teal-600 text-white flex items-center justify-center font-bold shadow-xs">
+                    <Truck className="w-7 h-7" />
+                  </div>
+                )}
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-black text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/60 px-2 py-0.5 rounded-md uppercase">
+                      کاپتنی گەیاندن
+                    </span>
+                    {(order.driverDistanceKm || order.deliveryDistanceKm) && (
+                      <span className="text-[10px] font-bold text-orange-600 bg-orange-100 dark:bg-orange-950/60 px-2 py-0.5 rounded-md font-latin">
+                        📍 دووری: {order.driverDistanceKm || order.deliveryDistanceKm || 1.8} ک.م
+                      </span>
+                    )}
+                  </div>
+                  <h4 className="text-sm sm:text-base font-black text-slate-900 dark:text-white mt-1">{order.driverName}</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-latin">مۆبایل: <span className="font-bold">{order.driverPhone}</span></p>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] font-bold text-teal-600 uppercase">کاپتنی گەیاندن</span>
-                <h4 className="text-sm font-bold text-slate-900">{order.driverName}</h4>
-                <p className="text-xs text-slate-500">مۆبایل: <span className="font-latin">{order.driverPhone}</span></p>
-              </div>
+
+              <a
+                href={`tel:${order.driverPhone}`}
+                className="w-full sm:w-auto px-4 py-2.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <Phone className="w-4 h-4" />
+                <span>پەیوەندی تەلەفۆنی بە کاپتن</span>
+              </a>
             </div>
 
-            <a
-              href={`tel:${order.driverPhone}`}
-              className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
-            >
-              <Phone className="w-4 h-4" />
-              <span>پەیوەندی بە شۆفێر</span>
-            </a>
+            {/* Vehicle & Plate Info */}
+            <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl border border-teal-200/70 dark:border-teal-800/60 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                {order.driverVehiclePhotoUrl ? (
+                  <img
+                    src={order.driverVehiclePhotoUrl}
+                    alt="Vehicle"
+                    className="w-14 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-lg font-bold">
+                    🚗
+                  </div>
+                )}
+                <div>
+                  <span className="text-[10px] text-slate-400 block">زانیاری ئۆتۆمبێل / ماتۆڕسکیل:</span>
+                  <span className="font-extrabold text-slate-800 dark:text-slate-200">
+                    {order.driverVehicleModel || order.driverVehicleType || 'ئۆتۆمبێلی گەیاندن'}
+                  </span>
+                </div>
+              </div>
+
+              {order.driverPlateNumber && (
+                <div className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 font-latin font-bold text-slate-800 dark:text-slate-200 text-xs">
+                  <span className="text-[10px] text-slate-400 block">ژمارەی تابلۆ:</span>
+                  <span>{order.driverPlateNumber}</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

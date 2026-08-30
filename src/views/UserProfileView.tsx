@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { FcmPushNotificationBanner } from '../components/notifications/FcmPushNotificationBanner';
 import {
   User,
   MapPin,
@@ -558,6 +559,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ onNavigate }) 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
               <LanguageSwitcher variant="full" />
             </div>
+
+            {/* FCM Real-time Push Notification Banner */}
+            <FcmPushNotificationBanner />
 
             <div className="border-t border-slate-100 dark:border-slate-800 pt-4">
               <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 mb-4 flex items-center justify-between">

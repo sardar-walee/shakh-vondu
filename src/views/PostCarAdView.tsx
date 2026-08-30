@@ -111,8 +111,48 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
   const paymentAccounts: Record<string, { title: string; number: string; owner: string }> = {
     fastpay: { title: 'فاستپەی (FastPay)', number: '0750 800 2000', owner: '(شاخ) ئۆتۆ (Shakh Auto)' },
     fib: { title: 'بانکی یەکەمی عێراقی (FIB)', number: 'IQ99FIBB0000001234567890', owner: 'Shakh Platform LTD' },
-    zaincash: { title: 'زەین کاش (ZainCash)', number: '0780 123 4567', owner: '(شاخ) پلاتفۆرم' },
+    zaincash: { title: 'سوپەر کی / زەین کاش (ZainCash)', number: '0780 123 4567', owner: '(شاخ) پلاتفۆرم' },
     asiapay: { title: 'ئاسیاپەی (AsiaPay)', number: '0770 123 4567', owner: '(شاخ) ئۆتۆ' }
+  };
+
+  const buildWhatsAppAdminMessage = (adId?: string) => {
+    const targetId = adId || createdAdId || `car-${Date.now()}`;
+    const directAdminLink = `${window.location.origin}/?view=admin-dashboard&tab=cars&carId=${targetId}#admin-car-${targetId}`;
+    const pkgInfo = packagePrices[packageType];
+    const methodTitle = paymentAccounts[paymentMethod]?.title || paymentMethod;
+
+    return `🚗 *داواکاری نوێی بڵاوکردنەوەی پۆستی ئۆتۆمبێل (Shakh Auto)*
+
+سڵاو سوپەر ئەدمین، داواکارییەکی نوێی ڕیکلامی ئۆتۆمبێل چاوەڕوانی تەسدیقی تۆیە:
+
+📋 *زانیاری ئۆتۆمبێل:*
+• *ناونیشان:* ${title}
+• *جۆر و مۆدێل:* ${brand} ${model} (${year})
+• *نرخ:* ${priceIqd.toLocaleString()} د.ع ($${priceUsd.toLocaleString()} USD)
+• *شار:* ${city}
+• *فرۆشیار:* ${userName} (${userPhone})
+
+💳 *زانیاری پارە ناردنەکە:*
+• *پاکێجی هەڵبژێردراو:* ${pkgInfo.name} (${pkgInfo.price.toLocaleString()} د.ع)
+• *ڕێگەی پارەدان:* ${methodTitle}
+• *ژمارەی نێرەر:* ${paymentSenderPhone || userPhone}
+• *کۆدی وەسڵ / Reference:* ${paymentTransactionId || 'TX-PENDING'}
+• *وێنەی وەسڵ:* ${paymentReceiptImages[0] || 'وێنە بارکراوە'}
+
+🏦 *زانیاری هەژمارە فەرمییەکانی پارەدان:*
+- فاستپەی (FastPay): 0750 800 2000
+- بانکی عێراقی یەکەم (FIB): IQ99FIBB0000001234567890
+- سوپەر کی / زەین کاش (SuperKey/ZainCash): 0780 123 4567
+
+🔗 *لینکی داواکار بۆ سوپەر ئەدمین (ڕاستەوخۆ بکەرەوە بۆ قبول یان ڕەفز):*
+${directAdminLink}`;
+  };
+
+  const sendWhatsAppToSuperAdmin = (adId?: string) => {
+    const message = buildWhatsAppAdminMessage(adId);
+    const adminPhone = '9647508002000';
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const handlePriceIqdChange = (val: number) => {
@@ -937,15 +977,57 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
 
             <div className="space-y-2">
               <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100">
-                ڕیکلامەکەت بە سەرکەوتوویی بڵاوکرایەوە! 🎉
+                ڕیکلامەکەت بە سەرکەوتوویی تۆمارکرا! 🎉
               </h3>
               <p className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 leading-relaxed">
-                پۆستەکەت بە سەرکەوتوویی تۆمارکرا و لە تەواوی پڕۆژەکەدا بۆ سەرجەم بەکار هێنەران بەردەستە و دەبینرێت.
+                داواکاری بڵاوکردنەوە لەگەڵ زانیارییەکانی پارەدان (فاستپەی، FIB، سوپەر کی) بۆ سوپەر ئەدمین ئامادەکراوە تاوەکو پەسەند بکات.
               </p>
             </div>
 
-            <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/50 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-xs font-black text-emerald-800 dark:text-emerald-300">
-              دۆخی ئێستا: چالاک و بڵاوکراوەتەوە بۆ هەموان (Active & Public)
+            {/* Direct WhatsApp Action Button */}
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => sendWhatsAppToSuperAdmin(createdAdId || undefined)}
+                className="w-full py-4 px-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-xs sm:text-sm font-black flex items-center justify-center gap-2.5 shadow-lg shadow-emerald-600/30 transition-transform active:scale-95 cursor-pointer"
+              >
+                <Phone className="w-5 h-5 shrink-0" />
+                <span>ناردنی داواکاری لە واتسئەپ 💬 بۆ سوپەر ئەدمین</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const msg = buildWhatsAppAdminMessage(createdAdId || undefined);
+                  copyToClipboard(msg, 'wa_text');
+                }}
+                className="w-full py-2.5 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span>{copiedAccount === 'wa_text' ? 'دەقی واتسئەپ کۆپی کرا! ✓' : 'کۆپیکردنی تەواوی دەقی داواکاری واتسئەپ'}</span>
+              </button>
+            </div>
+
+            {/* Direct Admin Link Box */}
+            <div className="p-3.5 bg-amber-50 dark:bg-amber-950/40 rounded-2xl border border-amber-200 dark:border-amber-800 text-right space-y-2">
+              <span className="text-[11px] font-black text-amber-900 dark:text-amber-200 block">
+                ⚡ لینکی ڕاستەوخۆی داواکار بۆ سوپەر ئەدمین (کلیک بۆ قبول / ڕەفز):
+              </span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={`${window.location.origin}/?view=admin-dashboard&tab=cars&carId=${createdAdId || 'new'}#admin-car-${createdAdId || 'new'}`}
+                  className="w-full text-[10px] font-latin font-bold p-2 bg-white dark:bg-slate-900 rounded-xl border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-100 truncate"
+                />
+                <button
+                  type="button"
+                  onClick={() => copyToClipboard(`${window.location.origin}/?view=admin-dashboard&tab=cars&carId=${createdAdId || 'new'}#admin-car-${createdAdId || 'new'}`, 'admin_link')}
+                  className="px-3 py-2 bg-amber-500 text-slate-950 rounded-xl text-[10px] font-black shrink-0 cursor-pointer"
+                >
+                  {copiedAccount === 'admin_link' ? 'کۆپی کرا! ✓' : 'کۆپیکردن'}
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5 pt-2">

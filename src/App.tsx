@@ -50,6 +50,29 @@ const MainApp: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentView, viewParam]);
 
+  // Parse initial URL query parameters and hashes for direct links (e.g. WhatsApp admin direct link)
+  useEffect(() => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const viewParamUrl = searchParams.get('view');
+      const carIdUrl = searchParams.get('carId') || searchParams.get('carAdminId');
+      const tabUrl = searchParams.get('tab');
+
+      if (viewParamUrl === 'admin-dashboard' || viewParamUrl === 'admin' || tabUrl === 'cars' || carIdUrl) {
+        setCurrentView('admin-dashboard');
+        if (carIdUrl) {
+          setViewParam(carIdUrl);
+        }
+      } else if (window.location.hash.includes('admin-car-')) {
+        const carId = window.location.hash.split('admin-car-')[1];
+        setCurrentView('admin-dashboard');
+        if (carId) setViewParam(carId);
+      }
+    } catch (e) {
+      console.error('Error parsing initial URL params:', e);
+    }
+  }, []);
+
   // Listen for real-time FCM Push Messages in foreground
   useEffect(() => {
     listenToFcmMessages((payload) => {
@@ -191,6 +214,8 @@ const MainApp: React.FC = () => {
         {currentView === 'admin-dashboard' && (
           <AdminDashboardView
             onNavigate={handleNavigate}
+            initialTab={viewParam ? 'cars' : 'cars'}
+            initialCarId={viewParam || undefined}
           />
         )}
 

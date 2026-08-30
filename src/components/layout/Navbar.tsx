@@ -140,12 +140,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const categoriesList = [
     { id: 'food', name: 'چێشتخانە و خواردن', keywords: ['خواردن', 'food', 'چێشتخانە', 'ڕێستۆرانت', 'کەباب', 'پیتزا'] },
     { id: 'market', name: 'سوپەرمارکێت و مارکێت', keywords: ['مارکێت', 'market', 'سوپەرمارکێت', 'پێداویستی'] },
-    { id: 'clothes', name: 'جلوبەرگ و مۆدە', keywords: ['جل', 'جلوبەرگ', 'clothes', 'مۆدە', 'پێڵاو'] },
     { id: 'fruits_vegetables', name: 'سەوزە و میوە', keywords: ['سەوزە', 'میوە', 'fruits', 'vegetables', 'فرێش'] },
-    { id: 'fresh_meat', name: 'گۆشتی تازەی کوردی', keywords: ['گۆشت', 'meat', 'مریشک'] },
     { id: 'dairy', name: 'شیرەمەنی و ماست', keywords: ['شیر', 'ماست', 'پەنیر', 'dairy'] },
     { id: 'electronics', name: 'ئەلیکترۆنیات و مۆبایل', keywords: ['مۆبایل', 'ئەلیکترۆنیات', 'phone', 'mobile', 'لاپتۆپ'] },
-    { id: 'beauty', name: 'جوانی و مکیاژ', keywords: ['مکیاژ', 'عەتر', 'جوانی', 'beauty', 'perfume'] },
     { id: 'cars', name: 'بازاڕی ئۆتۆمبێل', keywords: ['ئۆتۆمبێل', 'سەیارە', 'car', 'cars', 'تۆیۆتا', 'مرسیدس'] }
   ];
 
@@ -1136,12 +1133,9 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <option value="home">🏠 {t('گشت بەشەکان / پەڕەی سەرەکی')}</option>
                     <option value="food">🍽️ {t('cat.food') || 'چێشتخانە و خواردن'}</option>
                     <option value="market">🛒 {t('cat.market') || 'سوپەرمارکێت'}</option>
-                    <option value="clothes">👕 {t('cat.clothes') || 'جلوبەرگ و مۆدە'}</option>
                     <option value="fruits_vegetables">🍏 {t('cat.fruits_vegetables') || 'سەوزە و میوە'}</option>
-                    <option value="fresh_meat">🥩 {t('cat.fresh_meat') || 'گۆشتی تازەی کوردی'}</option>
                     <option value="dairy">🥛 {t('cat.dairy') || 'شیرەمەنی و ماست'}</option>
                     <option value="electronics">📱 {t('cat.electronics') || 'ئەلیکترۆنیات'}</option>
-                    <option value="beauty">✨ {t('cat.beauty') || 'جوانی و مکیاژ'}</option>
                     <option value="car-marketplace">🚗 {t('بازاڕی کڕین و فرۆشتنی ئۆتۆمبێل')}</option>
                   </select>
                   <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400">

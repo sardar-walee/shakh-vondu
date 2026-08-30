@@ -183,12 +183,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ initialMode = 'login', onNav
                   >
                     <option value="restaurant_owner">چێشتخانە و خواردن (Food)</option>
                     <option value="market_owner">مارکێت و سوپەرمارکێت (Market)</option>
-                    <option value="clothes_seller">جلوبەرگ و مۆدە (Clothes)</option>
                     <option value="fruits_vegetables_seller">سەوزە و میوە (Fruits & Vegetables)</option>
-                    <option value="fresh_meat_seller">گۆشتی تازە (Fresh Meat)</option>
                     <option value="dairy_seller">شیرەمەنی (Dairy)</option>
                     <option value="electronics_seller">ئەلیکترۆنیات و مۆبایل (Electronics)</option>
-                    <option value="beauty_seller">جوانی و مکیاژ (Beauty)</option>
+                    <option value="car_seller">فرۆشیاری ئۆتۆمبێل (Cars)</option>
                   </select>
                 </div>
               )}
