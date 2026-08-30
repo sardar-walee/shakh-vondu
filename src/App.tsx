@@ -34,10 +34,13 @@ import { UserProfileView } from './views/UserProfileView';
 import { NotificationCenterView } from './views/NotificationCenterView';
 import { NotificationToast } from './components/notifications/NotificationToast';
 import { AppUpdateAlert } from './components/common/AppUpdateAlert';
+import { GlitchReportModal } from './components/common/GlitchReportModal';
+import { useMarketplace } from './context/MarketplaceContext';
 import { listenToFcmMessages } from './lib/fcmService';
 import { ProductCategory } from './types';
 
 const MainApp: React.FC = () => {
+  const { isGlitchModalOpen, setIsGlitchModalOpen, detectedGlitchError } = useMarketplace();
   const [currentView, setCurrentView] = useState<string>('home');
   const [viewParam, setViewParam] = useState<string>('');
   const [selectedCity, setSelectedCity] = useState<string>('');
@@ -272,6 +275,13 @@ const MainApp: React.FC = () => {
       <AppDownloadModal
         isOpen={showAppDownloadModal}
         onClose={() => setShowAppDownloadModal(false)}
+      />
+
+      {/* Global Glitch / Error WhatsApp Report Modal */}
+      <GlitchReportModal
+        isOpen={isGlitchModalOpen}
+        onClose={() => setIsGlitchModalOpen(false)}
+        initialError={detectedGlitchError || undefined}
       />
     </div>
   );

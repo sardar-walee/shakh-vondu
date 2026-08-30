@@ -234,6 +234,12 @@ interface MarketplaceContextType {
   isUpdateModalOpen: boolean;
   setIsUpdateModalOpen: (open: boolean) => void;
 
+  // Glitch & Error Reporting to Super Admin WhatsApp
+  isGlitchModalOpen: boolean;
+  setIsGlitchModalOpen: (open: boolean) => void;
+  openGlitchModal: (initialError?: string) => void;
+  detectedGlitchError: string | null;
+
   // Platform Drivers & Captains Management across all roles
   allPlatformCaptains: StoreDriver[];
 }
@@ -408,17 +414,17 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
   // App Version & Update Notification State
   const DEFAULT_APP_VERSION: AppVersionInfo = {
-    version: '2.5.0',
-    buildNumber: 250,
-    releaseDate: '2026-08-27',
-    title: 'وەشانی نوێی (شاخ) ٢.٥.٠ بەردەستە',
-    description: 'سیستەمی تەواوی بەڕێوەبردنی کاپتنەکان بۆ هەموو ڕۆڵەکان، دروستکردنی QR Code ی دابەزاندنی ئەپ بۆ ئەندرۆید و ئەپڵ، و بەرزکردنەوەی ئاسایشی داتاکان',
+    version: '3.2.0',
+    buildNumber: 320,
+    releaseDate: '2026-08-30',
+    title: 'وەشانی نوێی (شاخ) ٣.٢.٠ بەردەستە',
+    description: 'وەشانی نوێی ٣.٢.٠ بە ڕووکار و ژێرخانی بێ خەوش، چارەسەرکردنی تەواوی گلیچەکان، و ناردنی ئۆتۆماتیکی داواکاری و ئیرۆر بۆ واتسئەپی سوپەر ئەدمین.',
     changelog: [
-      'دروستکردنی QR Code بۆ دابەزاندنی خێرای ئەپلیکەیشن بۆ ئەندرۆید (APK) و ئەپڵ (iOS)',
-      'سیستەمی زیرەکی ئاگاداری زینوو و ناچاری بۆ بەردەستبوونی هەر ئەپدەیتێکی نوێ لەسەر پلاتفۆرمی (شاخ)',
-      'گۆڕینی ناوی فەرمی پلاتفۆرم بۆ (شاخ)',
-      'زیادکردنی بەڕێوەبردنی تەواوی کاپتنانی گەیاندن (Delivery Captains) لە داشبۆردی سەرجەم ڕۆڵەکان و سوپەر ئەدمین',
-      'پشتیوانی زانیارییە وردەکانی کاپتن (جۆری ئامراز، تابلۆ، پەیوەندی خێرا، چاودێری ئەرک و دەستکاری)'
+      'نوێکردنەوەی فەرمی وەشانی ئەپ بۆ v3.2.0 لە تەواوی سیستم و داشبۆردی بەڕێوەبردن',
+      'نوێکردنەوەی ژمارەی فەرمی واتسئەپی سوپەر ئەدمین بۆ (07504796924) بۆ وەرگرتنی خێرای گلیچ و وەسڵی پارەدان',
+      'چارەسەرکردنی ڕاستەوخۆی گلیچ و ئیرۆرە تەکنیکییەکان لە ڕێگەی ErrorBoundary و ناردنی بۆ سوپەر ئەدمین',
+      'پیشاندانی کۆتا ئەپدەیت بە تەواوی ڕۆڵەکان (کڕیار، فرۆشیار، کاپتنی گەیاندن، سوپەر ئەدمین)',
+      'سیستەمی زیرەکی کۆنترۆڵکردن و بڵاوکردنەوەی وەشانەکان بۆ هەموو بەکارهێنەران'
     ],
     isMandatory: true,
     androidDownloadUrl: 'https://daim-post.online/download/android/shakh-app.apk',
@@ -429,7 +435,15 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [appVersion, setAppVersion] = useState<AppVersionInfo>(() => {
     const saved = localStorage.getItem('shakh_app_version');
     if (saved) {
-      try { return JSON.parse(saved); } catch (e) {}
+      try {
+        const parsed = JSON.parse(saved);
+        // Auto-upgrade stale or 2.5.0 version to 3.2.0
+        if (!parsed.version || parsed.version === '2.5.0' || parsed.version < '3.2.0') {
+          localStorage.setItem('shakh_app_version', JSON.stringify(DEFAULT_APP_VERSION));
+          return DEFAULT_APP_VERSION;
+        }
+        return parsed;
+      } catch (e) {}
     }
     return DEFAULT_APP_VERSION;
   });
@@ -438,6 +452,41 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [acknowledgedVersion, setAcknowledgedVersion] = useState<string>(() => {
     return localStorage.getItem('shakh_acknowledged_version') || '';
   });
+
+  // Glitch & Error reporting state
+  const [isGlitchModalOpen, setIsGlitchModalOpen] = useState(false);
+  const [detectedGlitchError, setDetectedGlitchError] = useState<string | null>(null);
+
+  const openGlitchModal = (initialError?: string) => {
+    if (initialError) {
+      setDetectedGlitchError(initialError);
+    }
+    setIsGlitchModalOpen(true);
+  };
+
+  // Global window error listener to capture unhandled glitches
+  useEffect(() => {
+    const handleGlobalError = (event: ErrorEvent) => {
+      if (event.error?.message || event.message) {
+        const errorText = event.error?.message || event.message;
+        setDetectedGlitchError(errorText);
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const reason = event.reason;
+      const errorText = typeof reason === 'string' ? reason : (reason?.message || 'Unhandled Promise Rejection');
+      setDetectedGlitchError(errorText);
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
   // Compute if update alert should be active
   const isAppUpdateAvailable = Boolean(
@@ -2964,6 +3013,10 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         openUpdateModal,
         isUpdateModalOpen,
         setIsUpdateModalOpen,
+        isGlitchModalOpen,
+        setIsGlitchModalOpen,
+        openGlitchModal,
+        detectedGlitchError,
         allPlatformCaptains
       }}
     >

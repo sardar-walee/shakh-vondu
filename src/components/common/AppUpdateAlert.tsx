@@ -22,7 +22,9 @@ import {
   Radio
 } from 'lucide-react';
 import { useMarketplace } from '../../context/MarketplaceContext';
+import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { Bug } from 'lucide-react';
 
 interface AppUpdateAlertProps {
   onNavigateHome?: () => void;
@@ -34,8 +36,10 @@ export const AppUpdateAlert: React.FC<AppUpdateAlertProps> = ({ onNavigateHome }
     isAppUpdateAvailable,
     dismissUpdateNotification,
     isUpdateModalOpen,
-    setIsUpdateModalOpen
+    setIsUpdateModalOpen,
+    openGlitchModal
   } = useMarketplace();
+  const { currentUser } = useAuth();
   const { t } = useLanguage();
 
   const [isUpdating, setIsUpdating] = useState(false);
@@ -375,6 +379,21 @@ export const AppUpdateAlert: React.FC<AppUpdateAlertProps> = ({ onNavigateHome }
                         {t('دواتر')}
                       </button>
                     )}
+                  </div>
+
+                  {/* Report Glitch Button */}
+                  <div className="pt-1 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUpdateModalOpen(false);
+                        openGlitchModal();
+                      }}
+                      className="inline-flex items-center gap-1.5 text-[11px] font-bold text-red-600 dark:text-red-400 hover:underline cursor-pointer"
+                    >
+                      <Bug className="w-3.5 h-3.5 text-red-500" />
+                      <span>ڕاپۆرتکردنی هەر گلیچ یان ئیرۆرێک بۆ سوپەر ئەدمین (WhatsApp) 💬</span>
+                    </button>
                   </div>
                 </>
               )}

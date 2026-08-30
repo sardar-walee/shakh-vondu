@@ -109,7 +109,7 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
   };
 
   const paymentAccounts: Record<string, { title: string; number: string; owner: string }> = {
-    fastpay: { title: 'فاستپەی (FastPay)', number: '0750 800 2000', owner: '(شاخ) ئۆتۆ (Shakh Auto)' },
+    fastpay: { title: 'فاستپەی (FastPay)', number: '0750 479 6924', owner: '(شاخ) ئۆتۆ (Shakh Auto)' },
     fib: { title: 'بانکی یەکەمی عێراقی (FIB)', number: 'IQ99FIBB0000001234567890', owner: 'Shakh Platform LTD' },
     zaincash: { title: 'سوپەر کی / زەین کاش (ZainCash)', number: '0780 123 4567', owner: '(شاخ) پلاتفۆرم' },
     asiapay: { title: 'ئاسیاپەی (AsiaPay)', number: '0770 123 4567', owner: '(شاخ) ئۆتۆ' }
@@ -140,7 +140,7 @@ export const PostCarAdView: React.FC<PostCarAdViewProps> = ({ onNavigate }) => {
 • *وێنەی وەسڵ:* ${paymentReceiptImages[0] || 'وێنە بارکراوە'}
 
 🏦 *زانیاری هەژمارە فەرمییەکانی پارەدان:*
-- فاستپەی (FastPay): 0750 800 2000
+- فاستپەی (FastPay): 0750 479 6924
 - بانکی عێراقی یەکەم (FIB): IQ99FIBB0000001234567890
 - سوپەر کی / زەین کاش (SuperKey/ZainCash): 0780 123 4567
 
@@ -150,7 +150,7 @@ ${directAdminLink}`;
 
   const sendWhatsAppToSuperAdmin = (adId?: string) => {
     const message = buildWhatsAppAdminMessage(adId);
-    const adminPhone = '9647508002000';
+    const adminPhone = '9647504796924';
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${adminPhone}&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };

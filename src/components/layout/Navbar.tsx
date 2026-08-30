@@ -43,7 +43,8 @@ import {
   ChevronRight,
   Layers,
   HelpCircle,
-  ExternalLink
+  ExternalLink,
+  Bug
 } from 'lucide-react';
 import { Logo } from '../common/Logo';
 import { LanguageSelector } from '../common/LanguageSelector';
@@ -80,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { totalItems, setIsOpen: setCartOpen } = useCart();
   const { userNotifications, unreadCount, actionableCount, markAsRead, markAllAsRead } = useNotification();
   const { language, setLanguage, t } = useLanguage();
-  const { products, sellers, carAds, appVersion, openUpdateModal } = useMarketplace();
+  const { products, sellers, carAds, appVersion, openUpdateModal, openGlitchModal } = useMarketplace();
 
   const { isDarkMode, toggleTheme } = useTheme();
 
@@ -1240,6 +1241,28 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </span>
               </button>
 
+              {/* 7. Glitch & Technical Problem Reporter Button */}
+              <button
+                onClick={() => {
+                  openGlitchModal();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center justify-between p-2.5 rounded-2xl bg-red-50/80 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-slate-800 dark:text-slate-200 text-xs font-bold hover:border-red-400 transition-all cursor-pointer shadow-2xs"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-red-600 text-white flex items-center justify-center shrink-0">
+                    <Bug className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-red-700 dark:text-red-300 leading-tight">ڕاپۆرتکردنی گلیچ و کێشە</p>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400">ناردنی خێرای ئیرۆر بۆ واتسئەپی سوپەر ئەدمین 💬</p>
+                  </div>
+                </div>
+                <span className="text-[9px] font-bold bg-red-100 dark:bg-red-900/80 text-red-700 dark:text-red-300 px-2 py-0.5 rounded-md shrink-0">
+                  سوپەر ئەدمین
+                </span>
+              </button>
+
             </div>
 
             {/* Drawer Bottom Footer */}
@@ -1257,7 +1280,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
               <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center font-latin">
-                SHAKH Multi-Marketplace Platform • {t('وەشانی')} ۲.۵
+                SHAKH Multi-Marketplace Platform • {t('وەشانی')} ۳.۲.۰
               </p>
             </div>
 

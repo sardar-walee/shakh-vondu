@@ -26,15 +26,15 @@ export const AppUpdateManager: React.FC = () => {
     setIsUpdateModalOpen
   } = useMarketplace();
 
-  const [version, setVersion] = useState(appVersion.version || '2.5.0');
-  const [buildNumber, setBuildNumber] = useState(appVersion.buildNumber || 250);
-  const [title, setTitle] = useState(appVersion.title || 'وەشانی نوێی (شاخ) بەردەستە');
-  const [description, setDescription] = useState(appVersion.description || 'سیستەمی تەواوی بەڕێوەبردنی کاپتنەکان بۆ هەموو ڕۆڵەکان و دروستکردنی QR Code ی دابەزاندنی ئەپ');
+  const [version, setVersion] = useState(appVersion.version || '3.2.0');
+  const [buildNumber, setBuildNumber] = useState(appVersion.buildNumber || 320);
+  const [title, setTitle] = useState(appVersion.title || 'وەشانی نوێی (شاخ) ٣.٢.٠ بەردەستە');
+  const [description, setDescription] = useState(appVersion.description || 'وەشانی نوێی ٣.٢.٠ بە ڕووکار و ژێرخانی بێ خەوش، چارەسەرکردنی تەواوی گلیچەکان، و ناردنی ئۆتۆماتیکی داواکاری و ئیرۆر بۆ واتسئەپی سوپەر ئەدمین.');
   const [changelog, setChangelog] = useState<string[]>(appVersion.changelog || [
-    'دروستکردنی QR Code بۆ دابەزاندنی خێرای ئەپ بۆ ئەندرۆید و ئەپڵ',
-    'سیستەمی نوێی ئاگاداری ڕاستەوخۆ و ناچاری بۆ بەردەستبوونی هەر ئەپدەیتێکی نوێ',
-    'گۆڕینی ناوی فەرمی پلاتفۆرم بۆ (شاخ)',
-    'زیادکردنی بەڕێوەبردنی تەواوی کاپتنانی گەیاندن لە داشبۆردی هەموو ڕۆڵەکان'
+    'نوێکردنەوەی فەرمی وەشانی ئەپ بۆ v3.2.0 لە تەواوی سیستم و داشبۆردی بەڕێوەبردن',
+    'نوێکردنەوەی ژمارەی فەرمی واتسئەپی سوپەر ئەدمین بۆ (07504796924) بۆ وەرگرتنی خێرای گلیچ و وەسڵی پارەدان',
+    'چارەسەرکردنی ڕاستەوخۆی گلیچ و ئیرۆرە تەکنیکییەکان لە ڕێگەی ErrorBoundary و ناردنی بۆ سوپەر ئەدمین',
+    'پیشاندانی کۆتا ئەپدەیت بە تەواوی ڕۆڵەکان (کڕیار، فرۆشیار، کاپتنی گەیاندن، سوپەر ئەدمین)'
   ]);
   const [newLogItem, setNewLogItem] = useState('');
   const [isMandatory, setIsMandatory] = useState<boolean>(appVersion.isMandatory || true);
@@ -149,7 +149,7 @@ export const AppUpdateManager: React.FC = () => {
                   required
                   value={version}
                   onChange={(e) => setVersion(e.target.value)}
-                  placeholder="وەک: 2.5.0"
+                  placeholder="وەک: 3.2.0"
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-latin font-bold text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-orange-500"
                 />
               </div>
