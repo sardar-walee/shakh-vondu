@@ -166,15 +166,25 @@ export const AppUpdateAlert: React.FC<AppUpdateAlertProps> = ({ onNavigateHome }
             {/* Content Body */}
             <div className="p-6 space-y-5">
               
-              {/* Mandatory Notice Banner */}
+              {/* Mandatory / Updated Notice Banner */}
               {!isUpdating && (
-                <div className="p-3.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 rounded-2xl flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200 font-bold leading-relaxed">
-                  <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5 animate-pulse" />
-                  <div>
-                    <span className="block font-black text-sm mb-0.5">ئاگاداری ئەپدەیتی نوێ 🚀</span>
-                    <span>ئەم وەشانه پێویستە بۆ بەردەوامبوونی کارکردنی سیستم. تکایە ئەپدەیتی بکەرەوە بۆ ئەوەی بتوانیت بەردەوام بیت لە بەکارهێنانی پلاتفۆرمی (شاخ).</span>
+                isAppUpdateAvailable ? (
+                  <div className="p-3.5 bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 rounded-2xl flex items-start gap-3 text-xs text-amber-900 dark:text-amber-200 font-bold leading-relaxed">
+                    <ShieldAlert className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5 animate-pulse" />
+                    <div>
+                      <span className="block font-black text-sm mb-0.5">ئاگاداری ئەپدەیتی نوێ 🚀</span>
+                      <span>ئەم وەشانه پێویستە بۆ بەردەوامبوونی کارکردنی سیستم. تکایە ئەپدەیتی بکەرەوە بۆ ئەوەی بتوانیت بەردەوام بیت لە بەکارهێنانی پلاتفۆرمی (شاخ).</span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 rounded-2xl flex items-start gap-3 text-xs text-emerald-900 dark:text-emerald-200 font-bold leading-relaxed">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <span className="block font-black text-sm mb-0.5">ئەپڵیکەیشن بە سەرکەوتوویی نوێکراوەتەوە 🎉</span>
+                      <span>تۆ لەسەر کۆتا وەشانی فەرمی (شاخ v{appVersion.version}) یت. تەواوی خزمەتگوزارییەکان بە سەرکەوتوویی جێبەجێ ببوون.</span>
+                    </div>
+                  </div>
+                )
               )}
 
               {/* Dynamic Animated Delivery Captain Road Progress Bar */}
@@ -359,24 +369,36 @@ export const AppUpdateAlert: React.FC<AppUpdateAlertProps> = ({ onNavigateHome }
 
                   {/* Actions */}
                   <div className="flex items-center gap-3 pt-2">
-                    <button
-                      onClick={handleApplyUpdate}
-                      disabled={isUpdating || updateSuccess}
-                      className="flex-1 py-4 bg-[#FF5500] hover:bg-orange-600 text-white rounded-2xl font-black text-xs shadow-xl shadow-orange-500/30 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      <span>{t('نوێکردنەوە و ڕیفرێشی ئەپ دەستبەجێ')}</span>
-                    </button>
+                    {isAppUpdateAvailable ? (
+                      <>
+                        <button
+                          onClick={handleApplyUpdate}
+                          disabled={isUpdating || updateSuccess}
+                          className="flex-1 py-4 bg-[#FF5500] hover:bg-orange-600 text-white rounded-2xl font-black text-xs shadow-xl shadow-orange-500/30 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer disabled:opacity-50"
+                        >
+                          <RefreshCw className="w-4 h-4" />
+                          <span>{t('نوێکردنەوە و ڕیفرێشی ئەپ دەستبەجێ')}</span>
+                        </button>
 
-                    {!isMandatory && (
+                        {!isMandatory && (
+                          <button
+                            onClick={() => {
+                              dismissUpdateNotification(appVersion.version);
+                              setIsUpdateModalOpen(false);
+                            }}
+                            className="px-5 py-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl text-xs font-bold cursor-pointer transition-colors"
+                          >
+                            {t('دواتر')}
+                          </button>
+                        )}
+                      </>
+                    ) : (
                       <button
-                        onClick={() => {
-                          dismissUpdateNotification(appVersion.version);
-                          setIsUpdateModalOpen(false);
-                        }}
-                        className="px-5 py-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl text-xs font-bold cursor-pointer transition-colors"
+                        onClick={() => setIsUpdateModalOpen(false)}
+                        className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-xs shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 transition-transform active:scale-95 cursor-pointer"
                       >
-                        {t('دواتر')}
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>باشە، تێگەیشتم (تۆ لەسەر کۆتا وەشانی v{appVersion.version} یت)</span>
                       </button>
                     )}
                   </div>

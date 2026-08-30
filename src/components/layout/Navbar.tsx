@@ -81,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const { totalItems, setIsOpen: setCartOpen } = useCart();
   const { userNotifications, unreadCount, actionableCount, markAsRead, markAllAsRead } = useNotification();
   const { language, setLanguage, t } = useLanguage();
-  const { products, sellers, carAds, appVersion, openUpdateModal, openGlitchModal } = useMarketplace();
+  const { products, sellers, carAds, appVersion, isAppUpdateAvailable, openUpdateModal, openGlitchModal } = useMarketplace();
 
   const { isDarkMode, toggleTheme } = useTheme();
 
@@ -600,16 +600,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             {/* Notifications Bell */}
             <div ref={notifRef} className="relative">
               <button
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                onClick={() => {
+                  if (isAppUpdateAvailable) {
+                    openUpdateModal();
+                  } else {
+                    setIsNotifOpen(!isNotifOpen);
+                  }
+                }}
                 className={`relative p-2.5 rounded-full transition-colors cursor-pointer ${
                   isNotifOpen ? 'bg-blue-100 text-[#2563EB]' : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
                 }`}
                 aria-label="Notifications"
               >
                 <Bell className="w-4 h-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#F97316] text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900 animate-pulse">
-                    {unreadCount}
+                {(unreadCount > 0 || isAppUpdateAvailable) && (
+                  <span className={`absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 text-white text-[9px] font-black rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900 ${
+                    isAppUpdateAvailable ? 'bg-red-600 animate-bounce shadow-md shadow-red-500/50' : 'bg-[#F97316] animate-pulse'
+                  }`}>
+                    {isAppUpdateAvailable ? '!' : unreadCount}
                   </span>
                 )}
               </button>
@@ -642,8 +650,31 @@ export const Navbar: React.FC<NavbarProps> = ({
                     </div>
 
                     <div className="max-h-[60vh] sm:max-h-72 overflow-y-auto space-y-2 pr-0.5">
+                      
+                      {/* App Version Notification Card inside dropdown */}
+                      <div
+                        onClick={() => {
+                          openUpdateModal();
+                          setIsNotifOpen(false);
+                        }}
+                        className="p-3 rounded-2xl bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800/80 hover:bg-emerald-100/90 transition-all cursor-pointer text-start shadow-2xs active:scale-98"
+                      >
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-xs font-black text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>ئەپڵیکەیشنەکەت نوێکراوەتەوە (v{appVersion.version}) 🎉</span>
+                          </span>
+                          <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/80 dark:text-emerald-200 px-2 py-0.5 rounded-md">
+                            کۆتا وەشان
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
+                          تۆ لەسەر کۆتا وەشانی (شاخ v{appVersion.version}) یت. کلیک بکە بۆ تەماشاکردنی لیستی گۆڕانکارییەکان.
+                        </p>
+                      </div>
+
                       {userNotifications.length === 0 ? (
-                        <p className="text-xs text-slate-400 text-center py-6">{t('هیچ ئاگادارییەک نییە')}</p>
+                        <p className="text-xs text-slate-400 text-center py-4">{t('هیچ ئاگادارییەکی تر نییە')}</p>
                       ) : (
                         userNotifications.slice(0, 8).map(n => (
                           <div

@@ -1121,33 +1121,18 @@ export const CaptainManager: React.FC<CaptainManagerProps> = ({
             )}
           </div>
 
-          {/* National ID / License & Notes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                زانیاری مۆڵەتی شۆفێری یان ناسنامە (ئارەزوومەندانە)
-              </label>
-              <input
-                type="text"
-                value={nationalIdOrLicense}
-                onChange={(e) => setNationalIdOrLicense(e.target.value)}
-                placeholder="ژمارەی مۆڵەت یان کارتی نیشتمانی"
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-orange-500"
-              />
-            </div>
-
-            <div>
-              <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                وێنەی کەسیی کاپتن (Photo URL)
-              </label>
-              <input
-                type="text"
-                value={driverPhotoUrl}
-                onChange={(e) => setDriverPhotoUrl(e.target.value)}
-                placeholder="https://images.unsplash.com/..."
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-latin text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-orange-500"
-              />
-            </div>
+          {/* National ID / License */}
+          <div>
+            <label className="font-bold text-slate-700 dark:text-slate-300 block mb-1">
+              زانیاری مۆڵەتی شۆفێری یان ناسنامە (ئارەزوومەندانە)
+            </label>
+            <input
+              type="text"
+              value={nationalIdOrLicense}
+              onChange={(e) => setNationalIdOrLicense(e.target.value)}
+              placeholder="ژمارەی مۆڵەت یان کارتی نیشتمانی"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-3 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-orange-500"
+            />
           </div>
 
           {/* Notes */}

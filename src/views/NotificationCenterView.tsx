@@ -61,7 +61,10 @@ export const NotificationCenterView: React.FC<NotificationCenterViewProps> = ({ 
     orders,
     updateOrderStatus,
     assignDriverToOrder,
-    assignStoreDriverToOrder
+    assignStoreDriverToOrder,
+    appVersion,
+    isAppUpdateAvailable,
+    openUpdateModal
   } = useMarketplace();
 
   const { currentUser, isSuperAdmin, isSeller, isDeliveryAgent, isStoreDriver, sellerProfile } = useAuth();
@@ -272,6 +275,56 @@ export const NotificationCenterView: React.FC<NotificationCenterViewProps> = ({ 
         isOpen={isPromoModalOpen}
         onClose={() => setIsPromoModalOpen(false)}
       />
+
+      {/* App Version Notification Banner */}
+      {isAppUpdateAvailable ? (
+        <div
+          onClick={openUpdateModal}
+          className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 text-white shadow-lg hover:shadow-xl transition-all cursor-pointer flex items-center justify-between gap-4 border-2 border-orange-300 animate-pulse"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+              <Sparkles className="w-5 h-5 text-amber-200 animate-spin" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black bg-white text-orange-600 px-2 py-0.5 rounded-md font-latin">
+                  v{appVersion.version}
+                </span>
+                <p className="text-sm font-black">وەشانی نوێی (شاخ) بەردەستە!</p>
+              </div>
+              <p className="text-xs text-orange-100 mt-0.5">کلیک بکە بۆ نوێکردنەوەی ڕاستەوخۆ و جێبەجێکردنی گۆڕانکارییەکان.</p>
+            </div>
+          </div>
+          <button className="px-4 py-2 bg-white text-orange-600 hover:bg-orange-50 rounded-2xl text-xs font-black shrink-0 shadow-md">
+            نوێکردنەوە 🚀
+          </button>
+        </div>
+      ) : (
+        <div
+          onClick={openUpdateModal}
+          className="p-4 sm:p-5 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 hover:bg-emerald-100/60 transition-all cursor-pointer flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black bg-emerald-600 text-white px-2 py-0.5 rounded-md font-latin">
+                  v{appVersion.version}
+                </span>
+                <p className="text-sm font-black text-slate-900 dark:text-white">ئەپڵیکەیشن بە سەرکەوتوویی نوێکراوەتەوە 🎉</p>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">تۆ لەسەر کۆتا وەشانی (شاخ) یت. کلیک بکە بۆ بینینی هەموو نوێکارییەکان.</p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline shrink-0 flex items-center gap-1">
+            <span>بینینی گۆڕانکارییەکان</span>
+            <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+          </span>
+        </div>
+      )}
 
       {/* Modern Top Header Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xs relative overflow-hidden">
