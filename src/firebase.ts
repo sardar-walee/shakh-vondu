@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 import firebaseConfigData from '../firebase-applet-config.json';
 
 const firebaseConfig = {
@@ -44,3 +45,14 @@ export const db = firestoreInstance;
 
 // Initialize Firebase Auth
 export const auth = getAuth(app);
+
+// Initialize Firebase Storage safely
+let storageInstance;
+try {
+  storageInstance = getStorage(app);
+} catch (e) {
+  console.warn('Firebase storage initialization notice:', e);
+}
+
+export const storage = storageInstance;
+

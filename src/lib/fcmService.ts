@@ -3,8 +3,8 @@ import { getMessaging, getToken, onMessage, isSupported, Messaging } from 'fireb
 import { doc, setDoc, collection, getDocs, query, where, serverTimestamp } from 'firebase/firestore';
 import { FcmTokenData, PromotionalOfferData } from '../types';
 
-// Default VAPID key placeholder or public key for Web Push
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BM_shakh_fcm_vapid_key_public_token_demo';
+// Retrieve real Web Push public VAPID key from environment variables
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || '';
 
 let messagingInstance: Messaging | null = null;
 let isFcmSupported = false;
@@ -64,10 +64,13 @@ export const requestFcmPushPermission = async (
 
     if (messaging && swRegistration) {
       try {
-        tokenStr = await getToken(messaging, {
-          serviceWorkerRegistration: swRegistration,
-          vapidKey: VAPID_KEY
-        });
+        const tokenOptions: { serviceWorkerRegistration: ServiceWorkerRegistration; vapidKey?: string } = {
+          serviceWorkerRegistration: swRegistration
+        };
+        if (VAPID_KEY) {
+          tokenOptions.vapidKey = VAPID_KEY;
+        }
+        tokenStr = await getToken(messaging, tokenOptions);
       } catch (tokenErr) {
         console.warn('FCM getToken standard fallback notice:', tokenErr);
       }

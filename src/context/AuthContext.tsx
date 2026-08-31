@@ -269,6 +269,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       let registeredUserId = `user-${Date.now()}`;
+      const emailLower = (data.email || '').toLowerCase().trim();
+      const isDesignatedAdminEmail = emailLower === 'shakh8002@gmail.com' || emailLower === 'admin@shakh.com' || emailLower === 'itlobbybardarash@gmail.com';
+      
+      // Sanitize role: normal public registration cannot claim admin or super_admin
+      let assignedRole: UserRole = data.role;
+      if ((data.role === 'admin' || data.role === 'super_admin') && !isDesignatedAdminEmail) {
+        assignedRole = 'customer';
+      }
 
       // Firebase Auth create
       if (data.password && data.password.length >= 6) {
@@ -291,7 +299,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             data: {
               full_name: data.fullName,
               phone: data.phone,
-              role: data.role,
+              role: assignedRole,
               city: data.city,
               area: data.area,
               address: data.address
@@ -314,7 +322,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               city: data.city,
               area: data.area,
               address: data.address,
-              role: data.role
+              role: assignedRole
             }
           ]);
         }
@@ -328,7 +336,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         city: data.city,
         area: data.area,
         address: data.address,
-        role: data.role,
+        role: assignedRole,
         category: data.category,
         geoLocation: data.geoLocation,
         isVerified: true,

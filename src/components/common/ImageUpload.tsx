@@ -12,6 +12,7 @@ import {
   Eye,
   Check
 } from 'lucide-react';
+import { uploadMediaToFirebaseStorage } from '../../lib/storageService';
 
 interface ImageUploadProps {
   images: string[];
@@ -19,6 +20,7 @@ interface ImageUploadProps {
   maxImages?: number;
   label?: string;
   helperText?: string;
+  folder?: 'products' | 'cars' | 'avatars' | 'receipts' | 'documents';
 }
 
 // Client-side image compression to optimize storage & fast transmission
@@ -67,7 +69,8 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
   onChange,
   maxImages = 8,
   label = 'وێنەکان باربکە (تا ٨ وێنە)',
-  helperText = 'دەتوانیت تا ٨ وێنەی کوالیتی بەرز دابنێیت. یەکەم وێنە وەک وێنەی سەرەکی دادەنرێت.'
+  helperText = 'دەتوانیت تا ٨ وێنەی کوالیتی بەرز دابنێیت. یەکەم وێنە وەک وێنەی سەرەکی دادەنرێت.',
+  folder = 'products'
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -86,14 +89,18 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       const remainingSlots = maxImages - images.length;
       const filesToProcess = fileList.slice(0, remainingSlots);
 
-      const compressedImages = await Promise.all(
-        filesToProcess.map((file) => compressImageFile(file))
+      const uploadedUrls = await Promise.all(
+        filesToProcess.map(async (file) => {
+          const compressedDataUrl = await compressImageFile(file);
+          const uploadRes = await uploadMediaToFirebaseStorage(compressedDataUrl, folder);
+          return uploadRes.url;
+        })
       );
 
-      const combined = [...images, ...compressedImages].slice(0, maxImages);
+      const combined = [...images, ...uploadedUrls].slice(0, maxImages);
       onChange(combined);
     } catch (err) {
-      console.error('Failed to compress/read images:', err);
+      console.error('Failed to compress/upload images:', err);
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
@@ -101,6 +108,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       }
     }
   };
+
 
   const handleAddUrl = (e: React.FormEvent) => {
     e.preventDefault();

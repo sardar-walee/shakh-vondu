@@ -2,105 +2,309 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // =========================================================================
+    // Core Helper & Security Functions
+    // =========================================================================
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
     function isSuperAdmin() {
       return isAuthenticated() && (
+        request.auth.token.email == 'shakh8002@gmail.com' ||
         request.auth.token.email == 'admin@shakh.com' ||
-        request.auth.token.role == 'super_admin' ||
-        request.auth.uid == 'admin-super'
+        request.auth.token.email == 'itlobbybardarash@gmail.com' ||
+        request.auth.uid == 'admin-super' ||
+        request.auth.uid == 'admin-shakh' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'super_admin'])
       );
     }
 
-    // 1. Products Collection: Publicly readable by all users across all platforms
+    function isSeller() {
+      return isAuthenticated() && (
+        isSuperAdmin() ||
+        exists(/databases/$(database)/documents/sellers/$(request.auth.uid)) ||
+        exists(/databases/$(database)/documents/sellers/$('store-' + request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in [
+           'seller', 'restaurant_owner', 'market_owner', 'clothes_seller',
+           'fruits_vegetables_seller', 'fresh_meat_seller', 'dairy_seller',
+           'electronics_seller', 'beauty_seller', 'car_seller'
+         ])
+      );
+    }
+
+    function isDeliveryAgent() {
+      return isAuthenticated() && (
+        isSuperAdmin() ||
+        exists(/databases/$(database)/documents/drivers/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['delivery_agent', 'store_driver'])
+      );
+    }
+
+    // =========================================================================
+    // 1. Products Collection
+    // Public catalog browsing; write operations restricted to seller or super admin
+    // =========================================================================
     match /products/{productId} {
       allow read: if true;
-      allow create: if true;
-      allow update, delete: if true;
+      allow create: if isAuthenticated() && (
+        isSuperAdmin() ||
+        request.resource.data.sellerId == request.auth.uid ||
+        request.resource.data.sellerId == 'store-' + request.auth.uid ||
+        (request.resource.data.sellerId != null && exists(/databases/$(database)/documents/sellers/$(request.resource.data.sellerId)) &&
+         get(/databases/$(database)/documents/sellers/$(request.resource.data.sellerId)).data.userId == request.auth.uid)
+      );
+      allow update, delete: if isSuperAdmin() || (
+        isAuthenticated() && (
+          resource.data.sellerId == request.auth.uid ||
+          resource.data.sellerId == 'store-' + request.auth.uid ||
+          (resource.data.sellerId != null && exists(/databases/$(database)/documents/sellers/$(resource.data.sellerId)) && 
+           get(/databases/$(database)/documents/sellers/$(resource.data.sellerId)).data.userId == request.auth.uid)
+        )
+      );
     }
 
-    // 2. Cars Collection: Publicly readable for all active ads
+    // =========================================================================
+    // 2. Cars Collection
+    // Public automotive listings; write operations restricted to ad owner or super admin
+    // =========================================================================
     match /cars/{carId} {
       allow read: if true;
-      allow create: if true;
-      allow update, delete: if true;
+      allow create: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid ||
+        isSuperAdmin()
+      );
+      allow update, delete: if isSuperAdmin() || isOwner(resource.data.userId);
     }
 
-    // 3. Sellers Collection: Public storefront directory
-    match /sellers/{sellerId} {
-      allow read: if true;
-      allow write: if true;
-    }
-
-    // 4. Users Collection
+    // =========================================================================
+    // 3. Users & Profiles Collections
+    // Public profiles for storefronts & reviews; self-management without privilege escalation
+    // =========================================================================
     match /users/{userId} {
       allow read: if true;
-      allow write: if true;
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == userId && (!(request.resource.data.role in ['admin', 'super_admin']) || isSuperAdmin())) ||
+        isSuperAdmin()
+      );
+      allow update: if isSuperAdmin() || (
+        isOwner(userId) && (
+          request.resource.data.role == resource.data.role ||
+          isSuperAdmin()
+        )
+      );
+      allow delete: if isSuperAdmin();
     }
 
-    // 5. Orders Collection
-    match /orders/{orderId} {
+    match /profiles/{profileId} {
       allow read: if true;
-      allow write: if true;
+      allow create: if isAuthenticated() && (
+        (request.auth.uid == profileId && (!(request.resource.data.role in ['admin', 'super_admin']) || isSuperAdmin())) ||
+        isSuperAdmin()
+      );
+      allow update: if isSuperAdmin() || (
+        isOwner(profileId) && (
+          request.resource.data.role == resource.data.role ||
+          isSuperAdmin()
+        )
+      );
+      allow delete: if isSuperAdmin();
     }
 
-    // 6. Reviews & Ratings
+    // =========================================================================
+    // 4. Sellers Collection
+    // Public storefront directory; write operations restricted to merchant owner or super admin
+    // =========================================================================
+    match /sellers/{sellerId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid ||
+        sellerId == request.auth.uid ||
+        sellerId == 'store-' + request.auth.uid ||
+        isSuperAdmin()
+      );
+      allow update: if isSuperAdmin() || isOwner(resource.data.userId) || request.auth.uid == sellerId || sellerId == 'store-' + request.auth.uid;
+      allow delete: if isSuperAdmin() || isOwner(resource.data.userId);
+    }
+
+    // =========================================================================
+    // 5. Orders Collection
+    // Multi-vendor customer orders; read and write restricted to involved parties & super admin
+    // =========================================================================
+    match /orders/{orderId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.customerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid ||
+        resource.data.sellerId == 'store-' + request.auth.uid ||
+        resource.data.driverId == request.auth.uid ||
+        resource.data.deliveryAgentId == request.auth.uid ||
+        resource.data.storeDriverId == request.auth.uid ||
+        isDeliveryAgent()
+      );
+      allow create: if isAuthenticated() && (
+        request.resource.data.customerId == request.auth.uid ||
+        isSuperAdmin()
+      );
+      allow update: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.customerId == request.auth.uid ||
+        resource.data.sellerId == request.auth.uid ||
+        resource.data.sellerId == 'store-' + request.auth.uid ||
+        resource.data.driverId == request.auth.uid ||
+        resource.data.deliveryAgentId == request.auth.uid ||
+        resource.data.storeDriverId == request.auth.uid ||
+        isDeliveryAgent() ||
+        isSeller()
+      );
+      allow delete: if isSuperAdmin();
+    }
+
+    // =========================================================================
+    // 6. Reviews Collection
+    // Customer ratings for products, sellers, and delivery drivers
+    // =========================================================================
     match /reviews/{reviewId} {
       allow read: if true;
-      allow write: if true;
+      allow create: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid ||
+        isSuperAdmin()
+      );
+      allow update: if isSuperAdmin() || isOwner(resource.data.userId) || (
+        resource.data.targetId != null && (
+          resource.data.targetId == request.auth.uid ||
+          resource.data.targetId == 'store-' + request.auth.uid
+        )
+      );
+      allow delete: if isSuperAdmin() || isOwner(resource.data.userId);
     }
 
-    // 7. Feedbacks
+    // =========================================================================
+    // 7. Feedbacks Collection
+    // Public community ideas & platform feedback
+    // =========================================================================
     match /feedbacks/{feedbackId} {
       allow read: if true;
-      allow write: if true;
+      allow create: if isAuthenticated() && (
+        request.resource.data.userId == request.auth.uid ||
+        isSuperAdmin()
+      );
+      allow update, delete: if isSuperAdmin() || isOwner(resource.data.userId);
     }
 
-    // 8. Notifications
+    // =========================================================================
+    // 8. Notifications Collection
+    // Private user notifications and actionable workflow messages
+    // =========================================================================
     match /notifications/{notificationId} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if isAuthenticatedParam(resource.data);
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.userId == request.auth.uid ||
+        resource.data.recipientId == request.auth.uid
+      );
     }
 
-    // 9. Wallets & Agreements
-    match /wallets/{walletId} {
-      allow read: if true;
-      allow write: if true;
+    function isAuthenticatedParam(data) {
+      return isAuthenticated() && (
+        isSuperAdmin() ||
+        data.userId == request.auth.uid ||
+        data.recipientId == request.auth.uid ||
+        data.userId == 'all' ||
+        data.recipientId == 'all' ||
+        data.userId == 'current' ||
+        (data.recipientRole == 'all_shakh_captains' && isDeliveryAgent()) ||
+        (data.recipientRole == 'all_admins' && isSuperAdmin())
+      );
     }
 
-    match /agreements/{agreementId} {
-      allow read: if true;
-      allow write: if true;
-    }
-
-    // 10. Favorites & Tokens
+    // =========================================================================
+    // 9. Favorites & Push Tokens
+    // User wishlists and browser FCM device registrations
+    // =========================================================================
     match /favorites/{favoriteId} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isSuperAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isSuperAdmin());
     }
 
     match /fcmTokens/{tokenId} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isSuperAdmin());
+      allow create, update: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isSuperAdmin());
     }
 
-    // 11. Promotional Offers & System Settings
+    // =========================================================================
+    // 10. Subscriptions, Wallets & Financial Agreements
+    // =========================================================================
+    match /subscriptions/{subscriptionId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isSuperAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /drivers/{driverId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (request.auth.uid == driverId || isSuperAdmin());
+    }
+
+    match /wallets/{walletId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.sellerId == request.auth.uid ||
+        resource.data.sellerId == 'store-' + request.auth.uid
+      );
+      allow write: if isSuperAdmin() || (
+        isSeller() && (
+          request.resource.data.sellerId == request.auth.uid ||
+          request.resource.data.sellerId == 'store-' + request.auth.uid
+        )
+      );
+    }
+
+    match /agreements/{agreementId} {
+      allow read: if isAuthenticated() && (
+        isSuperAdmin() ||
+        resource.data.sellerId == request.auth.uid ||
+        resource.data.sellerId == 'store-' + request.auth.uid
+      );
+      allow write: if isSuperAdmin() || (
+        isSeller() && (
+          request.resource.data.sellerId == request.auth.uid ||
+          request.resource.data.sellerId == 'store-' + request.auth.uid
+        )
+      );
+    }
+
+    // =========================================================================
+    // 11. Public Offers, Announcements & System Settings
+    // =========================================================================
     match /promotional_offers/{offerId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isSuperAdmin() || isSeller();
     }
 
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isSuperAdmin();
     }
 
-    // Catch-All
+    match /system_settings/{settingId} {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // Default catch-all (deny all undefined paths)
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }

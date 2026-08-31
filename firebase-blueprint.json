@@ -236,6 +236,41 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "title", "body", "senderId"]
+    },
+    "Subscription": {
+      "title": "User Subscription Plan",
+      "description": "Seller or delivery captain VIP and custom subscription plans",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "target": { "type": "string", "enum": ["seller", "captain"] },
+        "planId": { "type": "string" },
+        "planName": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "expired", "pending_approval", "custom_agreed"] },
+        "commissionRateOverride": { "type": "number" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "endDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "target", "planId", "status"]
+    },
+    "Feedback": {
+      "title": "User Feedback & Suggestions",
+      "description": "Community suggestions, bug reports, and reviews for platform improvements",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userRole": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "rating": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "implemented", "hidden"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "userName", "title", "message"]
     }
   },
   "firestore": {
@@ -248,6 +283,8 @@
     "/favorites/{favoriteId}": { "schema": "Favorite", "description": "Customer wishlist and favorites collection" },
     "/fcmTokens/{tokenId}": { "schema": "FcmToken", "description": "Device FCM push notification tokens" },
     "/promotional_offers/{offerId}": { "schema": "PromotionalOffer", "description": "Promotional offer push notification campaigns" },
-    "/system_settings/points_config": { "schema": "PointsSettings", "description": "Global points conversion rate config" }
+    "/system_settings/points_config": { "schema": "PointsSettings", "description": "Global points conversion rate config" },
+    "/subscriptions/{subscriptionId}": { "schema": "Subscription", "description": "VIP subscriptions and custom agreements" },
+    "/feedbacks/{feedbackId}": { "schema": "Feedback", "description": "User suggestions and feedbacks" }
   }
 }

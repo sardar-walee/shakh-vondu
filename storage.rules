@@ -1,0 +1,66 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'shakh8002@gmail.com' ||
+        request.auth.token.email == 'admin@shakh.com' ||
+        request.auth.token.email == 'itlobbybardarash@gmail.com' ||
+        request.auth.uid == 'admin-super' ||
+        request.auth.uid == 'admin-shakh'
+      );
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*')
+        && request.resource.size <= 10 * 1024 * 1024; // 10MB max
+    }
+
+    function isValidDocument() {
+      return (request.resource.contentType.matches('image/.*') || request.resource.contentType == 'application/pdf')
+        && request.resource.size <= 10 * 1024 * 1024; // 10MB max
+    }
+
+    // 1. Products Images: Publicly readable for marketplace browsing
+    match /products/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isValidImage();
+    }
+
+    // 2. Cars Images: Publicly readable for automotive marketplace
+    match /cars/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isValidImage();
+    }
+
+    // 3. User & Store Avatars: Publicly readable
+    match /avatars/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() && isValidImage();
+    }
+
+    // 4. Payment Receipts: Uploaded by buyers/sellers for verification
+    match /receipts/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidImage();
+    }
+
+    // 5. Captain & Seller Identity Documents (Tazkara, Driver Licenses, Certificates)
+    // Protected: readable by authenticated personnel and Super Admin
+    match /documents/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && isValidDocument();
+    }
+
+    // Default deny for all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

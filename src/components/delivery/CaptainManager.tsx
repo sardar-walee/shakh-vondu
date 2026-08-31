@@ -36,6 +36,7 @@ import { StoreDriver } from '../../types';
 import { Modal } from '../common/Modal';
 import { ImageUpload } from '../common/ImageUpload';
 import { CITIES } from '../../data/seedData';
+import { uploadMediaToFirebaseStorage } from '../../lib/storageService';
 
 const compressImageFile = (file: File): Promise<string> => {
   return new Promise((resolve) => {
@@ -82,7 +83,8 @@ const DirectFileUpload: React.FC<{
   value: string;
   onChange: (dataUrl: string) => void;
   placeholder?: string;
-}> = ({ label, value, onChange, placeholder }) => {
+  folder?: 'products' | 'cars' | 'avatars' | 'receipts' | 'documents';
+}> = ({ label, value, onChange, placeholder, folder = 'documents' }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
 
@@ -92,9 +94,10 @@ const DirectFileUpload: React.FC<{
     setLoading(true);
     try {
       const compressed = await compressImageFile(file);
-      onChange(compressed);
+      const uploadRes = await uploadMediaToFirebaseStorage(compressed, folder);
+      onChange(uploadRes.url);
     } catch (err) {
-      console.error('File compress error:', err);
+      console.error('File compress/upload error:', err);
     } finally {
       setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
