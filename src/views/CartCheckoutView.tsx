@@ -77,7 +77,8 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
   }, [primarySeller, distanceKm, subtotal]);
 
   const activeDeliveryFee = deliveryCalc.deliveryFee;
-  const calculatedGrandTotal = subtotal + activeDeliveryFee;
+  const PLATFORM_SERVICE_FEE = 250; // Fixed 250 IQD customer platform fee
+  const calculatedGrandTotal = subtotal + activeDeliveryFee + PLATFORM_SERVICE_FEE;
 
   // Points redemption calculation
   const pointsRate = pointsSettings?.pointsPerIQD || 150;
@@ -168,6 +169,7 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
       items: orderItems,
       subtotal,
       deliveryFee: activeDeliveryFee,
+      platformFee: PLATFORM_SERVICE_FEE,
       deliveryDistanceKm: distanceKm,
       deliveryZoneStatus: deliveryCalc.isWithinRadius ? 'within_radius' : 'custom_distance',
       total: Math.max(0, calculatedGrandTotal - appliedDiscount),
@@ -681,6 +683,15 @@ export const CartCheckoutView: React.FC<CartCheckoutViewProps> = ({ onNavigate }
                 <span>کرێی گەیاندن ({distanceKm} کم):</span>
                 <span className="font-bold text-slate-900 dark:text-slate-100 font-latin">
                   {deliveryCalc.isFreeDelivery ? 'بەخۆڕایی (Free)' : `${activeDeliveryFee.toLocaleString()} د.ع`}
+                </span>
+              </div>
+              <div className="flex justify-between text-slate-600 dark:text-slate-400">
+                <span className="flex items-center gap-1">
+                  <span>کرێی خزمەتگوزاری پلاتفۆرمی شاخ:</span>
+                  <span className="text-[10px] bg-slate-100 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-500 font-bold">جێگیر</span>
+                </span>
+                <span className="font-bold text-slate-900 dark:text-slate-100 font-latin">
+                  {PLATFORM_SERVICE_FEE.toLocaleString()} د.ع
                 </span>
               </div>
 

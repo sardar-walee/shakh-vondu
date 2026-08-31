@@ -39,6 +39,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { db } from '../firebase';
 import { sendFcmOrderStatusUpdate } from '../lib/fcmService';
 import { cleanTaggedDemoRecords, DemoCleanerResult } from '../lib/firestoreDemoCleaner';
+import { generateUUID, handleFirestoreError, OperationType } from '../lib/firestoreUtils';
 import {
   collection,
   doc,
@@ -115,6 +116,7 @@ interface MarketplaceContextType {
     items: Order['items'];
     subtotal: number;
     deliveryFee: number;
+    platformFee?: number;
     deliveryDistanceKm?: number;
     deliveryZoneStatus?: 'within_radius' | 'custom_distance' | 'out_of_range';
     total: number;
@@ -261,26 +263,16 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const { addNotification } = useNotification();
 
   // State initialization - load from local cache if present while Firestore live listener syncs
-  const [deletedProductIds, setDeletedProductIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem('shakh_deleted_product_ids');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [deletedCarIds, setDeletedCarIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem('shakh_deleted_car_ids');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [deletedFeedbackIds, setDeletedFeedbackIds] = useState<string[]>(() => {
-    const saved = localStorage.getItem('shakh_deleted_feedback_ids');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [deletedProductIds, setDeletedProductIds] = useState<string[]>([]);
+  const [deletedCarIds, setDeletedCarIds] = useState<string[]>([]);
+  const [deletedFeedbackIds, setDeletedFeedbackIds] = useState<string[]>([]);
 
   const [products, setProducts] = useState<Product[]>(() => {
     const saved = localStorage.getItem('shakh_products');
     if (saved) {
       try {
         const parsed: Product[] = JSON.parse(saved);
-        const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_product_ids') || '[]'));
-        return parsed.filter(p => !delSet.has(p.id));
+        return parsed;
       } catch (e) {}
     }
     return [];
@@ -297,8 +289,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (saved) {
       try {
         const parsed: CarAd[] = JSON.parse(saved);
-        const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_car_ids') || '[]'));
-        return parsed.filter(c => !delSet.has(c.id));
+        return parsed;
       } catch (e) {}
     }
     return [];
@@ -635,30 +626,32 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     const setupFirestoreSync = async () => {
       try {
-        // 1. Products Listener (Real-time Firestore source of truth)
+        // 1. Products Listener (Real-time Firestore shared source of truth)
         const prodCol = collection(db, 'products');
         unsubProducts = onSnapshot(
           prodCol,
           (snapshot) => {
             const list: Product[] = [];
-            const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_product_ids') || '[]'));
             snapshot.forEach((docSnap) => {
               const data = docSnap.data() as Product;
               const itemId = data.id || docSnap.id;
-              if (!delSet.has(itemId) && !delSet.has(docSnap.id)) {
-                list.push({
-                  ...data,
-                  id: itemId,
-                  isAvailable: data.isAvailable !== false,
-                  productStatus: data.productStatus || 'active'
-                });
-              }
+              list.push({
+                ...data,
+                id: itemId,
+                published: data.published !== false,
+                visibility: data.visibility || 'public',
+                isAvailable: data.isAvailable !== false,
+                productStatus: data.productStatus || 'active'
+              });
             });
             list.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
             setProducts(list);
+            try {
+              localStorage.setItem('shakh_products', JSON.stringify(list));
+            } catch (e) {}
           },
           (err) => {
-            console.warn('Products onSnapshot error:', err);
+            handleFirestoreError(err, OperationType.LIST, 'products');
           }
         );
 
@@ -679,7 +672,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
                 storeName: 'بەڕێوەبەرایەتی شاخ (Shakh Official)',
                 slug: 'admin-store',
                 category: 'food',
-                description: 'تۆڕی فەرمیی بەڕێوەبەرایەتی پلاتفۆرمی شاخ',
+                description: 'تۆڕی فەrmیی بەڕێوەبەرایەتی پلاتفۆرمی شاخ',
                 logoUrl: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=150',
                 coverUrl: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800',
                 rating: 5.0,
@@ -707,9 +700,12 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
               });
             }
             setSellers(list);
+            try {
+              localStorage.setItem('shakh_sellers', JSON.stringify(list));
+            } catch (e) {}
           },
           (err) => {
-            console.warn('Sellers onSnapshot error:', err);
+            handleFirestoreError(err, OperationType.LIST, 'sellers');
           }
         );
 
@@ -722,31 +718,40 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
             snapshot.forEach((docSnap) => list.push(docSnap.data() as Order));
             list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setOrders(list);
+            try {
+              localStorage.setItem('shakh_orders', JSON.stringify(list));
+            } catch (e) {}
           },
           (err) => {
-            console.warn('Orders onSnapshot error:', err);
+            handleFirestoreError(err, OperationType.LIST, 'orders');
           }
         );
 
-        // 4. Cars Listener
+        // 4. Cars Listener (Real-time Firestore shared source of truth)
         const carsCol = collection(db, 'cars');
         unsubCars = onSnapshot(
           carsCol,
           (snapshot) => {
             const list: CarAd[] = [];
-            const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_car_ids') || '[]'));
             snapshot.forEach((docSnap) => {
               const data = docSnap.data() as CarAd;
               const itemId = data.id || docSnap.id;
-              if (!delSet.has(itemId) && !delSet.has(docSnap.id)) {
-                list.push({ ...data, id: itemId });
-              }
+              list.push({
+                ...data,
+                id: itemId,
+                published: data.published !== false,
+                visibility: data.visibility || 'public',
+                adStatus: data.adStatus || 'active'
+              });
             });
             list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
             setCarAds(list);
+            try {
+              localStorage.setItem('shakh_car_ads', JSON.stringify(list));
+            } catch (e) {}
           },
           (err) => {
-            console.warn('Cars onSnapshot error:', err);
+            handleFirestoreError(err, OperationType.LIST, 'cars');
           }
         );
 
@@ -758,9 +763,12 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
             const list: Review[] = [];
             snapshot.forEach((docSnap) => list.push(docSnap.data() as Review));
             setReviews(list);
+            try {
+              localStorage.setItem('shakh_reviews', JSON.stringify(list));
+            } catch (e) {}
           },
           (err) => {
-            console.warn('Reviews onSnapshot error:', err);
+            handleFirestoreError(err, OperationType.LIST, 'reviews');
           }
         );
 
@@ -770,18 +778,18 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
           feedbacksCol,
           (snapshot) => {
             const list: UserFeedback[] = [];
-            const delSet = new Set(JSON.parse(localStorage.getItem('shakh_deleted_feedback_ids') || '[]'));
             snapshot.forEach((docSnap) => {
               const data = docSnap.data() as UserFeedback;
               const itemId = data.id || docSnap.id;
-              if (!delSet.has(itemId) && !delSet.has(docSnap.id)) {
-                list.push({ ...data, id: itemId });
-              }
+              list.push({ ...data, id: itemId });
             });
             setUserFeedbacks(list);
+            try {
+              localStorage.setItem('shakh_user_feedbacks', JSON.stringify(list));
+            } catch (e) {}
           },
           (err) => {
-            console.warn('Feedbacks onSnapshot error:', err);
+            handleFirestoreError(err, OperationType.LIST, 'feedbacks');
           }
         );
 
@@ -928,7 +936,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   // Product Management
-  const addProduct = async (productData: Omit<Product, 'id' | 'createdAt'>): Promise<{ success: boolean; error?: string }> => {
+  const addProduct = async (productData: Omit<Product, 'id' | 'createdAt'>): Promise<{ success: boolean; error?: string; productId?: string }> => {
     if (!currentUser) return { success: false, error: 'تکایە سەرەتا بچۆ ژوورەوە' };
 
     // Super Admin can post in ALL categories. Regular sellers can post in their own assigned category or if not restricted.
@@ -939,14 +947,31 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       };
     }
 
+    const newProductId = generateUUID();
+    const nowIso = new Date().toISOString();
     const newProduct: Product = {
       ...productData,
-      id: `prod-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+      id: newProductId,
+      published: true,
+      visibility: 'public',
       isAvailable: productData.isAvailable !== false,
       productStatus: productData.productStatus || 'active',
-      createdAt: new Date().toISOString()
+      createdAt: nowIso,
+      updatedAt: nowIso
     };
 
+    // 1. Write product to Firestore as the single primary source of truth
+    try {
+      await setDoc(doc(db, 'products', newProduct.id), newProduct);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, `products/${newProduct.id}`);
+      return {
+        success: false,
+        error: 'کێشەیەک لە پاشەکەوتکردنی کاڵا لە داتابەیسی سەرهێڵ ڕوویدا. تکایە پەیوەندی ئینتەرنێتەکەت بپشکنە.'
+      };
+    }
+
+    // 2. Optimistic local cache update
     setProducts(prev => {
       const updated = [newProduct, ...prev.filter(p => p.id !== newProduct.id)];
       try {
@@ -955,14 +980,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return updated;
     });
 
-    // 1. Write product to Firestore
-    try {
-      await setDoc(doc(db, 'products', newProduct.id), newProduct);
-    } catch (e) {
-      console.warn('Firestore addProduct notice:', e);
-    }
-
-    // 2. Ensure seller profile exists in Firestore 'sellers' collection for customers
+    // 3. Ensure seller profile exists in Firestore 'sellers' collection for customers
     try {
       const sellerIdToUse = newProduct.sellerId || (currentUser ? `store-${currentUser.id}` : 'store-main');
       const isAdminStore = sellerIdToUse === 'admin-store' || sellerIdToUse === 'store-main' || isSuperAdmin;
@@ -1062,7 +1080,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       }
     });
 
-    return { success: true };
+    return { success: true, productId: newProduct.id };
   };
 
   const updateProduct = async (id: string, updates: Partial<Product>): Promise<{ success: boolean; error?: string }> => {
@@ -1073,11 +1091,16 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return { success: false, error: 'تۆ ناتوانیت کاڵای ئەم بەشە دەستکاری بکەیت' };
     }
 
-    setProducts(prev => prev.map(p => (p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p)));
+    const payload = { ...updates, updatedAt: new Date().toISOString() };
+
+    setProducts(prev => prev.map(p => (p.id === id ? { ...p, ...payload } : p)));
 
     try {
-      await updateDoc(doc(db, 'products', id), updates);
-    } catch (e) {}
+      await updateDoc(doc(db, 'products', id), payload);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `products/${id}`);
+      return { success: false, error: 'هەڵەیەک لە نوێکردنەوەی کاڵا لە داتابەیس ڕوویدا.' };
+    }
 
     return { success: true };
   };
@@ -1090,19 +1113,18 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return { success: false, error: 'تۆ ناتوانیت کاڵای ئەم بەشە بسڕیتەوە' };
     }
 
-    setDeletedProductIds(prev => {
-      const next = Array.from(new Set([...prev, id]));
-      localStorage.setItem('shakh_deleted_product_ids', JSON.stringify(next));
-      return next;
-    });
-
     setProducts(prev => {
       const next = prev.filter(p => p.id !== id);
       localStorage.setItem('shakh_products', JSON.stringify(next));
       return next;
     });
 
-    await safeDeleteFirestoreDoc('products', id);
+    try {
+      await deleteDoc(doc(db, 'products', id));
+    } catch (e) {
+      handleFirestoreError(e, OperationType.DELETE, `products/${id}`);
+      return { success: false, error: 'هەڵەیەک لە سڕینەوەی کاڵا لە داتابەیس ڕوویدا.' };
+    }
 
     if (isSupabaseConfigured) {
       try {
@@ -1449,6 +1471,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     items: Order['items'];
     subtotal: number;
     deliveryFee: number;
+    platformFee?: number;
     deliveryDistanceKm?: number;
     deliveryZoneStatus?: 'within_radius' | 'custom_distance' | 'out_of_range';
     total: number;
@@ -1492,6 +1515,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const calculatedCommissionAmount = Math.round((orderData.subtotal * effectiveCommissionRate) / 100);
     const calculatedSellerAmount = Math.round(orderData.subtotal - calculatedCommissionAmount);
     const calculatedPointsEarned = orderData.pointsEarned ?? Math.max(10, Math.round(orderData.subtotal * 0.02));
+    const platformFee = orderData.platformFee !== undefined ? orderData.platformFee : 250;
 
     const newOrder: Order = {
       id: newOrderId,
@@ -1513,6 +1537,7 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       items: orderData.items,
       subtotal: orderData.subtotal,
       deliveryFee: orderData.deliveryFee,
+      platformFee,
       deliveryDistanceKm: orderData.deliveryDistanceKm,
       deliveryZoneStatus: orderData.deliveryZoneStatus || 'within_radius',
       deliveryMode,
@@ -2122,10 +2147,13 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const now = Date.now();
     const startDate = new Date(now).toISOString();
     const expirationDate = new Date(now + durationDays * 24 * 60 * 60 * 1000).toISOString();
+    const newCarId = generateUUID();
 
     const newAd: CarAd = {
       ...adData,
-      id: `car-${now}`,
+      id: newCarId,
+      published: true,
+      visibility: 'public',
       adStatus: 'active',
       paymentStatus: 'paid',
       adminApprovalStatus: 'approved',
@@ -2135,16 +2163,26 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       viewsCount: 1,
       likesCount: 0,
       sharesCount: 0,
-      createdAt: startDate
+      createdAt: startDate,
+      updatedAt: startDate
     };
 
-    setCarAds(prev => [newAd, ...prev.filter(c => c.id !== newAd.id)]);
-
+    // 1. Write to Firestore as the single source of truth
     try {
       await setDoc(doc(db, 'cars', newAd.id), newAd);
     } catch (e) {
-      console.warn('Firestore setDoc notice for car ad:', e);
+      handleFirestoreError(e, OperationType.CREATE, `cars/${newAd.id}`);
+      return {
+        success: false,
+        error: 'کێشەیەک لە پاشەکەوتکردنی ڕیکلامی ئۆتۆمبێل لە داتابەیس ڕوویدا.'
+      };
     }
+
+    // 2. Optimistic local cache update
+    setCarAds(prev => [newAd, ...prev.filter(c => c.id !== newAd.id)]);
+    try {
+      localStorage.setItem('shakh_car_ads', JSON.stringify([newAd, ...carAds.filter(c => c.id !== newAd.id)]));
+    } catch (e) {}
 
     if (isSupabaseConfigured) {
       try {
@@ -2169,8 +2207,8 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
 
     addNotification({
       userId: currentUser.id,
-      title: 'ڕیکلامی ئۆتۆمبێل نێردرا بۆ سوپەر ئەدمین ⏳',
-      message: `ڕیکلامی (${newAd.title}) بە سەرکەوتوویی تۆمارکرا. پاش وردبینی وەسڵ و پارەدان لەلایەن سوپەر ئەدمین، دەستبەجێ بڵاودەبێتەوە.`,
+      title: 'ڕیکلامی ئۆتۆمبێل بڵاوکرایەوە 🚗',
+      message: `ڕیکلامی (${newAd.title}) بە سەرکەوتوویی لە بەشی ئۆتۆمبێل بڵاوکرایەوە.`,
       type: 'car'
     });
 
@@ -2188,26 +2226,24 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     const startDate = new Date(now).toISOString();
     const expirationDate = new Date(now + durationDays * 24 * 60 * 60 * 1000).toISOString();
 
-    setCarAds(prev => prev.map(a => (a.id === adId ? {
-      ...a,
-      adStatus: 'active',
-      paymentStatus: 'paid',
-      adminApprovalStatus: 'approved',
+    const updates = {
+      adStatus: 'active' as const,
+      paymentStatus: 'paid' as const,
+      adminApprovalStatus: 'approved' as const,
       adminApprovedAt: startDate,
       startDate,
-      expirationDate
-    } : a)));
+      expirationDate,
+      updatedAt: startDate
+    };
+
+    setCarAds(prev => prev.map(a => (a.id === adId ? { ...a, ...updates } : a)));
 
     try {
-      await updateDoc(doc(db, 'cars', adId), {
-        adStatus: 'active',
-        paymentStatus: 'paid',
-        adminApprovalStatus: 'approved',
-        adminApprovedAt: startDate,
-        startDate,
-        expirationDate
-      });
-    } catch (e) {}
+      await updateDoc(doc(db, 'cars', adId), updates);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `cars/${adId}`);
+      return { success: false, error: 'هەڵەیەک لە پەسەندکردنی ڕیکلام ڕوویدا' };
+    }
 
     addNotification({
       userId: targetAd.userId,
@@ -2224,21 +2260,21 @@ export const MarketplaceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     if (!targetAd) return { success: false, error: 'ڕیکلام نەدۆزرایەوە' };
 
     const rejectReason = reason || 'بەڵگەی پارەدان یان وەسڵەکە ڕەتکرایەوە لەلایەن بەڕێوەبەرایەتی';
+    const updates = {
+      adStatus: 'rejected' as const,
+      adminApprovalStatus: 'rejected' as const,
+      adminRejectionReason: rejectReason,
+      updatedAt: new Date().toISOString()
+    };
 
-    setCarAds(prev => prev.map(a => (a.id === adId ? {
-      ...a,
-      adStatus: 'rejected',
-      adminApprovalStatus: 'rejected',
-      adminRejectionReason: rejectReason
-    } : a)));
+    setCarAds(prev => prev.map(a => (a.id === adId ? { ...a, ...updates } : a)));
 
     try {
-      await updateDoc(doc(db, 'cars', adId), {
-        adStatus: 'rejected',
-        adminApprovalStatus: 'rejected',
-        adminRejectionReason: rejectReason
-      });
-    } catch (e) {}
+      await updateDoc(doc(db, 'cars', adId), updates);
+    } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `cars/${adId}`);
+      return { success: false, error: 'هەڵەیەک لە ڕەتکردنەوەی ڕیکلام ڕوویدا' };
+    }
 
     addNotification({
       userId: targetAd.userId,

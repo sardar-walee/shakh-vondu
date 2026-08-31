@@ -226,6 +226,8 @@ export interface Product {
   unit?: string;
   rating?: number;
   reviewCount?: number;
+  published?: boolean;
+  visibility?: 'public' | 'private';
   createdAt: string;
   updatedAt?: string;
 
@@ -364,6 +366,7 @@ export interface Order {
   items: OrderItem[];
   subtotal: number;
   deliveryFee: number;
+  platformFee?: number; // Fixed 250 IQD platform service fee
   deliveryDistanceKm?: number;
   deliveryZoneStatus?: 'within_radius' | 'custom_distance' | 'out_of_range';
   total: number;
@@ -485,7 +488,10 @@ export interface CarAd {
   likesCount?: number;
   sharesCount?: number;
   isHidden?: boolean;
+  published?: boolean;
+  visibility?: 'public' | 'private';
   createdAt: string;
+  updatedAt?: string;
 
   // Extended Professional Vehicle Specifications
   trim?: string;

@@ -2,35 +2,41 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper Functions
+    // Helper functions
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'admin@shakh.com' ||
+        request.auth.token.role == 'super_admin' ||
+        request.auth.uid == 'admin-super'
+      );
     }
 
-    // 1. Users Collection
-    match /users/{userId} {
+    // 1. Products Collection: Publicly readable by all users across all platforms
+    match /products/{productId} {
       allow read: if true;
-      allow write: if true;
+      allow create: if true;
+      allow update, delete: if true;
     }
 
-    // 2. Sellers Collection (Public storefronts for all buyers)
+    // 2. Cars Collection: Publicly readable for all active ads
+    match /cars/{carId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if true;
+    }
+
+    // 3. Sellers Collection: Public storefront directory
     match /sellers/{sellerId} {
       allow read: if true;
       allow write: if true;
     }
 
-    // 3. Products Collection (Publicly visible to all customers across marketplace)
-    match /products/{productId} {
-      allow read: if true;
-      allow write: if true;
-    }
-
-    // 4. Cars Collection (Publicly visible to all customers in Shakh Auto)
-    match /cars/{carId} {
+    // 4. Users Collection
+    match /users/{userId} {
       allow read: if true;
       allow write: if true;
     }
@@ -41,55 +47,52 @@ service cloud.firestore {
       allow write: if true;
     }
 
-    // 6. Reviews & Ratings (Publicly visible to all customers)
+    // 6. Reviews & Ratings
     match /reviews/{reviewId} {
       allow read: if true;
       allow write: if true;
     }
 
-    // 7. Seller Wallets & Financial Ledger
-    match /wallets/{walletId} {
-      allow read: if true;
-      allow write: if true;
-    }
-
-    // 8. Seller Agreements
-    match /agreements/{agreementId} {
-      allow read: if true;
-      allow write: if true;
-    }
-
-    // 9. User Feedbacks
+    // 7. Feedbacks
     match /feedbacks/{feedbackId} {
       allow read: if true;
       allow write: if true;
     }
 
-    // 10. Notifications
+    // 8. Notifications
     match /notifications/{notificationId} {
       allow read: if true;
       allow write: if true;
     }
 
-    // 11. Favorites Collection
+    // 9. Wallets & Agreements
+    match /wallets/{walletId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /agreements/{agreementId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // 10. Favorites & Tokens
     match /favorites/{favoriteId} {
       allow read: if true;
       allow write: if true;
     }
 
-    // 12. FCM Device Tokens Collection
     match /fcmTokens/{tokenId} {
       allow read: if true;
       allow write: if true;
     }
 
-    // 13. Promotional Offers Collection
+    // 11. Promotional Offers & System Settings
     match /promotional_offers/{offerId} {
       allow read: if true;
       allow write: if true;
     }
 
-    // 14. System Settings & Banners (Publicly readable)
     match /settings/{settingId} {
       allow read: if true;
       allow write: if true;
@@ -97,8 +100,7 @@ service cloud.firestore {
 
     // Catch-All
     match /{document=**} {
-      allow read: if true;
-      allow write: if true;
+      allow read, write: if true;
     }
   }
 }

@@ -297,12 +297,12 @@ export const SubscriptionManagementPanel: React.FC<SubscriptionManagementPanelPr
               </div>
 
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                {activeSubscription ? activeSubscription.planName : (mode === 'captain' ? 'پلانی کاپتنی ستاندارد (٧٠٪ کاپتن / ٣٠٪ شاخ)' : 'پلانی ستاندارد (١٠٪ نیسبە بۆ شاخ)')}
+                {activeSubscription ? activeSubscription.planName : (mode === 'captain' ? 'ڕێککەوتنی کاپتنی ستاندارد (٧٠٪ کاپتن / ٣٠٪ شاخ)' : 'ڕێککەوتنی ستاندارد (پۆستی بێسنوور + نیسبەی فرۆش بەپێی ڕێککەوتن)')}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {mode === 'captain'
-                  ? 'بە بەشداریکردن لە ئابوونەی زێڕین، تەواوی ١٠٠٪ـی کرێی گەیاندن بۆ خۆت دەبێت و هیچ نیسبەیەک نادرێتە شاخ!'
-                  : 'پۆستەکانی بەشی ئۆتۆمبێل بەخشراون لە نیسبەی فرۆش. بە ئابوونەی Pro یان VIP دەتوانیت نیسبەی بەشەکانی تر کەم بکەیتەوە بۆ ٥٪ یان ٠٪!'}
+                  ? 'کاپتن نیسبە دەدات بەپێی ڕێککەوتن. بە پلانی زێڕین ١٠٠٪ تەواوی کرێی گەیاندن وەردەگریت یان بەپێی ڕێککەوتنی دووقۆڵی.'
+                  : 'پۆستکردنی کاڵا ١٠٠٪ بێبەرامبەرە و بێ لیمیتە (سفر د.ع). دوکاندار تەنها لە کاتی فرۆشتنی سەرکەوتوودا نیسبە دەدات بەپێی ڕێککەوتن لەگەڵ پلاتفۆرمی شاخ.'}
               </p>
             </div>
 

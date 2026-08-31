@@ -258,6 +258,10 @@ export const OrderTrackingView: React.FC<OrderTrackingViewProps> = ({
                 <span>کرێی گەیاندن:</span>
                 <span className="font-bold text-slate-900 font-latin">{order.deliveryFee.toLocaleString()} د.ع</span>
               </div>
+              <div className="flex justify-between">
+                <span>کرێی سەکۆ و پلاتفۆرم:</span>
+                <span className="font-bold text-slate-900 font-latin">{(order.platformFee ?? 250).toLocaleString()} د.ع</span>
+              </div>
 
               {Boolean(order.pointsDiscount && order.pointsDiscount > 0) && (
                 <div className="flex justify-between text-amber-700 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/40 p-1.5 rounded-lg border border-amber-200 dark:border-amber-800">

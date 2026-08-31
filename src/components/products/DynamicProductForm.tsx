@@ -460,6 +460,8 @@ export const DynamicProductForm: React.FC<DynamicProductFormProps> = ({
       images,
       isAvailable: isAvailable !== false,
       productStatus: initialData?.productStatus || 'active',
+      published: true,
+      visibility: 'public',
       isFeatured,
       rating: initialData?.rating || 5.0,
       reviewCount: initialData?.reviewCount || 0,
